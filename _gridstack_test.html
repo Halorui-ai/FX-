@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>gridstack isolation test</title>
+<link rel="stylesheet" href="./lib/gridstack.min.css">
+</head>
+<body>
+<div id="msg">loading gridstack only...</div>
+<div class="grid-stack" id="testGrid">
+  <div class="grid-stack-item" gs-x="0" gs-y="0" gs-w="4" gs-h="2">
+    <div class="grid-stack-item-content">test card</div>
+  </div>
+</div>
+<script src="./lib/gridstack-all.min.js"></script>
+<script>
+document.getElementById('msg').textContent = 'GridStack defined: ' + (typeof GridStack !== 'undefined');
+</script>
+</body>
+</html>

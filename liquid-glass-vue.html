@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vue 3 · LiquidGlass 组件（Web Worker 折射）</title>
+<style>
+  :root[data-theme="light"] {
+    --bg-base:#F4F6FA; --text:#1A2233; --text-2:#5A6478;
+    --accent:#0A84FF; --accent-2:#5E5CE6;
+  }
+  :root[data-theme="dark"] {
+    --bg-base:#0D1117; --text:#E6EDF3; --text-2:#9DA7B8;
+    --accent:#4A9EFF; --accent-2:#9B7DFF;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text); background:var(--bg-base); min-height:100vh; }
+  #bg-source { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+  .app { position:relative; z-index:5; max-width:1100px; margin:0 auto; padding:32px 24px 80px; }
+  .app h1 { font-size:22px; font-weight:600; }
+  .app h1 .ac { background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .app .sub { color:var(--text-2); font-size:13px; margin-top:8px; line-height:1.7; }
+
+  .toolbar { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:20px 0 28px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    border-radius:14px; padding:14px 18px; }
+  :root[data-theme="light"] .toolbar { background:rgba(255,255,255,.5); border-color:rgba(0,0,0,.08); }
+  .toolbar label { font-size:13px; color:var(--text-2); display:flex; align-items:center; gap:10px; }
+  .toolbar input[type=range] { width:180px; accent-color:var(--accent); }
+  .toolbar .val { color:var(--accent); font-weight:600; min-width:34px; }
+  .pill-btn { background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.12);
+    border-radius:999px; padding:6px 14px; font-size:13px; cursor:pointer; }
+  :root[data-theme="light"] .pill-btn { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.08); }
+
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:800px){ .cards { grid-template-columns:1fr; } }
+
+  /* LiquidGlass 组件样式 */
+  .lg-card { position:relative; height:240px; border-radius:26px; overflow:hidden; isolation:isolate;
+    box-shadow:0 12px 48px rgba(0,0,0,.35); }
+  .lg-card.draggable { cursor:grab; }
+  .lg-card.dragging { cursor:grabbing; transform:scale(1.02); box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .lg-canvas { position:absolute; z-index:1; pointer-events:none; }
+  .lg-tint { position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:26px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.02) 50%, rgba(0,0,0,.04) 100%); }
+  :root[data-theme="light"] .lg-tint { background:linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,.15) 50%, rgba(0,0,0,.04) 100%); }
+  .lg-edge { position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:26px;
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(0,0,0,.2); }
+  :root[data-theme="light"] .lg-edge { border-color:rgba(255,255,255,.6); }
+  .lg-body { position:relative; z-index:4; height:100%; padding:22px; pointer-events:none; }
+  .lg-body .label { font-size:12px; color:var(--text-2); margin-bottom:8px; }
+  .lg-body .metric { font-size:42px; font-weight:600; letter-spacing:-1px; }
+  .lg-body .delta { font-size:13px; color:#FF7A7A; margin-top:6px; }
+  .lg-body .bars { display:flex; gap:6px; align-items:flex-end; height:60px; margin-top:18px; }
+  .lg-body .bars span { flex:1; background:rgba(255,255,255,.18); border-radius:4px; }
+  :root[data-theme="light"] .lg-body .bars span { background:rgba(0,0,0,.15); }
+  .lg-body .bars span:nth-child(1){height:35%}.lg-body .bars span:nth-child(2){height:55%}
+  .lg-body .bars span:nth-child(3){height:40%}.lg-body .bars span:nth-child(4){height:75%}
+  .lg-body .bars span:nth-child(5){height:50%}.lg-body .bars span:nth-child(6){height:65%}
+  .lg-body .bars span:nth-child(7){height:45%}.lg-body .bars span:nth-child(8){height:60%}
+
+  .hint { font-size:11px; color:var(--text-2); margin-top:10px; }
+  .fatal { padding:48px; color:#FF7A7A; font-family:system-ui,sans-serif; line-height:1.9; font-size:15px; }
+  .fatal code { background:rgba(255,122,122,.12); padding:2px 6px; border-radius:5px; }
+</style>
+</head>
+<body>
+
+<canvas id="bg-source"></canvas>
+<div id="app" class="app"></div>
+
+<!-- 内网本地资源：vue.global.prod.js 已归入 lib/ 目录，离线运行 -->
+<script src="./lib/vue.global.prod.js"></script>
+
+<script>
+/* ============ 内联 Web Worker：只做像素位移计算 ============ */
+const workerCode = `
+self.onmessage = function(e) {
+  const { buffer, Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd, Hd } = e.data;
+  const input = new Uint8ClampedArray(buffer);
+  const output = new Uint8ClampedArray(input.length);
+  const cx = Wp / 2, cy = Hp / 2;
+  const L = pad, R = pad + Wd, Tp = pad, B = pad + Hd;
+  for (let y = 0; y < Hp; y++) {
+    for (let x = 0; x < Wp; x++) {
+      const dx = Math.min(x - L, R - x);
+      const dy = Math.min(y - Tp, B - y);
+      const d = Math.min(dx, dy);
+      let rX = x, gX = x, bX = x, rY = y, gY = y, bY = y;
+      if (d >= 0 && d < edgeZone) {
+        const t = 1 - d / edgeZone;
+        const strength = Math.pow(t, 1.6) * maxStrength;
+        const dist = Math.hypot(x - cx, y - cy) || 1;
+        const nx = (x - cx) / dist, ny = (y - cy) / dist;
+        // 向外侧采样 + 三通道色散
+        rX = x + nx * strength;
+        gX = x + nx * strength * (1 - chroma);
+        bX = x + nx * strength * (1 - chroma * 2);
+        rY = y + ny * strength;
+        gY = y + ny * strength * (1 - chroma);
+        bY = y + ny * strength * (1 - chroma * 2);
+        rX = Math.max(0, Math.min(Wp - 1, rX)) | 0;
+        gX = Math.max(0, Math.min(Wp - 1, gX)) | 0;
+        bX = Math.max(0, Math.min(Wp - 1, bX)) | 0;
+        rY = Math.max(0, Math.min(Hp - 1, rY)) | 0;
+        gY = Math.max(0, Math.min(Hp - 1, gY)) | 0;
+        bY = Math.max(0, Math.min(Hp - 1, bY)) | 0;
+      }
+      const rIdx = (rY * Wp + rX) * 4, gIdx = (gY * Wp + gX) * 4, bIdx = (bY * Wp + bX) * 4, dst = (y * Wp + x) * 4;
+      output[dst] = input[rIdx];
+      output[dst + 1] = input[gIdx + 1];
+      output[dst + 2] = input[bIdx + 2];
+      output[dst + 3] = 255;
+    }
+  }
+  self.postMessage({ buffer: output.buffer, Wp, Hp }, [output.buffer]);
+};
+`;
+const workerUrl = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+
+/* ============ 背景源绘制（与 demo 一致） ============ */
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let currentTheme = 'dark';
+const THEMES = {
+  dark:  { bgCenter:'#1a2342', bgEdge:'#050810', grid:'rgba(120,180,255,0.07)', ringA:'rgba(150,200,255,0.28)', ringB:'rgba(255,180,120,0.22)', diag:'rgba(180,220,255,0.16)' },
+  light: { bgCenter:'#e8eef8', bgEdge:'#b8c4d4', grid:'rgba(70,100,150,0.12)', ringA:'rgba(70,130,200,0.35)', ringB:'rgba(200,120,80,0.3)', diag:'rgba(60,100,160,0.2)' },
+};
+const bgSource = document.getElementById('bg-source');
+const bgCtx = bgSource.getContext('2d', { willReadFrequently: true });
+function renderBgSource() {
+  bgSource.width = window.innerWidth * DPR; bgSource.height = window.innerHeight * DPR;
+  bgSource.style.width = window.innerWidth + 'px'; bgSource.style.height = window.innerHeight + 'px';
+  bgCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const T = THEMES[currentTheme];
+  const W = window.innerWidth, H = window.innerHeight;
+  const g = bgCtx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, Math.max(W,H));
+  g.addColorStop(0, T.bgCenter); g.addColorStop(1, T.bgEdge);
+  bgCtx.fillStyle = g; bgCtx.fillRect(0, 0, W, H);
+  bgCtx.strokeStyle = T.grid; bgCtx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40){ bgCtx.beginPath(); bgCtx.moveTo(x,0); bgCtx.lineTo(x,H); bgCtx.stroke(); }
+  for (let y = 0; y < H; y += 40){ bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y); bgCtx.stroke(); }
+  bgCtx.strokeStyle = T.ringA;
+  for (const r of [30,70,110,150,190,230,270,310,350]){ bgCtx.beginPath(); bgCtx.arc(280,80,r,0,Math.PI*2); bgCtx.stroke(); }
+  bgCtx.strokeStyle = T.ringB;
+  for (const r of [40,90,140,190,240,290,340]){ bgCtx.beginPath(); bgCtx.arc(W*0.6,H*0.7,r,0,Math.PI*2); bgCtx.stroke(); }
+  bgCtx.strokeStyle = T.diag; bgCtx.lineWidth = 1.2;
+  for (let i = -15; i < 30; i++){ const o = i*90; bgCtx.beginPath(); bgCtx.moveTo(o-H,0); bgCtx.lineTo(o+W,H); bgCtx.stroke(); }
+}
+// 关键修复①：提前绘制背景——即使 Vue 未加载，页面也不再是纯黑屏
+renderBgSource();
+
+/* ============ 主线程降级用的折射计算（与 Worker 逻辑一致） ============ */
+function computeRefraction(buffer, p) {
+  const input = new Uint8ClampedArray(buffer);
+  const output = new Uint8ClampedArray(input.length);
+  const { Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd, Hd } = p;
+  const cx = Wp / 2, cy = Hp / 2;
+  const L = pad, R = pad + Wd, Tp = pad, B = pad + Hd;
+  for (let y = 0; y < Hp; y++) {
+    for (let x = 0; x < Wp; x++) {
+      const dx = Math.min(x - L, R - x);
+      const dy = Math.min(y - Tp, B - y);
+      const d = Math.min(dx, dy);
+      let rX = x, gX = x, bX = x, rY = y, gY = y, bY = y;
+      if (d >= 0 && d < edgeZone) {
+        const t = 1 - d / edgeZone;
+        const strength = Math.pow(t, 1.6) * maxStrength;
+        const dist = Math.hypot(x - cx, y - cy) || 1;
+        const nx = (x - cx) / dist, ny = (y - cy) / dist;
+        rX = x + nx * strength;
+        gX = x + nx * strength * (1 - chroma);
+        bX = x + nx * strength * (1 - chroma * 2);
+        rY = y + ny * strength;
+        gY = y + ny * strength * (1 - chroma);
+        bY = y + ny * strength * (1 - chroma * 2);
+        rX = Math.max(0, Math.min(Wp - 1, rX)) | 0;
+        gX = Math.max(0, Math.min(Wp - 1, gX)) | 0;
+        bX = Math.max(0, Math.min(Wp - 1, bX)) | 0;
+        rY = Math.max(0, Math.min(Hp - 1, rY)) | 0;
+        gY = Math.max(0, Math.min(Hp - 1, gY)) | 0;
+        bY = Math.max(0, Math.min(Hp - 1, bY)) | 0;
+      }
+      const rIdx = (rY * Wp + rX) * 4, gIdx = (gY * Wp + gX) * 4, bIdx = (bY * Wp + bX) * 4, dst = (y * Wp + x) * 4;
+      output[dst] = input[rIdx];
+      output[dst + 1] = input[gIdx + 1];
+      output[dst + 2] = input[bIdx + 2];
+      output[dst + 3] = 255;
+    }
+  }
+  return output;
+}
+
+/* ============ Vue 缺失兜底：避免无声黑屏 ============ */
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').innerHTML =
+    '<div class="fatal">⚠️ 未找到 <code>vue.global.prod.js</code>。<br>' +
+    '请确认该文件与本 HTML 处于<b>同一目录</b>；内网离线环境请勿改用 CDN。<br>' +
+    '（本文件已随附一份到同目录，将其一并拷贝到内网即可。）</div>';
+  throw new Error('Vue 全局构建未加载');
+}
+
+/* ============ LiquidGlass 组件 ============ */
+const { createApp, defineComponent, ref, onMounted, onBeforeUnmount, watch } = Vue;
+
+const LiquidGlass = defineComponent({
+  name: 'LiquidGlass',
+  props: {
+    refractionStrength: { type: Number, default: 18 }, // 边缘最大位移（CSS px）
+    edgeZone:          { type: Number, default: 28 },  // 边缘作用带宽度（CSS px）
+    chroma:            { type: Number, default: 0.18 },// 色散强度
+    draggable:         { type: Boolean, default: false },
+  },
+  setup(props) {
+    const root = ref(null);
+    const canvas = ref(null);
+    let worker = null, busy = false, pending = false, rafId = null, useWorker = true;
+    let dragging = false, dragOff = { x: 0, y: 0 };
+
+    function render() {
+      if (!root.value || !canvas.value) return;
+      const rect = root.value.getBoundingClientRect();
+      const W = rect.width, H = rect.height;
+      if (W < 4 || H < 4) return;
+      const padCss = 30;
+      const pad = Math.round(padCss * DPR);
+      const Wp = Math.round((W + padCss * 2) * DPR);
+      const Hp = Math.round((H + padCss * 2) * DPR);
+      const cv = canvas.value;
+      cv.width = Wp; cv.height = Hp;
+      cv.style.width = (W + padCss * 2) + 'px';
+      cv.style.height = (H + padCss * 2) + 'px';
+      cv.style.left = (-padCss) + 'px';
+      cv.style.top = (-padCss) + 'px';
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      // 从背景源复制「卡片区域 + 一圈 padding」
+      ctx.drawImage(bgSource,
+        Math.round((rect.left - padCss) * DPR), Math.round((rect.top - padCss) * DPR), Wp, Hp,
+        0, 0, Wp, Hp);
+      const img = ctx.getImageData(0, 0, Wp, Hp);
+      const params = {
+        Wp, Hp,
+        edgeZone: Math.round(props.edgeZone * DPR),
+        maxStrength: Math.round(props.refractionStrength * DPR),
+        chroma: props.chroma,
+        pad,
+        Wd: Math.round(W * DPR),
+        Hd: Math.round(H * DPR),
+      };
+      if (useWorker) {
+        if (busy) { pending = true; return; } // worker 忙，合并为一次最新渲染
+        busy = true;
+        worker.postMessage({ buffer: img.data.buffer, ...params }, [img.data.buffer]);
+      } else {
+        // 关键修复③：主线程降级（file:// 下 Firefox 可能禁用 Blob Worker）
+        const out = computeRefraction(img.data.buffer, params);
+        ctx.putImageData(new ImageData(out, Wp, Hp), 0, 0);
+      }
+    }
+
+    function onWorkerMsg(e) {
+      const { buffer, Wp, Hp } = e.data;
+      const ctx = canvas.value.getContext('2d');
+      ctx.putImageData(new ImageData(new Uint8ClampedArray(buffer), Wp, Hp), 0, 0);
+      busy = false;
+      if (pending) { pending = false; render(); }
+    }
+
+    onMounted(() => {
+      // 关键修复③：Worker 创建失败则降级，避免 file:// 下白屏
+      try {
+        worker = new Worker(workerUrl);
+        worker.onmessage = onWorkerMsg;
+      } catch (err) {
+        useWorker = false;
+        console.warn('Web Worker 不可用，已降级为主线程计算（拖动时可能略卡）：', err);
+      }
+      render();
+      window.addEventListener('resize', render);
+    });
+    onBeforeUnmount(() => {
+      worker && worker.terminate();
+      window.removeEventListener('resize', render);
+    });
+
+    // prop 变化 → 重渲染（worker 异步，主线程不卡）
+    watch(() => [props.refractionStrength, props.edgeZone, props.chroma], () => render());
+
+    // 拖动
+    function onDown(e) {
+      if (!props.draggable) return;
+      dragging = true;
+      root.value.classList.add('dragging');
+      const r = root.value.getBoundingClientRect();
+      dragOff.x = e.clientX - r.left; dragOff.y = e.clientY - r.top;
+      root.value.style.position = 'fixed';
+      root.value.style.left = r.left + 'px'; root.value.style.top = r.top + 'px';
+      root.value.style.zIndex = '9999';
+      root.value.style.width = r.width + 'px'; root.value.style.height = r.height + 'px';
+      e.preventDefault();
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      root.value.style.left = (e.clientX - dragOff.x) + 'px';
+      root.value.style.top = (e.clientY - dragOff.y) + 'px';
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(render);
+    }
+    function onUp() { dragging = false; }
+    onMounted(() => {
+      root.value.addEventListener('mousedown', onDown);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    return { root, canvas };
+  },
+  template: `
+    <div class="lg-card" :class="{ draggable }" ref="root">
+      <canvas class="lg-canvas" ref="canvas"></canvas>
+      <div class="lg-tint"></div>
+      <div class="lg-edge"></div>
+      <div class="lg-body"><slot/></div>
+    </div>
+  `,
+});
+
+/* ============ App ============ */
+const App = defineComponent({
+  components: { LiquidGlass },
+  setup() {
+    const strength = ref(18);
+    const theme = ref('dark');
+    const toggleTheme = () => {
+      theme.value = theme.value === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme.value);
+      currentTheme = theme.value;
+      renderBgSource();
+    };
+    onMounted(() => { renderBgSource(); });
+    return { strength, theme, toggleTheme };
+  },
+  template: `
+    <h1>Vue 3 · <span class="ac">LiquidGlass</span> 组件</h1>
+    <p class="sub">折射强度暴露为 prop，拖动滑块实时调节；像素循环跑在 Web Worker，主线程只做合成（拖动顺滑不卡）。<br>
+    把本地 <code>vue.global.prod.js</code> 放在同目录即可离线运行。右侧卡片可拖动。</p>
+
+    <div class="toolbar">
+      <label>折射强度
+        <input type="range" min="0" max="40" step="1" v-model.number="strength">
+        <span class="val">{{ strength }}</span>
+      </label>
+      <button class="pill-btn" @click="toggleTheme">切换 浅/深 色</button>
+    </div>
+
+    <div class="cards">
+      <liquid-glass :refraction-strength="strength" :edge-zone="28" :chroma="0.18">
+        <div class="label">固定卡 · 强度随滑块实时变化</div>
+        <div class="metric">92.4%</div>
+        <div class="delta">↑ 3.1% 较昨日</div>
+        <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </liquid-glass>
+
+      <liquid-glass :refraction-strength="strength" :edge-zone="28" :chroma="0.18" :draggable="true">
+        <div class="label">可拖动卡 · 折射随位置实时更新</div>
+        <div class="metric">87.1%</div>
+        <div class="delta">↓ 1.4% 较昨日</div>
+        <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="hint">↑ 拖动此卡，背景折射实时重绘</div>
+      </liquid-glass>
+    </div>
+  `,
+});
+
+createApp(App).mount('#app');
+</script>
+</body>
+</html>

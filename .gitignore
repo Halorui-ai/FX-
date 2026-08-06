@@ -1,0 +1,21 @@
+# Excel 临时锁文件（打开时自动生成）
+~$*
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 截图 / 预览图
+*.png
+
+# 冗余副本 / 临时导出
+* - 副本.*
+*.tmp
+
+# 编辑器 / 系统
+Thumbs.db
+.DS_Store
+
+# 工具/代理内部目录（非项目内容）
+.qoder/
+.workbuddy/

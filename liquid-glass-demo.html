@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>液态玻璃 · 真实边缘折射 + 交互组件</title>
+<style>
+  /* ============ 双模式色彩 ============ */
+  :root[data-theme="light"] {
+    --bg-base:#F4F6FA; --surface:#FFFFFF;
+    --text:#1A2233; --text-2:#5A6478; --text-3:#8A92A6;
+    --accent:#0A84FF; --accent-2:#5E5CE6;
+    --separator:rgba(26,34,51,.08);
+  }
+  :root[data-theme="dark"] {
+    --bg-base:#0D1117; --surface:#1C2230;
+    --text:#E6EDF3; --text-2:#9DA7B8; --text-3:#6B7488;
+    --accent:#4A9EFF; --accent-2:#9B7DFF;
+    --separator:rgba(255,255,255,.08);
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body {
+    font-family: system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text); overflow-x:hidden;
+  }
+
+  /* ============ 背景内容源（被 canvas 采样用） ============ */
+  #bg-source { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+  /* ============ 顶部 ============ */
+  .header {
+    position:relative; z-index:5; padding:24px 32px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .header h1 { font-size:22px; font-weight:600; letter-spacing:.5px; }
+  .header h1 .accent { background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .pill-btn {
+    background:rgba(255,255,255,.06); color:var(--text);
+    border:1px solid rgba(255,255,255,.12); border-radius:999px;
+    padding:6px 14px; font-size:13px; cursor:pointer;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    transition:all .2s;
+  }
+  :root[data-theme="light"] .pill-btn { background:rgba(0,0,0,.04); border-color:rgba(0,0,0,.08); }
+  .pill-btn:hover { background:rgba(255,255,255,.12); }
+  :root[data-theme="light"] .pill-btn:hover { background:rgba(0,0,0,.08); }
+
+  /* ============ 玻璃卡片基础 ============ */
+  .stage { position:relative; z-index:1; padding:24px 32px 80px; max-width:1400px; margin:0 auto; }
+  .section-title { font-size:14px; color:var(--text-2); margin:24px 0 14px;
+    letter-spacing:1px; text-transform:uppercase; font-weight:500; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:900px){ .grid-3 { grid-template-columns:1fr; } }
+
+  .card {
+    position:relative; height:260px; border-radius:26px; padding:22px;
+    overflow:hidden; cursor:default;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card-header { font-size:12px; color:var(--text-2); margin-bottom:8px; font-weight:500; }
+  .metric { font-size:42px; font-weight:600; letter-spacing:-1px; line-height:1; }
+  .delta { color:#FF5A5A; font-size:13px; margin-top:6px; }
+  .bars { display:flex; gap:6px; align-items:flex-end; height:60px; margin-top:18px; }
+  .bars span { flex:1; background:rgba(255,255,255,.18); border-radius:4px; }
+  :root[data-theme="light"] .bars span { background:rgba(0,0,0,.18); }
+  .bars span:nth-child(1){height:35%} .bars span:nth-child(2){height:55%}
+  .bars span:nth-child(3){height:40%} .bars span:nth-child(4){height:75%}
+  .bars span:nth-child(5){height:50%} .bars span:nth-child(6){height:65%}
+  .bars span:nth-child(7){height:45%} .bars span:nth-child(8){height:60%}
+
+  /* ① 传统毛玻璃 */
+  .card.plain {
+    background:rgba(255,255,255,.06);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 8px 32px rgba(0,0,0,.2);
+  }
+  :root[data-theme="light"] .card.plain { background:rgba(255,255,255,.5); border-color:rgba(255,255,255,.6); }
+
+  /* ② CSS 近似（之前几版的高峰） */
+  .card.css-approx {
+    background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    backdrop-filter:blur(14px) saturate(160%); -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.25),
+      inset 0 -1px 0 rgba(0,0,0,.15),
+      0 10px 40px rgba(0,0,0,.25);
+  }
+  :root[data-theme="light"] .card.css-approx {
+    background:linear-gradient(135deg, rgba(255,255,255,.6), rgba(255,255,255,.2));
+    border-color:rgba(255,255,255,.7);
+  }
+  /* CSS 假"折射"——只用渐变描边假装边缘弯曲（注意背景的圆环/线条其实没被位移） */
+  .card.css-approx::before {
+    content:""; position:absolute; inset:0; border-radius:26px; padding:1px;
+    background:linear-gradient(135deg, rgba(180,220,255,.55), rgba(255,180,220,.35), rgba(180,255,220,.4));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    pointer-events:none;
+  }
+
+  /* ③ 真实 JS Canvas 折射 */
+  .card.real { position:relative; cursor:grab; isolation:isolate;
+    box-shadow:0 12px 48px rgba(0,0,0,.35); }
+  .card.real.dragging { cursor:grabbing; transform:scale(1.02);
+    box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .card.real .glass-canvas {
+    position:absolute; inset:0; width:100%; height:100%;
+    border-radius:26px; z-index:1; pointer-events:none;
+  }
+  .card.real .tint {
+    position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:26px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.02) 50%, rgba(0,0,0,.04) 100%);
+  }
+  :root[data-theme="light"] .card.real .tint {
+    background:linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,.15) 50%, rgba(0,0,0,.04) 100%);
+  }
+  .card.real .edge {
+    position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:26px;
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(0,0,0,.2);
+  }
+  :root[data-theme="light"] .card.real .edge { border-color:rgba(255,255,255,.6); }
+  .card.real .body { position:relative; z-index:4; pointer-events:none; }
+  .card.real .drag-hint {
+    position:absolute; bottom:14px; left:22px; right:22px; z-index:5;
+    font-size:11px; color:var(--text-2);
+    display:flex; align-items:center; gap:6px; pointer-events:none;
+  }
+  .card.real .drag-hint::before { content:"⊕"; color:var(--accent); font-size:14px; }
+  .card.real .reset-btn {
+    position:absolute; top:14px; right:14px; z-index:6;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+    color:var(--text); border-radius:8px; padding:4px 8px; font-size:11px;
+    cursor:pointer; display:none; backdrop-filter:blur(8px);
+  }
+  .card.real.dragging .reset-btn { display:block; }
+
+  /* ============ 交互组件区 ============ */
+  .controls-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:1100px){ .controls-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){ .controls-grid { grid-template-columns:1fr; } }
+
+  .control-card {
+    position:relative; height:160px; border-radius:20px; padding:18px;
+    overflow:hidden; isolation:isolate;
+    box-shadow:0 8px 28px rgba(0,0,0,.25);
+  }
+  .control-card .glass-canvas { position:absolute; inset:0; width:100%; height:100%;
+    border-radius:20px; z-index:1; pointer-events:none; }
+  .control-card .tint { position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.01) 100%); }
+  :root[data-theme="light"] .control-card .tint { background:linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.15) 100%); }
+  .control-card .edge { position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:20px;
+    border:1px solid rgba(255,255,255,.18); box-shadow:inset 0 1px 0 rgba(255,255,255,.25); }
+  :root[data-theme="light"] .control-card .edge { border-color:rgba(255,255,255,.6); }
+  .control-card .body { position:relative; z-index:4; height:100%;
+    display:flex; flex-direction:column; justify-content:space-between; }
+
+  .ctrl-label { font-size:12px; color:var(--text-2); display:flex; justify-content:space-between; }
+  .ctrl-label .val { color:var(--accent); font-weight:600; }
+
+  /* 开关 */
+  .toggle { position:relative; width:52px; height:30px; border-radius:999px; cursor:pointer;
+    background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2);
+    transition:background .2s; padding:0; }
+  .toggle.on { background:var(--accent); border-color:var(--accent); }
+  .toggle .knob { position:absolute; top:2px; left:2px; width:24px; height:24px; border-radius:50%;
+    background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.3); transition:left .22s cubic-bezier(.4,0,.2,1); }
+  .toggle.on .knob { left:24px; }
+  .toggle-wrap { display:flex; align-items:center; justify-content:space-between; }
+
+  /* 滑块 */
+  .slider-wrap { position:relative; height:30px; display:flex; align-items:center; }
+  .slider-track { position:absolute; left:0; right:0; height:4px; border-radius:2px;
+    background:rgba(255,255,255,.15); }
+  :root[data-theme="light"] .slider-track { background:rgba(0,0,0,.12); }
+  .slider-fill { position:absolute; left:0; top:0; height:4px; border-radius:2px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2)); width:17%; }
+  .slider-thumb { position:absolute; width:22px; height:22px; border-radius:50%;
+    background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.4), 0 0 0 4px rgba(255,255,255,.1);
+    left:17%; transform:translateX(-50%); cursor:grab; top:50%; margin-top:-11px; }
+  .slider-thumb:active { cursor:grabbing; }
+  .slider-wrap { touch-action:none; }
+
+  /* 旋钮 */
+  .knob-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .knob-dial { width:72px; height:72px; border-radius:50%; position:relative; cursor:grab;
+    background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(255,255,255,.05) 60%, rgba(0,0,0,.15) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), inset 0 -2px 4px rgba(0,0,0,.25), 0 4px 12px rgba(0,0,0,.3);
+    --rot:75deg; touch-action:none;
+  }
+  :root[data-theme="light"] .knob-dial { background:radial-gradient(circle at 30% 30%, #fff, #e0e4ec 60%, #c4cbd9 100%); }
+  .knob-dial::after { content:""; position:absolute; top:6px; left:50%; width:3px; height:18px;
+    background:var(--accent); border-radius:2px; transform-origin:50% 30px;
+    transform:translateX(-50%) rotate(var(--rot)); box-shadow:0 0 6px var(--accent); }
+  .knob-dial:active { cursor:grabbing; }
+  .knob-track { position:absolute; inset:6px; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 0deg, var(--accent) 0deg, var(--accent-2) var(--arc, 270deg), transparent var(--arc, 270deg) 360deg);
+    -webkit-mask:radial-gradient(circle, transparent 28px, #000 29px);
+            mask:radial-gradient(circle, transparent 28px, #000 29px);
+    opacity:.5; }
+
+  /* 分段控制器 */
+  .segmented { display:flex; background:rgba(0,0,0,.2); border-radius:10px; padding:3px; gap:2px; }
+  :root[data-theme="light"] .segmented { background:rgba(0,0,0,.08); }
+  .seg { flex:1; border:none; background:transparent; color:var(--text-2);
+    padding:6px 0; font-size:12px; border-radius:8px; cursor:pointer; transition:all .15s; }
+  .seg.active { background:rgba(255,255,255,.15); color:var(--text);
+    box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  :root[data-theme="light"] .seg.active { background:rgba(255,255,255,.7); color:#1A2233; }
+
+  /* ============ 技术评估区 ============ */
+  .notes { margin-top:48px; padding:24px 28px; border-radius:20px;
+    background:rgba(255,255,255,.04); border:1px solid var(--separator); }
+  :root[data-theme="light"] .notes { background:rgba(255,255,255,.5); }
+  .notes h2 { font-size:16px; margin-bottom:14px; color:var(--text); }
+  .notes-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:800px){ .notes-grid { grid-template-columns:1fr; } }
+  .note h3 { font-size:13px; color:var(--accent); margin-bottom:6px; font-weight:600; }
+  .note p, .note li { font-size:13px; line-height:1.7; color:var(--text-2); }
+  .note ul { padding-left:18px; margin-top:4px; }
+  .note code { background:rgba(0,0,0,.2); padding:1px 6px; border-radius:4px;
+    font-size:12px; color:var(--accent); }
+  :root[data-theme="light"] .note code { background:rgba(0,0,0,.08); }
+  .verdict { margin-top:10px; padding:8px 12px; border-radius:8px;
+    background:linear-gradient(90deg, rgba(74,158,255,.1), rgba(155,125,255,.1));
+    border-left:3px solid var(--accent); font-size:12px; color:var(--text); }
+</style>
+</head>
+<body>
+
+<!-- 背景内容源（被 canvas 采样绘制）+ 可见背景层（CSS） -->
+<canvas id="bg-source"></canvas>
+<div class="bg-css" id="bg-css" style="position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 70% 30%, #1a2342 0%, #0d1117 60%, #050810 100%);"></div>
+
+<header class="header">
+  <h1>液态玻璃 · <span class="accent">真实边缘折射</span> 演进</h1>
+  <button class="pill-btn" id="theme-toggle">切换 浅/深 色</button>
+  <span style="font-size:12px;color:var(--text-2);margin-left:auto">第三张卡片可拖动 · 背景折射实时重绘</span>
+</header>
+
+<main class="stage">
+
+  <div class="section-title">① 三栏对照 · 看清楚"真折射"和"CSS 假折射"的区别</div>
+  <div class="grid-3">
+
+    <!-- ① 传统毛玻璃 -->
+    <div class="card plain">
+      <div class="card-header">传统毛玻璃 · 仅 backdrop blur</div>
+      <div class="metric">92.4<span style="font-size:24px">%</span></div>
+      <div class="delta">↑ 3.1% 较昨日</div>
+      <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- ② CSS 近似（之前几版的高峰） -->
+    <div class="card css-approx">
+      <div class="card-header">CSS 近似 · 渐变描边假装边缘</div>
+      <div class="metric">92.4<span style="font-size:24px">%</span></div>
+      <div class="delta">↑ 3.1% 较昨日</div>
+      <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:10px">注：背景的圆环/网格线在边缘其实没被位移，弯曲感来自渐变描边</div>
+    </div>
+
+    <!-- ③ 真实 JS Canvas 折射（可拖动） -->
+    <div class="card real" id="real-card">
+      <canvas class="glass-canvas"></canvas>
+      <div class="tint"></div>
+      <div class="edge"></div>
+      <div class="body">
+        <div class="card-header">真实边缘折射 · JS + Canvas</div>
+        <div class="metric">92.4<span style="font-size:24px">%</span></div>
+        <div class="delta">↑ 3.1% 较昨日</div>
+        <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="drag-hint">拖动此卡片，背景折射实时更新</div>
+      <button class="reset-btn" id="reset-card">复位</button>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:48px">② 液态玻璃 · 交互组件</div>
+  <div class="controls-grid">
+
+    <!-- 开关 -->
+    <div class="control-card">
+      <canvas class="glass-canvas"></canvas>
+      <div class="tint"></div>
+      <div class="edge"></div>
+      <div class="body">
+        <div class="toggle-wrap">
+          <span class="ctrl-label">实时数据刷新</span>
+          <button class="toggle on" id="toggle" role="switch" aria-checked="true"><span class="knob"></span></button>
+        </div>
+        <span class="ctrl-label" style="font-size:11px">最后同步: 2 分钟前</span>
+      </div>
+    </div>
+
+    <!-- 滑块 -->
+    <div class="control-card">
+      <canvas class="glass-canvas"></canvas>
+      <div class="tint"></div>
+      <div class="edge"></div>
+      <div class="body">
+        <div class="ctrl-label">刷新频率 <span class="val" id="freq-val">5 秒</span></div>
+        <div class="slider-wrap" id="slider-wrap">
+          <div class="slider-track"></div>
+          <div class="slider-fill" id="slider-fill"></div>
+          <div class="slider-thumb" id="slider-thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 旋钮 -->
+    <div class="control-card">
+      <canvas class="glass-canvas"></canvas>
+      <div class="tint"></div>
+      <div class="edge"></div>
+      <div class="body">
+        <div class="ctrl-label">亮度 <span class="val" id="bright-val">75%</span></div>
+        <div class="knob-wrap">
+          <div class="knob-dial" id="knob" style="--arc:270deg">
+            <div class="knob-track" id="knob-track"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分段 -->
+    <div class="control-card">
+      <canvas class="glass-canvas"></canvas>
+      <div class="tint"></div>
+      <div class="edge"></div>
+      <div class="body">
+        <div class="ctrl-label">时间粒度</div>
+        <div class="segmented" id="segmented">
+          <button class="seg active" data-val="day">日</button>
+          <button class="seg" data-val="week">周</button>
+          <button class="seg" data-val="month">月</button>
+        </div>
+        <span class="ctrl-label" style="font-size:11px">当前: 按日聚合</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技术评估 -->
+  <section class="notes">
+    <h2>技术评估与局限</h2>
+    <div class="notes-grid">
+      <div class="note">
+        <h3>1. 纯 HTML/CSS 能实现真实折射吗？</h3>
+        <p><strong>不能，至少当前规范下做不到。</strong> CSS 的 <code>backdrop-filter</code> 规范支持的滤镜函数有限（blur、brightness、contrast、saturate 等），<code>url()</code> 引用 SVG <code>feDisplacementMap</code> 虽被部分浏览器实现，但存在：</p>
+        <ul>
+          <li>不对 backdrop 区域做几何位移，背景像素位置不变</li>
+          <li>跨浏览器表现不一，Safari 行为与 Chrome 差异明显</li>
+          <li>性能差，触发每帧重绘时帧率掉到 20 以下</li>
+        </ul>
+        <div class="verdict">结论：纯 CSS 只能"模拟"边缘效果（渐变描边 + 内阴影 + 切面高光），无法真正弯曲背景像素。</div>
+      </div>
+
+      <div class="note">
+        <h3>2. 拖动时折射会动态更新吗？</h3>
+        <p><strong>会，JS + Canvas 方案能实时更新。</strong> 实现思路：</p>
+        <ul>
+          <li>把"背景内容"（圆环、网格、渐变、装饰元素）画到一个全屏 <code>&lt;canvas id="bg-source"&gt;</code></li>
+          <li>每个玻璃卡内嵌一个 <code>&lt;canvas&gt;</code>，根据 <code>getBoundingClientRect()</code> 把卡片所在区域的背景源复制进来</li>
+          <li>对边缘 ~28px 环带做像素级位移和 RGB 通道分离采样（色散）</li>
+          <li><code>requestAnimationFrame</code> 内重绘，拖动时同步更新</li>
+        </ul>
+        <div class="verdict">本 demo 第三张卡可拖动，背景折射会跟着位置和内容变化。</div>
+      </div>
+
+      <div class="note">
+        <h3>3. 需要哪些技术？内网能跑吗？</h3>
+        <p>本方案是<strong>纯前端单文件 HTML</strong>，不依赖任何 CDN：</p>
+        <ul>
+          <li><strong>必须</strong>：现代浏览器支持 Canvas 2D <code>getImageData/putImageData</code>（Chrome 76+ / Edge 79+ / Firefox 70+ / Safari 14+）</li>
+          <li><strong>不需</strong>：WebGL、Three.js、构建工具、Node 依赖</li>
+          <li><strong>不需</strong>：外网、CDN、npm 包</li>
+          <li>整个 demo ~ 28KB，邮件分发即可</li>
+        </ul>
+        <div class="verdict">若要做"几十个玻璃卡同屏"，建议用 OffscreenCanvas + Web Worker，或降级到 CSS 近似方案。</div>
+      </div>
+
+      <div class="note">
+        <h3>4. 当前局限与优化路径</h3>
+        <p><strong>局限：</strong></p>
+        <ul>
+          <li>边缘位移是基于背景"源 canvas"重绘，背景内容必须能被代码化绘制（DOM 元素不能直接采样）</li>
+          <li>每帧 <code>getImageData</code> + 像素循环，单卡 300×200 约 6 万次运算，多卡同屏会吃 CPU</li>
+          <li>不支持实时视频、跨域 iframe、外部图片作为背景</li>
+        </ul>
+        <p style="margin-top:8px"><strong>优化路径：</strong></p>
+        <ul>
+          <li>把像素循环搬进 <strong>Web Worker</strong>，主线程只做合成</li>
+          <li>改用 <strong>WebGL 着色器</strong>（片元 shader 算位移），单卡成本降到 &lt;1ms</li>
+          <li>用 <strong>OffscreenCanvas</strong> 离屏渲染，背景源持续更新而非每帧重绘</li>
+          <li>若用框架（React/Vue），可封装成 <code>&lt;LiquidGlass&gt;</code> 组件，<code>refractionStrength</code> 暴露为 prop</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ========================================================
+   真实边缘折射：JS + Canvas 实现
+   思路：
+   1) 背景内容画到 #bg-source（不可见 canvas，作为背景源）
+   2) 每个玻璃卡内嵌 canvas，按卡片位置把"所在区域的背景"采样
+   3) 边缘 ~28px 环带做几何位移（透镜效应）+ RGB 通道分离（色散）
+======================================================== */
+
+const DPR = Math.min(window.devicePixelRatio || 1, 2); // 限制最大 2 防爆
+let currentTheme = 'dark';
+
+// 主题渐变（背景源用）
+const THEMES = {
+  dark: {
+    bgCenter: '#1a2342', bgEdge: '#050810',
+    grid: 'rgba(120,180,255,0.07)',
+    ringA: 'rgba(150,200,255,0.28)',
+    ringB: 'rgba(255,180,120,0.22)',
+    diag: 'rgba(180,220,255,0.16)',
+    orb1: 'rgba(100,150,255,0.18)',
+    orb2: 'rgba(255,150,100,0.14)',
+    cssBg: 'radial-gradient(ellipse at 70% 30%, #1a2342 0%, #0d1117 60%, #050810 100%)'
+  },
+  light: {
+    bgCenter: '#e8eef8', bgEdge: '#b8c4d4',
+    grid: 'rgba(70,100,150,0.12)',
+    ringA: 'rgba(70,130,200,0.35)',
+    ringB: 'rgba(200,120,80,0.3)',
+    diag: 'rgba(60,100,160,0.2)',
+    orb1: 'rgba(80,130,220,0.25)',
+    orb2: 'rgba(220,150,100,0.22)',
+    cssBg: 'radial-gradient(ellipse at 70% 30%, #e8eef8 0%, #d0d8e8 60%, #b8c4d4 100%)'
+  }
+};
+
+// ---------- 背景内容绘制 ----------
+function drawBackground(ctx, viewX, viewY, W, H, theme) {
+  const T = THEMES[theme];
+
+  // 径向渐变底
+  const grad = ctx.createRadialGradient(W*0.7, H*0.3, 0, W*0.7, H*0.3, Math.max(W,H));
+  grad.addColorStop(0, T.bgCenter);
+  grad.addColorStop(1, T.bgEdge);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 网格
+  ctx.strokeStyle = T.grid;
+  ctx.lineWidth = 1;
+  const GS = 40;
+  for (let x = -(viewX % GS); x < W; x += GS) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = -(viewY % GS); y < H; y += GS) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // 同心圆组 A（左上）
+  ctx.strokeStyle = T.ringA;
+  ctx.lineWidth = 1;
+  const cxA = 280, cyA = 80;
+  for (const r of [30, 70, 110, 150, 190, 230, 270, 310, 350]) {
+    ctx.beginPath();
+    ctx.arc(cxA - viewX, cyA - viewY, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // 同心圆组 B（右下）
+  ctx.strokeStyle = T.ringB;
+  const cxB = viewX + window.innerWidth*0.6, cyB = viewY + window.innerHeight*0.7;
+  for (const r of [40, 90, 140, 190, 240, 290, 340]) {
+    ctx.beginPath();
+    ctx.arc(cxB, cyB, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // 对角线
+  ctx.strokeStyle = T.diag;
+  ctx.lineWidth = 1.2;
+  for (let i = -15; i < 30; i++) {
+    const off = i * 90;
+    ctx.beginPath();
+    ctx.moveTo(-viewX + off - H, -viewY);
+    ctx.lineTo(-viewX + off + W, -viewY + H);
+    ctx.stroke();
+  }
+
+  // 发光球
+  const drawOrb = (x, y, r, color) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(x-r, y-r, r*2, r*2);
+  };
+  drawOrb(viewX + window.innerWidth*0.15, viewY + window.innerHeight*0.3, 220, T.orb1);
+  drawOrb(viewX + window.innerWidth*0.85, viewY + window.innerHeight*0.75, 260, T.orb2);
+}
+
+// ---------- 渲染背景源 ----------
+const bgSource = document.getElementById('bg-source');
+const bgCtx = bgSource.getContext('2d', { willReadFrequently: true });
+function renderBgSource() {
+  bgSource.width = window.innerWidth * DPR;
+  bgSource.height = window.innerHeight * DPR;
+  bgSource.style.width = window.innerWidth + 'px';
+  bgSource.style.height = window.innerHeight + 'px';
+  bgCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawBackground(bgCtx, 0, 0, window.innerWidth, window.innerHeight, currentTheme);
+}
+
+// ---------- 渲染单张玻璃卡 ----------
+// 关键修复：边缘"向外侧采样"（而非向中心），并给 canvas 加 padding 让外侧
+// 背景也参与采样 —— 这样卡片边缘一碰到线条，折射立刻出现在边缘，不再滞后。
+const clamp = (v, lo, hi) => v < lo ? lo : (v > hi ? hi : v);
+
+function renderGlassCard(card) {
+  const canvas = card.querySelector('.glass-canvas');
+  if (!canvas) return;
+  const rect = card.getBoundingClientRect();
+  const W = rect.width, H = rect.height;
+  if (W < 4 || H < 4) return;
+
+  // padding：多带一圈背景，使"卡片外侧"内容也能被边缘采样到
+  const padCss = 30;                 // CSS 像素，需 >= maxStrength
+  const pad = Math.round(padCss * DPR);
+  const Wp = Math.round((W + padCss * 2) * DPR);
+  const Hp = Math.round((H + padCss * 2) * DPR);
+
+  canvas.width = Wp; canvas.height = Hp;
+  // 画布比卡片大一圈，靠 card 的 overflow:hidden 裁切；定位到 -padCss 对齐卡片
+  canvas.style.width  = (W + padCss * 2) + 'px';
+  canvas.style.height = (H + padCss * 2) + 'px';
+  canvas.style.left = (-padCss) + 'px';
+  canvas.style.top  = (-padCss) + 'px';
+  canvas.style.right = 'auto';
+  canvas.style.bottom = 'auto';
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // 从背景源复制"卡片区域 + 一圈 padding"（含外侧内容）
+  ctx.drawImage(
+    bgSource,
+    Math.round((rect.left - padCss) * DPR), Math.round((rect.top - padCss) * DPR), Wp, Hp,
+    0, 0, Wp, Hp
+  );
+
+  // 边缘像素级位移 + 色散
+  const input = ctx.getImageData(0, 0, Wp, Hp);
+  const output = ctx.createImageData(Wp, Hp);
+  const data = input.data, out = output.data;
+
+  const edgeZone = 28 * DPR;   // 边缘作用带宽度（卡片内侧 28px）
+  const maxStrength = 18 * DPR; // 最大位移量（向外侧）
+  const chroma = 0.18;          // 色散强度（通道间位移差）
+  const cx = Wp / 2, cy = Hp / 2;
+
+  // 卡片可见内容在画布设备坐标中的边界
+  const L = pad, R = pad + Math.round(W * DPR);
+  const Tp = pad, B = pad + Math.round(H * DPR);
+
+  for (let y = 0; y < Hp; y++) {
+    for (let x = 0; x < Wp; x++) {
+      // 到"卡片内容边缘"的距离（仅卡片内 d>=0 才折射）
+      const dx = Math.min(x - L, R - x);
+      const dy = Math.min(y - Tp, B - y);
+      const d = Math.min(dx, dy);
+
+      let rX = x, gX = x, bX = x;
+      let rY = y, gY = y, bY = y;
+
+      if (d >= 0 && d < edgeZone) {
+        const t = 1 - d / edgeZone;          // 0 内部，1 边缘
+        const strength = Math.pow(t, 1.6) * maxStrength;
+        const dist = Math.hypot(x - cx, y - cy) || 1;
+        const nx = (x - cx) / dist;          // 指向卡片外
+        const ny = (y - cy) / dist;
+
+        // 翻转符号 → 向外侧采样（边缘显示卡片外侧紧贴的内容）
+        rX = x + nx * strength;
+        gX = x + nx * strength * (1 - chroma);
+        bX = x + nx * strength * (1 - chroma * 2);
+        rY = y + ny * strength;
+        gY = y + ny * strength * (1 - chroma);
+        bY = y + ny * strength * (1 - chroma * 2);
+
+        rX = clamp(rX, 0, Wp - 1) | 0;
+        gX = clamp(gX, 0, Wp - 1) | 0;
+        bX = clamp(bX, 0, Wp - 1) | 0;
+        rY = clamp(rY, 0, Hp - 1) | 0;
+        gY = clamp(gY, 0, Hp - 1) | 0;
+        bY = clamp(bY, 0, Hp - 1) | 0;
+      }
+
+      const rIdx = (rY * Wp + rX) * 4;
+      const gIdx = (gY * Wp + gX) * 4;
+      const bIdx = (bY * Wp + bX) * 4;
+      const dstIdx = (y * Wp + x) * 4;
+
+      out[dstIdx]     = data[rIdx];
+      out[dstIdx + 1] = data[gIdx + 1];
+      out[dstIdx + 2] = data[bIdx + 2];
+      out[dstIdx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(output, 0, 0);
+}
+
+function renderAllGlassCards() {
+  document.querySelectorAll('.card.real, .control-card').forEach(renderGlassCard);
+}
+
+// ---------- 拖动主卡（实时重绘） ----------
+const realCard = document.getElementById('real-card');
+const realCardOriginal = { /* 占位 */ };
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+let originalRect = null;
+let rafId = null;
+
+function snapshotOriginalRect() {
+  const r = realCard.getBoundingClientRect();
+  realCardOriginal.left = r.left;
+  realCardOriginal.top = r.top;
+}
+
+realCard.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.reset-btn')) return;
+  isDragging = true;
+  realCard.classList.add('dragging');
+  snapshotOriginalRect();
+  const r = realCard.getBoundingClientRect();
+  dragStart.x = e.clientX - r.left;
+  dragStart.y = e.clientY - r.top;
+  originalRect = r;
+
+  // 切到 fixed 定位，保持当前视口位置
+  realCard.style.position = 'fixed';
+  realCard.style.left = r.left + 'px';
+  realCard.style.top = r.top + 'px';
+  realCard.style.right = 'auto';
+  realCard.style.width = r.width + 'px';
+  realCard.style.height = r.height + 'px';
+  realCard.style.zIndex = '9999';
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const newLeft = e.clientX - dragStart.x;
+  const newTop = e.clientY - dragStart.y;
+  realCard.style.left = newLeft + 'px';
+  realCard.style.top = newTop + 'px';
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => renderGlassCard(realCard));
+});
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false;
+    rafId = null;
+  }
+});
+
+// 复位
+document.getElementById('reset-card').addEventListener('click', (e) => {
+  e.stopPropagation();
+  realCard.classList.remove('dragging');
+  realCard.style.position = '';
+  realCard.style.left = '';
+  realCard.style.top = '';
+  realCard.style.right = '';
+  realCard.style.width = '';
+  realCard.style.height = '';
+  realCard.style.zIndex = '';
+  // 等一帧让布局恢复
+  requestAnimationFrame(() => {
+    renderGlassCard(realCard);
+  });
+});
+
+// ---------- 主题切换 ----------
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('bg-css').style.background = THEMES[currentTheme].cssBg;
+  renderBgSource();
+  renderAllGlassCards();
+});
+
+// ---------- 开关 ----------
+const toggle = document.getElementById('toggle');
+toggle.addEventListener('click', () => {
+  const on = toggle.classList.toggle('on');
+  toggle.setAttribute('aria-checked', on);
+});
+
+// ---------- 滑块 ----------
+const sliderWrap = document.getElementById('slider-wrap');
+const sliderThumb = document.getElementById('slider-thumb');
+const sliderFill = document.getElementById('slider-fill');
+const freqVal = document.getElementById('freq-val');
+let sliderDragging = false;
+
+function updateSlider(clientX) {
+  const r = sliderWrap.getBoundingClientRect();
+  let pct = (clientX - r.left) / r.width;
+  pct = Math.max(0, Math.min(1, pct));
+  const val = Math.round(pct * 29) + 1;
+  sliderThumb.style.left = (pct * 100) + '%';
+  sliderFill.style.width = (pct * 100) + '%';
+  freqVal.textContent = val + ' 秒';
+}
+
+sliderThumb.addEventListener('mousedown', (e) => {
+  sliderDragging = true; e.preventDefault(); e.stopPropagation();
+});
+sliderWrap.addEventListener('mousedown', (e) => {
+  sliderDragging = true;
+  updateSlider(e.clientX);
+  e.preventDefault();
+});
+document.addEventListener('mousemove', (e) => {
+  if (sliderDragging) updateSlider(e.clientX);
+});
+document.addEventListener('mouseup', () => sliderDragging = false);
+
+// ---------- 旋钮 ----------
+const knob = document.getElementById('knob');
+const knobTrack = document.getElementById('knob-track');
+const brightVal = document.getElementById('bright-val');
+let knobDragging = false;
+let knobPct = 0.75; // 初始 75%
+
+function updateKnob(clientX, clientY) {
+  const r = knob.getBoundingClientRect();
+  const cx = r.left + r.width/2;
+  const cy = r.top + r.height/2;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  // 角度：从正上方起算，顺时针为正，0-360
+  let ang = Math.atan2(dx, -dy) * 180 / Math.PI;
+  if (ang < 0) ang += 360;
+  knobPct = ang / 360;
+  const pct = Math.round(knobPct * 100);
+  const rot = ang;
+  knob.style.setProperty('--rot', rot + 'deg');
+  knob.style.setProperty('--arc', (ang) + 'deg');
+  brightVal.textContent = pct + '%';
+}
+
+knob.addEventListener('mousedown', (e) => {
+  knobDragging = true;
+  updateKnob(e.clientX, e.clientY);
+  e.preventDefault(); e.stopPropagation();
+});
+document.addEventListener('mousemove', (e) => {
+  if (knobDragging) updateKnob(e.clientX, e.clientY);
+});
+document.addEventListener('mouseup', () => knobDragging = false);
+
+// ---------- 分段控制器 ----------
+document.querySelectorAll('.segmented .seg').forEach(seg => {
+  seg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.segmented .seg').forEach(s => s.classList.remove('active'));
+    seg.classList.add('active');
+  });
+});
+
+// ---------- 初始化 ----------
+renderBgSource();
+renderAllGlassCards();
+
+// 窗口缩放
+window.addEventListener('resize', () => {
+  renderBgSource();
+  renderAllGlassCards();
+});
+
+// 防右键误拖
+realCard.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>

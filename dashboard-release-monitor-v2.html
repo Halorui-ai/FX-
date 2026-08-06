@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物品放行监控数据看板 v2.0（实时动态版）</title>
+<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="./lib/toastify.css">
+<style>
+/* ========== 全局样式（液态玻璃风） ========== */
+:root{
+  --bg:#eef1f6;
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
+  --accent:#0071e3; --accent2:#2997ff;
+  --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a; --purple:#5e5ce6; --cyan:#00b8d4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{background:none;color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:14px;-webkit-font-smoothing:antialiased}
+body{padding:18px 22px;min-height:100vh}
+h1{font-size:23px;letter-spacing:-0.3px;font-weight:600}
+.sub{color:var(--txt2);font-size:12px;margin-top:4px}
+button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--txt);border-radius:980px;padding:8px 16px;font-size:13px;transition:.18s}
+button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,255,255,0.85)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button.primary:hover{filter:brightness(1.06);color:#fff}
+.hidden{display:none!important}
+
+/* ========== 顶栏 ========== */
+#topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:14px 18px;border:1px solid rgba(255,255,255,0.40);border-radius:16px;
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(6px) saturate(140%);
+  -webkit-backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);margin-bottom:16px}
+#topbar .actions{display:flex;gap:8px;flex-wrap:wrap}
+.metaRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+#fileMeta{color:var(--txt2);font-size:12px}
+#fileMeta b{color:var(--accent);font-weight:600}
+
+/* ========== LIVE 徽标 ========== */
+#liveBadge{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;
+  border:1px solid rgba(52,199,89,0.4);border-radius:20px;background:rgba(52,199,89,0.12);color:#1a7f37;font-size:12px}
+.liveDot{width:8px;height:8px;border-radius:50%;background:#34c759;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,199,89,.5)}70%{box-shadow:0 0 0 8px rgba(52,199,89,0)}100%{box-shadow:0 0 0 0 rgba(52,199,89,0)}}
+#liveBadge.paused .liveDot{background:var(--warn);animation:none}
+#liveBadge.paused{border-color:rgba(255,159,10,0.45);background:rgba(255,159,10,0.14);color:#9a6200}
+
+/* ========== 实时流入动态栏 ========== */
+#liveFeed{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(6px) saturate(140%);-webkit-backdrop-filter:blur(6px) saturate(140%);
+  border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:10px 14px;margin-bottom:16px;overflow:hidden;min-height:46px}
+#liveFeed .feedLabel{flex:none;display:flex;align-items:center;gap:8px;color:#1a7f37;font-size:12px;
+  font-weight:600;border-right:1px solid var(--line);padding-right:12px;white-space:nowrap}
+#feedItems{display:flex;gap:8px;overflow:hidden;flex:1;align-items:center}
+#feedItems .empty{color:var(--txt2);font-size:12px}
+.feedItem{flex:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.35);
+  border-radius:10px;padding:6px 10px;font-size:12px;color:var(--txt2);white-space:nowrap;animation:slideIn .45s ease}
+.feedItem b{color:var(--txt);font-weight:600}
+.feedItem .t{color:var(--accent);font-family:"Segoe UI",monospace}
+.feedItem .route{color:var(--accent)}
+.stBadge{padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.st-ok{background:rgba(52,199,89,0.14);color:#1a7f37;border:1px solid rgba(52,199,89,0.4)}
+.st-bad{background:rgba(255,59,48,0.12);color:#c0392b;border:1px solid rgba(255,59,48,0.4)}
+.st-warn{background:rgba(255,159,10,0.16);color:#9a6200;border:1px solid rgba(255,159,10,0.45)}
+.st-sp{background:rgba(94,92,230,0.14);color:#4240c8;border:1px solid rgba(94,92,230,0.4)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.feedItem--new{animation:slideIn .45s ease, flashNew 1s ease}
+@keyframes flashNew{0%{box-shadow:0 0 0 0 rgba(0,113,227,.45)}35%{box-shadow:0 0 0 3px rgba(0,113,227,.30)}100%{box-shadow:0 0 0 12px rgba(0,113,227,0)}}
+.feedItem--out{animation:slideOut .4s ease forwards;pointer-events:none}
+@keyframes slideOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(28px)}}
+
+/* ========== 上传区 ========== */
+#dropzone{border:2px dashed rgba(0,0,0,0.14);border-radius:20px;padding:60px 20px;text-align:center;
+  background:rgba(255,255,255,0.06);backdrop-filter:blur(6px) saturate(140%);-webkit-backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);transition:.2s;margin-bottom:16px}
+#dropzone.over{border-color:var(--accent);background:rgba(0,113,227,0.08)}
+#dropzone .big{font-size:40px;margin-bottom:12px}
+#dropzone p{color:var(--txt2);line-height:1.9}
+#dropzone .btns{margin-top:18px;display:flex;gap:10px;justify-content:center}
+
+/* ========== 错误面板 ========== */
+#errPanel{border:1px solid rgba(255,59,48,0.45);background:rgba(255,59,48,0.08);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+#errPanel h3{color:var(--bad);margin-bottom:8px;font-size:15px}
+#errPanel li{color:#c0392b;margin-left:20px;line-height:1.8}
+
+/* ========== 动态背景画布 + 玻璃层 ========== */
+#bg-source{position:absolute; left:0; top:0; z-index:-1; pointer-events:none;}
+.lg-tint,.lg-edge{position:absolute !important;}
+.lg-tint  {inset:0; z-index:1 !important; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 45%, rgba(255,255,255,.06) 100%);}
+.lg-edge  {inset:0; z-index:2 !important; pointer-events:none; border-radius:inherit;
+  border:1px solid rgba(255,255,255,.50);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(0,0,0,.05);}
+.kpi>*:not(.lg-tint):not(.lg-edge),
+.chartCard>*:not(.lg-tint):not(.lg-edge),
+.analyzeCard>*:not(.lg-tint):not(.lg-edge),
+#detailCard>*:not(.lg-tint):not(.lg-edge){position:relative; z-index:3;}
+
+/* ========== KPI 卡片 ========== */
+#kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:16px;position:relative;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);cursor:pointer}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kc,var(--accent));z-index:4;border-radius:16px 0 0 16px}
+.kpi .label{color:var(--txt2);font-size:12px;margin-bottom:8px}
+.kpi .value{font-size:28px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--txt)}
+.kpi .kpiSub{font-size:12px;color:var(--txt2);margin-top:3px;font-family:"Segoe UI",monospace}
+.kpi .kpiSub b{color:var(--cyan);font-weight:600}
+.kpi .clickHint{font-size:11px;color:var(--txt2);opacity:.55;margin-top:6px;transition:opacity .2s}
+.kpi:hover .clickHint{opacity:1}
+
+/* ========== 图表区 ========== */
+#charts,#charts2{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:14px}
+.chartCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35)}
+.chartCard h3{font-size:14px;color:var(--txt);margin-bottom:6px;padding-left:8px;border-left:3px solid var(--accent)}
+.chart{width:100%;height:300px}
+.chartCard,.kpi{transition:transform .22s ease, box-shadow .22s ease, background .22s ease}
+.chartCard:hover,.kpi:hover{transform:translateY(-3px);background:rgba(255,255,255,0.10);
+  box-shadow:0 12px 36px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,0.45)}
+.span4{grid-column:span 4}.span6{grid-column:span 6}.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1100px){.span4,.span6,.span8{grid-column:span 12}}
+
+/* ========== 专项分析表卡片（在途超时 / 超时未接收） ========== */
+#analysis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:900px){#analysis{grid-template-columns:1fr}}
+.analyzeCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:14px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);cursor:pointer;
+  transition:transform .22s ease, box-shadow .22s ease, background .22s ease}
+.analyzeCard:hover{transform:translateY(-3px);background:rgba(255,255,255,0.10);
+  box-shadow:0 12px 36px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,0.45)}
+.analyzeCard .ac-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.analyzeCard h3{font-size:14px;color:var(--txt);padding-left:8px;border-left:3px solid var(--ac,var(--warn))}
+.analyzeCard .ac-count{font-size:24px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--ac,var(--warn))}
+.analyzeCard .ac-desc{font-size:12px;color:var(--txt2);margin-bottom:10px;line-height:1.6}
+.analyzeCard .ac-preview{font-size:12px}
+.analyzeCard .ac-more{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:12px;color:var(--accent);font-weight:600}
+.analyzeCard .ac-empty{color:var(--txt2);font-size:12px;padding:14px 0;text-align:center}
+.ac-tag{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:600;margin-right:4px}
+
+/* ========== 明细表 ========== */
+#detailCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35)}
+#detailCard h3{font-size:14px;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent)}
+#detailTable{font-size:12px}
+.tabulator{background:transparent;border:1px solid var(--line);color:var(--txt);font-size:12px;border-radius:12px;overflow:hidden}
+.tabulator .tabulator-header{background:rgba(0,0,0,0.03)!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-header .tabulator-col{background:transparent!important;border-right:1px solid var(--line)!important}
+.tabulator .tabulator-row{background:transparent!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-row.tabulator-row-even{background:rgba(0,0,0,0.02)!important}
+.tabulator .tabulator-row:hover{background:rgba(0,113,227,0.06)!important}
+.tabulator .tabulator-cell{border-right:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-footer{background:transparent!important;color:var(--txt)!important}
+.tabulator .tabulator-page{color:var(--txt)!important;background:rgba(255,255,255,0.6)!important;border:1px solid var(--line)!important}
+.tabulator .tabulator-page.active{background:var(--accent)!important;color:#fff!important}
+.tabulator .tabulator-page:hover{background:rgba(0,113,227,0.1)!important}
+.tabulator .tabulator-tableholder{background:transparent!important}
+.tabulator .tabulator-tableholder .tabulator-table{background:transparent!important;color:var(--txt)!important}
+.tabulator .tabulator-header .tabulator-header-filter input{background:rgba(255,255,255,0.7)!important;border:1px solid var(--line)!important;color:var(--txt)!important;border-radius:6px;padding:2px 6px}
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title .tabulator-title-editor{background:rgba(255,255,255,0.7)!important;color:var(--txt)!important;border:1px solid var(--line)!important}
+.tabulator .tabulator-footer .tabulator-page-counter,.tabulator .tabulator-footer .tabulator-paginator label{color:var(--txt2)!important}
+.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents{color:var(--txt2)!important}
+.tabulator-popup-container{background:rgba(255,255,255,0.95)!important;border:1px solid var(--line)!important;box-shadow:0 8px 30px rgba(0,0,0,0.12)!important;border-radius:10px!important}
+.tabulator-edit-list .tabulator-edit-list-item{color:var(--txt)!important}
+.tabulator-edit-list .tabulator-edit-list-item.active{background:rgba(0,113,227,0.1)!important;color:var(--accent)!important}
+.tabulator .tabulator-alert{background:rgba(255,255,255,0.4)!important}
+.tabulator-row.tabulator-group{background:rgba(0,0,0,0.04)!important;color:var(--txt)!important;border-color:var(--line)!important}
+.footerNote{color:var(--txt2);font-size:12px;text-align:center;margin:18px 0 6px}
+
+/* ========== 二级详情面板（液态玻璃） ========== */
+#detailOverlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.10);backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%);
+  opacity:0;pointer-events:none;transition:opacity .3s ease}
+#detailOverlay.open{opacity:1;pointer-events:auto}
+#detailPanel{width:min(95vw,1180px);max-height:90vh;display:flex;flex-direction:column;
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.45);border-radius:20px;
+  backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
+  box-shadow:0 24px 80px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.45);
+  transform:translateY(28px) scale(0.97);transition:transform .35s cubic-bezier(.16,1,.3,1)}
+#detailOverlay.open #detailPanel{transform:none}
+#detailPanelHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.30);flex:none}
+#detailPanelTitle{font-size:17px;font-weight:600;display:flex;align-items:center;gap:10px}
+#detailPanelTitle::before{content:"";width:4px;height:20px;background:var(--accent);border-radius:2px;flex:none}
+#btnDetailClose{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.40);
+  background:rgba(255,255,255,0.10);color:var(--txt2);font-size:13px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:.2s;padding:0;line-height:1}
+#btnDetailClose:hover{background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);color:var(--bad)}
+#detailPanelBody{padding:18px 22px;overflow-y:auto;flex:1}
+.detailChips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.detailChip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.35);border-radius:12px;
+  padding:10px 16px;min-width:110px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.detailChip .dc-label{font-size:11px;color:var(--txt2);margin-bottom:4px}
+.detailChip .dc-value{font-size:20px;font-weight:700;font-family:"Segoe UI",monospace}
+#detailChartBox{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.25);border-radius:14px;padding:12px;margin-bottom:16px}
+#detailChart{width:100%;height:280px}
+/* —— 多维度切换器（放行单总览二级页） —— */
+#detailDims{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.dimBtn{cursor:pointer;border:1px solid rgba(255,255,255,0.40);background:rgba(255,255,255,0.08);
+  color:var(--txt2);border-radius:980px;padding:7px 18px;font-size:13px;transition:.2s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.dimBtn:hover{color:var(--accent);border-color:var(--accent);background:rgba(0,113,227,0.08)}
+.dimBtn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(0,113,227,0.30)}
+/* —— 分类筛选芯片（点击过滤下方明细） —— */
+#detailCatFilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.catFilter{cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;font-size:12px;
+  border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);color:var(--txt2);transition:.18s;user-select:none}
+.catFilter::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cc,var(--accent));flex:none;opacity:.55;transition:.18s}
+.catFilter:hover{color:var(--txt);border-color:var(--cc,var(--accent));background:rgba(255,255,255,0.12)}
+.catFilter.active{color:var(--txt);font-weight:600;border-color:var(--cc,var(--accent));background:rgba(255,255,255,0.16);
+  box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+.catFilter.active::before{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--cc) 25%,transparent)}
+.catFilter b{font-family:"Segoe UI",monospace;color:var(--txt)}
+#detailTableBox h4{font-size:13px;color:var(--txt);margin-bottom:8px;padding-left:8px;border-left:3px solid var(--accent)}
+@media(max-width:768px){#detailPanel{width:98vw;max-height:94vh;border-radius:14px}#detailPanelBody{padding:12px 14px}}
+
+/* ========== 文件解析加载遮罩（液态玻璃风） ========== */
+#loadingOverlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  background:rgba(238,241,246,0.55);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity .28s ease}
+#loadingOverlay.show{opacity:1;pointer-events:auto}
+.loadingCard{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.50);border-radius:20px;
+  padding:30px 46px;text-align:center;
+  box-shadow:0 12px 48px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.45)}
+.spinner{width:44px;height:44px;margin:0 auto 16px;border-radius:50%;
+  border:3px solid rgba(0,113,227,0.15);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingText{font-size:14px;color:var(--txt);margin-bottom:14px}
+.progressTrack{width:230px;height:6px;border-radius:3px;background:rgba(0,0,0,0.08);overflow:hidden}
+#progressBar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .3s ease}
+</style>
+</head>
+<body>
+
+<!-- 液态玻璃动态背景画布（漂浮几何 + 流动光晕） -->
+<canvas id="bg-source"></canvas>
+
+<!-- ========== 顶栏 ========== -->
+<div id="topbar">
+  <div>
+    <h1>🚪 物品放行监控数据看板</h1>
+    <div class="sub">内网离线版 · 数据仅在本地浏览器处理，不会外传 · 支持上传「物品放行监控.xlsx」实时分析</div>
+    <div class="metaRow">
+      <span id="fileMeta"></span>
+      <span id="liveBadge" class="hidden"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b id="liveTime">--:--:--</b></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="btnLive" class="hidden">⏸ 暂停刷新</button>
+    <button id="btnReupload" class="hidden">📂 重新上传</button>
+    <button id="btnExportExcel" class="hidden">📊 导出分析结果 Excel</button>
+    <button id="btnShot" class="hidden">🖼️ 导出看板截图</button>
+  </div>
+</div>
+
+<!-- ========== 实时流入动态栏（仅演示模式显示） ========== -->
+<div id="liveFeed" class="hidden">
+  <div class="feedLabel"><span class="liveDot"></span>实时流入</div>
+  <div id="feedItems"><span class="empty">等待新数据…</span></div>
+</div>
+
+<!-- ========== 上传区 ========== -->
+<div id="dropzone">
+  <div class="big">📁</div>
+  <p>把「物品放行监控」导出的 <b>.xls / .xlsx / .csv</b> 文件拖到此处<br>或点击下方按钮选择文件（业务分析逻辑全部保留在页面内，可随时替换新数据）</p>
+  <div class="btns">
+    <button class="primary" id="btnPick">选择数据文件</button>
+    <button id="btnDemo">载入示例数据预览（实时演示）</button>
+  </div>
+  <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" class="hidden">
+</div>
+
+<!-- ========== 错误面板 ========== -->
+<div id="errPanel" class="hidden">
+  <h3>⚠️ 数据文件校验未通过</h3>
+  <ul id="errList"></ul>
+  <p style="color:#c0392b;margin-top:8px;font-size:12px">请检查导出的表头是否与「物品放行监控」模板一致，或联系维护人更新「字段映射」配置。</p>
+</div>
+
+<!-- ========== 文件解析加载遮罩 ========== -->
+<div id="loadingOverlay">
+  <div class="loadingCard">
+    <div class="spinner"></div>
+    <div id="loadingText">正在读取文件…</div>
+    <div class="progressTrack"><div id="progressBar"></div></div>
+  </div>
+</div>
+
+<!-- ========== 看板主体 ========== -->
+<div id="dashboard" class="hidden">
+  <div id="kpis">
+    <div class="kpi" data-key="overview" style="--kc:var(--accent)"><div class="label">放行单总数</div><div class="value" id="kpiOrders">0</div><div class="kpiSub">记录 <b id="kpiRecordsSub">0</b> 条</div><div class="clickHint">点击查看详情</div></div>
+    <div class="kpi" data-key="special" style="--kc:var(--purple)"><div class="label">特级安保单</div><div class="value" id="kpiSpecial">0</div><div class="clickHint">点击查看详情</div></div>
+    <div class="kpi" data-key="transitTimeout" style="--kc:var(--warn)"><div class="label">在途超时未放行</div><div class="value" id="kpiTransit" style="color:var(--warn)">0</div><div class="clickHint">点击查看详情</div></div>
+    <div class="kpi" data-key="receiveTimeout" style="--kc:var(--bad)"><div class="label">超时未接收</div><div class="value" id="kpiReceive" style="color:var(--bad)">0</div><div class="clickHint">点击查看详情</div></div>
+    <div class="kpi" id="kpiRate" data-key="rate" style="--kc:var(--ok)"><div id="liquidChart" style="width:100%;height:110px"></div></div>
+  </div>
+
+  <div id="charts">
+    <div class="chartCard span4" id="cardType"><h3>单据类型分布（特保 / 普通）</h3><div class="chart" id="chartType"></div></div>
+    <div class="chartCard span8" id="cardTrend"><h3>申请量时间趋势</h3><div class="chart" id="chartTrend"></div></div>
+  </div>
+
+  <!-- ========== 专项分析表卡片（上移：在途超时 / 超时未接收） ========== -->
+  <div id="analysis">
+    <div class="analyzeCard" data-key="transitTimeout" style="--ac:var(--warn)">
+      <div class="ac-head"><h3>🚧 在途超时 · 流入门岗未放行</h3><span class="ac-count" id="acTransitCount">0</span></div>
+      <div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。点击卡片查看完整明细。</div>
+      <div class="ac-preview" id="acTransitPreview"></div>
+      <span class="ac-more">查看二级详情 →</span>
+    </div>
+    <div class="analyzeCard" data-key="receiveTimeout" style="--ac:var(--bad)">
+      <div class="ac-head"><h3>📭 超时未接收</h3><span class="ac-count" id="acReceiveCount">0</span></div>
+      <div class="ac-desc">流入门岗已放行，但接收人超过规定时间仍未接收。点击卡片查看完整明细。</div>
+      <div class="ac-preview" id="acReceivePreview"></div>
+      <span class="ac-more">查看二级详情 →</span>
+    </div>
+  </div>
+
+  <div id="charts2">
+    <div class="chartCard span6" id="cardDept"><h3>申请部门 TOP10</h3><div class="chart" id="chartDept"></div></div>
+    <div class="chartCard span6" id="cardCat"><h3>物品分类分布</h3><div class="chart" id="chartCat"></div></div>
+    <div class="chartCard span6" id="cardRoute"><h3>门岗流转方向 TOP10（流出 → 流入）</h3><div class="chart" id="chartRoute"></div></div>
+    <div class="chartCard span6" id="cardStatus"><h3>放行 / 接收状态分布</h3><div class="chart" id="chartStatus"></div></div>
+    <div class="chartCard span12" id="cardDeptCat"><h3>部门 × 物品分类 交叉分布</h3><div class="chart" id="chartDeptCat"></div></div>
+  </div>
+
+  <div id="detailCard">
+    <h3>明细数据（可搜索 / 排序 / 导出）</h3>
+    <div id="detailTable"></div>
+  </div>
+</div>
+
+<!-- ========== 二级详情面板（液态玻璃） ========== -->
+<div id="detailOverlay">
+  <div id="detailPanel">
+    <div id="detailPanelHead">
+      <h3 id="detailPanelTitle">数据详情</h3>
+      <button id="btnDetailClose" title="关闭（Esc）">✕</button>
+    </div>
+    <div id="detailPanelBody">
+      <div class="detailChips" id="detailChips"></div>
+      <div id="detailDims" style="display:none"></div>
+      <div id="detailChartBox"><div id="detailChart"></div></div>
+      <div id="detailCatFilters"></div>
+      <div id="detailTableBox"><h4 id="detailTableTitle">数据明细</h4><div id="detailTable2"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v2.0（实时动态版）</div>
+
+<!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
+<script src="./lib/echarts.min.js"></script>
+<script src="./lib/echarts-liquidfill.min.js"></script>
+<script src="./lib/xlsx.full.min.js"></script>
+<script src="./lib/papaparse.min.js"></script>
+<script src="./lib/dayjs.min.js"></script>
+<script src="./lib/lodash.min.js"></script>
+<script src="./lib/countUp.umd.js"></script>
+<script src="./lib/tabulator.min.js"></script>
+<script src="./lib/toastify.js"></script>
+<script src="./lib/html2canvas.min.js"></script>
+<script src="./lib/FileSaver.min.js"></script>
+
+<script>
+/* =====================================================================
+ * ★★★ 业务配置区（想调整分析逻辑只改这里，全是中文配置）★★★
+ * 源数据：物品放行监控.xlsx（A~AN 共 40 列）
+ * ===================================================================== */
+const CONFIG = {
+  // —— 字段映射：左边“标准字段”，右边为导出文件中可能出现的表头别名 ——
+  字段映射: {
+    申请日期:   ["申请日期", "申請日期"],
+    放行单号:   ["放行单号", "放行單號", "单号", "单据编号"],
+    物品类型:   ["物品类型", "物品類型"],
+    申请人:     ["申请人姓名", "申請人姓名", "申请人"],
+    申请部门:   ["申请人部门", "申請人部門", "申请部门", "部门"],
+    流出门岗:   ["放行单流出门岗", "放行單流出門崗", "流出门岗"],
+    流入门岗:   ["放行单流入门岗", "放行單流入門崗", "流入门岗"],
+    实际放行门岗: ["实际放行门岗", "實際放行門崗"],
+    放行人:     ["放行人姓名", "放行人"],
+    实际放行时间: ["实际放行时间", "實際放行時間"],
+    放行状态:   ["放行状态", "放行狀態"],
+    放行超时:   ["放行超时", "放行超時"],
+    接收时间:   ["接收时间", "接收時間"],
+    接收超时:   ["接收超时", "接收超時"],
+    接收状态:   ["接收状态", "接收狀態"],
+    接收人:     ["接收人姓名", "接收人"],
+    物品分类:   ["物品分类", "物品分類"],
+    放行物品名称: ["放行物品名称", "放行物品名稱", "物品名称"],
+    数量:       ["放行数量", "放行數量", "数量"],
+    厂区:       ["厂区", "廠區"]
+  },
+
+  // —— 必需字段：缺了这些列就无法分析 ——
+  必需字段: ["放行单号", "申请日期", "流入门岗"],
+
+  // —— 特级安保单识别：单号前六位为 WF9897 即视为特保单 ——
+  特保单号前缀: "WF9897",
+  普通单号标识: "WF7501",
+
+  // —— 超时判断：超时标记字段值等于以下之一即视为超时 ——
+  超时标记: ["1", 1, "是", "Y", "YES", "TRUE"],
+
+  TOPN: 10,
+  趋势天数阈值: 62,
+  大文件警告行数: 50000,
+  大数据量阈值: 30000,   // 超过此行数自动进入大数据模式（关闭动画 / 背景降频 / 表格渐进渲染）
+  分块大小: 5000,         // 数据标准化分块行数（分块间隙让出主线程，保持界面响应）
+
+  // —— 实时演示模式 ——
+  实时演示: { 刷新间隔毫秒: 1000, 每批最小条数: 1, 每批最大条数: 1, 动态栏保留条数: 4 }
+};
+
+/* =====================================================================
+ * 以下为程序逻辑，一般不需要修改
+ * ===================================================================== */
+const $ = id => document.getElementById(id);
+function toast(msg, ok = true) {
+  Toastify({ text: msg, duration: 3500, gravity: "top", position: "right",
+    style: { background: ok ? "rgba(52,199,89,0.92)" : "rgba(255,59,48,0.92)", color: "#fff", borderRadius: "12px", backdropFilter: "blur(10px)" } }).showToast();
+}
+function parseDate(v) {
+  if (v == null || v === "") return null;
+  if (v instanceof Date && !isNaN(v)) return dayjs(v);
+  if (typeof v === "number" && v > 20000 && v < 80000) return dayjs(new Date(Math.round((v - 25569) * 86400 * 1000)));
+  const d = dayjs(String(v).trim().replace(/[./年月]/g, "-").replace(/日/g, ""));
+  return d.isValid() ? d : null;
+}
+function decodeText(buf) {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder("gbk").decode(buf); }
+}
+// 超时标记判断
+function isTimeout(v) { return CONFIG.超时标记.some(m => String(v).trim().toUpperCase() === String(m).toUpperCase()); }
+// 特保单判断：放行单号前六位为 WF9897
+function isSpecialOrder(r) {
+  return String(r.放行单号 || "").startsWith(CONFIG.特保单号前缀);
+}
+
+// ---------- 全局状态 ----------
+let rows = [];            // 标准化后的记录行
+let orders = {};          // 按放行单号聚合的订单级信息
+let CH = {};              // ECharts 实例
+let counters = {};        // countUp 实例
+let detailTable = null;
+let currentFileName = "";
+let currentColOf = null;
+let liveTimer = null;
+let demoMode = false;
+let livePaused = false;
+
+// ---------- 文件读取入口 ----------
+$("btnPick").onclick = () => $("fileInput").click();
+$("fileInput").onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0]); };
+const dz = $("dropzone");
+["dragover", "dragenter"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+// ---------- 加载遮罩控制 ----------
+function showLoading(msg) {
+  $("loadingText").textContent = msg || "正在读取文件…";
+  $("progressBar").style.width = "0%";
+  $("loadingOverlay").classList.add("show");
+}
+function setLoadingProgress(pct, msg) {
+  $("progressBar").style.width = Math.min(100, pct) + "%";
+  if (msg) $("loadingText").textContent = msg;
+}
+function hideLoading() { $("loadingOverlay").classList.remove("show"); }
+
+function handleFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  if (!["xls", "xlsx", "csv"].includes(ext)) { toast("仅支持 .xls / .xlsx / .csv 文件", false); return; }
+  currentFileName = file.name;
+  showLoading(`正在读取「${file.name}」…`);
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      setLoadingProgress(15, "正在解析文件结构…");
+      await new Promise(r => setTimeout(r, 30));  // 让遮罩先完成渲染再执行重活
+      let list;
+      if (ext === "csv") {
+        const text = decodeText(e.target.result);
+        const aoa = Papa.parse(text, { skipEmptyLines: true }).data;
+        const hIdx = findHeaderRow(aoa);
+        if (hIdx < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+        const header = aoa[hIdx].map(h => String(h).trim());
+        list = aoa.slice(hIdx + 1).map(arr => {
+          const o = {}; header.forEach((h, i) => o[h] = arr[i] != null ? arr[i] : ""); return o;
+        });
+      } else {
+        const wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const hIdx = findHeaderRow(XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }));
+        if (hIdx < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+        if (hIdx > 0) {  // 跳过顶部合并标题行，以真实表头行作为解析起点
+          const ref = XLSX.utils.decode_range(ws["!ref"]);
+          ref.s.r = hIdx; ws["!ref"] = XLSX.utils.encode_range(ref);
+        }
+        list = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      }
+      if (!list.length) { toast("文件中没有读到数据行", false); return; }
+      if (list.length > CONFIG.大文件警告行数) toast(`数据量较大（${list.length} 行），已启用大数据优化模式`, false);
+      stopLive();
+      demoMode = false;
+      await processData(list);
+    } catch (err) {
+      console.error(err);
+      toast("文件解析失败：" + err.message, false);
+    } finally {
+      hideLoading();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------- 智能定位表头行（兼容首行为合并标题行的导出文件） ----------
+// 放行系统导出的 xls 首行常为横跨所有列的合并单元格（标题/说明），
+// 此处向下扫描（最多 20 行），找到与「字段映射」别名命中 ≥2 个的真实表头行。
+function findHeaderRow(aoa) {
+  const aliases = new Set();
+  Object.values(CONFIG.字段映射).forEach(arr => arr.forEach(a => aliases.add(a)));
+  const limit = Math.min(aoa.length, 20);
+  for (let i = 0; i < limit; i++) {
+    const row = aoa[i]; if (!row) continue;
+    let hits = 0;
+    for (const v of row) { if (v != null && aliases.has(String(v).trim()) && ++hits >= 2) return i; }
+  }
+  return -1;
+}
+
+// ---------- 字段映射与校验 ----------
+function mapColumns(rawList) {
+  const headers = Object.keys(rawList[0]);
+  const colOf = {};
+  for (const [std, aliases] of Object.entries(CONFIG.字段映射)) {
+    colOf[std] = headers.find(h => aliases.some(a => h.trim() === a)) || null;
+  }
+  const missing = CONFIG.必需字段.filter(f => !colOf[f]);
+  return { colOf, missing, headers };
+}
+
+async function processData(rawList) {
+  const { colOf, missing } = mapColumns(rawList);
+  if (missing.length) {
+    $("errList").innerHTML = missing.map(f =>
+      `<li>缺少必需列「${f}」（可识别的表头：${CONFIG.字段映射[f].join(" / ")}）</li>`).join("");
+    $("errPanel").classList.remove("hidden");
+    $("dashboard").classList.add("hidden");
+    window.scrollTo(0, 0);
+    return;
+  }
+  $("errPanel").classList.add("hidden");
+  currentColOf = colOf;
+  // —— 分块标准化：大数据量时每处理一块让出主线程，保持界面响应并刷新进度 ——
+  const n = rawList.length, chunk = CONFIG.分块大小;
+  rows = new Array(n);
+  if (n > chunk) {
+    for (let s = 0; s < n; s += chunk) {
+      const end = Math.min(s + chunk, n);
+      for (let i = s; i < end; i++) rows[i] = normalizeRow(rawList[i]);
+      setLoadingProgress(30 + end / n * 55, `正在标准化数据… ${end.toLocaleString()} / ${n.toLocaleString()} 行`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  } else {
+    for (let i = 0; i < n; i++) rows[i] = normalizeRow(rawList[i]);
+  }
+  rawList = null;  // 释放原始数据引用，降低老机器内存占用
+  setLoadingProgress(90, "正在渲染看板…");
+  await new Promise(r => setTimeout(r, 20));
+  renderAll();
+}
+
+function normalizeRow(r) {
+  const o = {};
+  for (const [std, col] of Object.entries(currentColOf)) o[std] = col ? (r[col] ?? "") : "";
+  o.数量 = parseFloat(o.数量) || 0;
+  o._申请日期 = parseDate(o.申请日期);
+  o._放行日期 = parseDate(o.实际放行时间);
+  o._接收日期 = parseDate(o.接收时间);
+  o._特保 = isSpecialOrder(o);
+  o._放行超时 = isTimeout(o.放行超时);
+  o._接收超时 = isTimeout(o.接收超时);
+  // 已到达：实际放行门岗 == 流入门岗（且均非空）
+  o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
+  // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
+  o._接收超时未接收 = !!o.实际放行门岗 && !o._接收日期 && o._接收超时;
+  return o;
+}
+
+// ---------- 订单级聚合（按放行单号） ----------
+function computeOrders() {
+  const g = _.groupBy(rows, "放行单号");
+  const map = {};
+  for (const [no, arr] of Object.entries(g)) {
+    if (!no) continue;
+    const arrived = arr.some(r => r._已到达);           // 任一记录到达流入门岗 → 整单已到达
+    const special = arr.some(r => r._特保);
+    const releaseTimeout = arr.some(r => r._放行超时);
+    map[no] = {
+      单号: no, 记录数: arr.length,
+      特保: special,
+      已到达: arrived,
+      在途: !arrived,                                    // 尚未到达流入门岗 → 在途
+      放行超时: releaseTimeout,
+      在途超时: !arrived && releaseTimeout,             // ★ 在途超时流入门岗未放行
+      申请部门: arr[0].申请部门 || "",
+      流入门岗: arr[0].流入门岗 || "",
+      物品分类: arr.map(r => r.物品分类).filter(Boolean).join("/"),
+      _日期: arr[0]._申请日期
+    };
+  }
+  return map;
+}
+
+// ---------- 汇总计算 ----------
+function computeStats() {
+  orders = computeOrders();
+  const orderList = Object.values(orders);
+  const total = rows.length;
+  const orderCount = orderList.length;
+  const specialOrders = orderList.filter(o => o.特保).length;
+  const abnormal = rows.filter(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")).length;
+  const transitTimeoutOrders = orderList.filter(o => o.在途超时);
+  const receiveTimeoutRows = rows.filter(r => r._接收超时未接收);
+  const received = rows.filter(r => r._接收日期).length;
+
+  // —— 放行结案完成率：在规定时间内到达流入门岗完成放行的单据 ——
+  const closedOrders = orderList.filter(o => o.已到达 && !o.放行超时).length;      // 结案完成（到达且未超时）
+  const arrivedTimeout = orderList.filter(o => o.已到达 && o.放行超时).length;     // 到达但超时
+  const transitTimeoutCount = transitTimeoutOrders.length;                          // 在途超时
+  const scopedOrders = closedOrders + arrivedTimeout + transitTimeoutCount;        // 纳入统计（排除在途未超时）
+  const inTransitNotTimeout = orderList.filter(o => !o.已到达 && !o.放行超时).length; // 在途未超时（不纳入统计）
+  const closeRate = scopedOrders ? closedOrders / scopedOrders : 0;
+
+  const valid = rows.filter(r => r._申请日期);
+  let trend = [];
+  if (valid.length) {
+    const min = _.minBy(valid, r => r._申请日期.valueOf())._申请日期;
+    const max = _.maxBy(valid, r => r._申请日期.valueOf())._申请日期;
+    const fmt = max.diff(min, "day") <= CONFIG.趋势天数阈值 ? "YYYY-MM-DD" : "YYYY-MM";
+    const grouped = _.countBy(valid, r => r._申请日期.format(fmt));
+    trend = Object.keys(grouped).sort().map(k => [k, grouped[k]]);
+  }
+  const top = (fn, n = CONFIG.TOPN) =>
+    _(rows).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
+      .orderBy("value", "desc").take(n).value();
+
+  return {
+    total, orderCount, specialOrders, abnormal,
+    transitTimeoutOrders, receiveTimeoutRows,
+    receiveRate: total ? received / total : 0,
+    received,
+    closedOrders, arrivedTimeout, scopedOrders, inTransitNotTimeout, closeRate,
+    typeDist: { 特级安保单: specialOrders, 普通单: orderCount - specialOrders },
+    trend,
+    deptTop: top("申请部门"),
+    catTop: top(r => r.物品分类 || "未分类"),
+    routeTop: _(rows).filter(r => r.流出门岗 && r.流入门岗)
+      .groupBy(r => `${r.流出门岗} → ${r.流入门岗}`)
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(CONFIG.TOPN).value(),
+    statusDist: {
+      "放行异常": abnormal,
+      "放行超时": rows.filter(r => r._放行超时).length,
+      "接收超时": receiveTimeoutRows.length,
+      "已接收": received
+    },
+    deptCat: (() => {
+      const matrix = {};
+      rows.forEach(r => {
+        const d = r.申请部门 || "（空）", c = r.物品分类 || "未分类";
+        (matrix[d] = matrix[d] || {})[c] = (matrix[d][c] || 0) + 1;
+      });
+      const depts = Object.entries(matrix).map(([d, obj]) => [d, _.sum(Object.values(obj))])
+        .sort((a, b) => b[1] - a[1]).slice(0, CONFIG.TOPN).map(x => x[0]);
+      const cats = Object.entries(_(rows).map(r => r.物品分类 || "未分类").countBy().value())
+        .sort((a, b) => b[1] - a[1]).map(x => x[0]);
+      return { depts, cats, series: cats.map(cat => ({ name: cat, data: depts.map(d => matrix[d][cat] || 0) })) };
+    })()
+  };
+}
+
+// ---------- 图表配置 ----------
+const PALETTE = ["#0071e3", "#34c759", "#ff9f0a", "#ff3b30", "#5e5ce6", "#00b8d4", "#ff2d92", "#30b0c7", "#af52de", "#ff9500"];
+const baseAxis = {
+  axisLine: { lineStyle: { color: "rgba(0,0,0,0.14)" } },
+  axisLabel: { color: "rgba(0,0,0,0.55)" },
+  splitLine: { lineStyle: { color: "rgba(0,0,0,0.06)" } }
+};
+// —— 动画配置：丝滑缓动；大数据量时自动关闭全部动画以保证交互流畅 ——
+const SMOOTH_ANIM = {
+  animationDuration: 900, animationEasing: "cubicOut",
+  animationDurationUpdate: 700, animationEasingUpdate: "cubicInOut"
+};
+const LARGE_ANIM = { animation: false, animationDuration: 0, animationDurationUpdate: 0 };
+const animOpt = () => rows.length > CONFIG.大数据量阈值 ? LARGE_ANIM : SMOOTH_ANIM;
+const withAnim = opt => Object.assign({}, animOpt(), opt);
+function hbarOption(data, color) {
+  return {
+    tooltip: {},
+    grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+    xAxis: { type: "value", ...baseAxis },
+    yAxis: { type: "category", data: data.map(d => d.name).reverse(), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", width: 130, overflow: "truncate" } },
+    series: [{ type: "bar", data: data.map(d => d.value).reverse(), barWidth: "55%",
+      itemStyle: { borderRadius: [0, 5, 5, 0], color },
+      label: { show: true, position: "right", color: "#1d1d1f" } }]
+  };
+}
+function catOption(S) {
+  return {
+    tooltip: {},
+    grid: { left: 40, right: 20, top: 30, bottom: 70 },
+    xAxis: { type: "category", data: S.catTop.map(d => d.name), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", rotate: 25, width: 90, overflow: "truncate" } },
+    yAxis: { type: "value", ...baseAxis },
+    series: [{ type: "bar", data: S.catTop.map((d, i) => ({ value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } })),
+      barWidth: "50%", itemStyle: { borderRadius: [5, 5, 0, 0] },
+      label: { show: true, position: "top", color: "#1d1d1f" } }]
+  };
+}
+const optionBuilders = {
+  liquid: S => ({
+    series: [{ type: "liquidFill", radius: "85%", center: ["50%", "55%"],
+      data: [S.closeRate || 0], color: ["#34c759"],
+      backgroundStyle: { color: "rgba(255,255,255,0.08)", borderWidth: 0 },
+      outline: { borderDistance: 2, itemStyle: { borderColor: "rgba(52,199,89,0.6)", borderWidth: 2 } },
+      label: { formatter: `放行结案完成率\n${(S.closeRate * 100).toFixed(1)}%`, fontSize: 12, color: "#1d1d1f", insideColor: "#1d1d1f" } }]
+  }),
+  type: S => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+      data: [
+        { name: "特级安保单", value: S.typeDist.特级安保单, itemStyle: { color: "#5e5ce6" } },
+        { name: "普通单", value: S.typeDist.普通单, itemStyle: { color: "#0071e3" } }
+      ] }]
+  }),
+  status: S => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} ({d}%)" },
+      data: [
+        { name: "已接收", value: S.statusDist.已接收, itemStyle: { color: "#34c759" } },
+        { name: "放行超时", value: S.statusDist.放行超时, itemStyle: { color: "#ff9f0a" } },
+        { name: "接收超时", value: S.statusDist.接收超时, itemStyle: { color: "#ff3b30" } },
+        { name: "放行异常", value: S.statusDist.放行异常, itemStyle: { color: "#af52de" } }
+      ] }]
+  }),
+  trend: S => ({
+    tooltip: { trigger: "axis" },
+    grid: { left: 50, right: 20, top: 30, bottom: 40 },
+    xAxis: { type: "category", data: S.trend.map(t => t[0]), ...baseAxis },
+    yAxis: { type: "value", ...baseAxis },
+    dataZoom: S.trend.length > 40 ? [{ type: "inside" }] : [],
+    series: [{ type: "line", data: S.trend.map(t => t[1]), smooth: true, symbolSize: 6,
+      lineStyle: { width: 3, color: "#0071e3" }, itemStyle: { color: "#0071e3" },
+      areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: "rgba(0,113,227,.28)" }, { offset: 1, color: "rgba(0,113,227,0)" }] } } }]
+  }),
+  deptCat: S => {
+    const { depts, series } = S.deptCat;
+    return {
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: { type: "scroll", bottom: 0, textStyle: { color: baseAxis.axisLabel.color } },
+      grid: { left: 10, right: 20, top: 20, bottom: 66, containLabel: true },
+      xAxis: { type: "category", data: depts, ...baseAxis, axisLabel: { rotate: 25, width: 80, overflow: "truncate" } },
+      yAxis: { type: "value", ...baseAxis },
+      series: series.map((s, i) => ({ name: s.name, type: "bar", stack: "total", data: s.data, barWidth: "58%",
+        itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: i === series.length - 1 ? [5, 5, 0, 0] : 0 },
+        emphasis: { focus: "series" } }))
+    };
+  }
+};
+
+// ---------- 渲染 ----------
+function destroyCharts() { Object.values(CH).forEach(c => c.dispose()); CH = {}; counters = {}; }
+
+function renderAll() {
+  destroyCharts();
+  const S = computeStats();
+  updateFileMeta(S);
+
+  counters.orders = new countUp.CountUp("kpiOrders", S.orderCount, { separator: ",", duration: 0.9 });
+  counters.records = new countUp.CountUp("kpiRecordsSub", S.total, { separator: ",", duration: 0.9 });
+  counters.special = new countUp.CountUp("kpiSpecial", S.specialOrders, { separator: ",", duration: 0.9 });
+  counters.transit = new countUp.CountUp("kpiTransit", S.transitTimeoutOrders.length, { separator: ",", duration: 0.9 });
+  counters.receive = new countUp.CountUp("kpiReceive", S.receiveTimeoutRows.length, { separator: ",", duration: 0.9 });
+  Object.values(counters).forEach(c => c.start());
+
+  CH.liquid = echarts.init($("liquidChart")); CH.liquid.setOption(optionBuilders.liquid(S), true);
+  CH.type = echarts.init($("chartType")); CH.type.setOption(optionBuilders.type(S), true);
+  if (S.trend.length) { CH.trend = echarts.init($("chartTrend")); CH.trend.setOption(optionBuilders.trend(S), true); $("cardTrend").classList.remove("hidden"); }
+  else { $("cardTrend").classList.add("hidden"); }
+  CH.dept = echarts.init($("chartDept")); CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"), true);
+  CH.cat = echarts.init($("chartCat")); CH.cat.setOption(catOption(S), true);
+  if (S.routeTop.length) { CH.route = echarts.init($("chartRoute")); CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"), true); $("cardRoute").classList.remove("hidden"); }
+  else { $("cardRoute").classList.add("hidden"); }
+  CH.status = echarts.init($("chartStatus")); CH.status.setOption(optionBuilders.status(S), true);
+  CH.deptCat = echarts.init($("chartDeptCat")); CH.deptCat.setOption(optionBuilders.deptCat(S), true);
+
+  renderAnalysisCards(S);
+
+  const cols = Object.keys(CONFIG.字段映射)
+    .filter(k => rows.some(r => r[k] !== "" && r[k] != null))
+    .map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
+  if (detailTable) detailTable.destroy();
+  // —— 大数据量优化：渐进渲染 + 虚拟DOM，仅绘制可视行，数万行也不卡顿 ——
+  const isLarge = rows.length > CONFIG.大数据量阈值;
+  detailTable = new Tabulator("#detailTable", {
+    data: rows.map(stripPrivate), columns: cols, layout: "fitColumns",
+    pagination: true, paginationSize: isLarge ? 50 : 20,
+    ...(isLarge ? { progressiveLoad: "scroll", renderVertical: "virtual" } : {}),
+    movableColumns: true, placeholder: "暂无数据"
+  });
+
+  $("dropzone").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnShot"].forEach(id => $(id).classList.remove("hidden"));
+  $("btnLive").classList.toggle("hidden", !demoMode);
+  $("liveBadge").classList.toggle("hidden", !demoMode);
+  $("liveFeed").classList.toggle("hidden", !demoMode);
+  setTimeout(() => Object.values(CH).forEach(c => c.resize()), 50);
+  setTimeout(() => scheduleRefraction(), 90);
+  toast(`已加载 ${S.total} 条记录 / ${S.orderCount} 张放行单 ✅`);
+}
+
+function scheduleRefraction() {
+  document.querySelectorAll('.kpi, .chartCard, .analyzeCard, #detailCard').forEach(card => {
+    if (!card.querySelector(':scope > .lg-tint')) {
+      const tint = document.createElement('div'); tint.className = 'lg-tint';
+      const edge = document.createElement('div'); edge.className = 'lg-edge';
+      card.insertBefore(edge, card.firstChild);
+      card.insertBefore(tint, card.firstChild);
+    }
+  });
+}
+
+function stripPrivate(o) {
+  const r = {};
+  for (const k of Object.keys(o)) if (!k.startsWith("_")) r[k] = o[k];
+  return r;
+}
+
+function updateFileMeta(S) {
+  const dates = rows.filter(r => r._申请日期).map(r => r._申请日期);
+  const range = dates.length ? `${_.min(dates).format("YYYY-MM-DD")} ~ ${_.max(dates).format("YYYY-MM-DD")}` : "无有效日期";
+  $("fileMeta").innerHTML = `文件：<b>${currentFileName}</b> ｜ 共 <b>${S.total}</b> 条记录 / <b>${S.orderCount}</b> 单 ｜ 时间范围：<b>${range}</b>`;
+}
+
+// ---------- 专项分析表卡片（预览渲染） ----------
+function renderAnalysisCards(S) {
+  $("acTransitCount").textContent = S.transitTimeoutOrders.length;
+  const tp = $("acTransitPreview");
+  if (!S.transitTimeoutOrders.length) {
+    tp.innerHTML = '<div class="ac-empty">✅ 暂无在途超时未放行单据</div>';
+  } else {
+    tp.innerHTML = S.transitTimeoutOrders.slice(0, 3).map(o =>
+      `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
+      `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
+      `<b style="color:var(--txt)">${o.单号}</b></span>` +
+      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
+  }
+  $("acReceiveCount").textContent = S.receiveTimeoutRows.length;
+  const rp = $("acReceivePreview");
+  if (!S.receiveTimeoutRows.length) {
+    rp.innerHTML = '<div class="ac-empty">✅ 暂无超时未接收记录</div>';
+  } else {
+    rp.innerHTML = S.receiveTimeoutRows.slice(0, 3).map(r =>
+      `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
+      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${r._特保 ? "特保" : "普通"}</span>` +
+      `<b style="color:var(--txt)">${r.放行单号}</b></span>` +
+      `<span style="color:var(--txt2)">${r.申请部门 || "-"} · ${r.放行物品名称 || "-"}</span></div>`).join("") +
+      (S.receiveTimeoutRows.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutRows.length - 3} 条</div>` : "");
+  }
+}
+
+// ---------- 二级详情面板 ----------
+let detailChartInst = null, detailTableInst = null;
+const KPI_DETAIL = {
+  overview: {
+    multi: true,
+    title: "📋 放行单总览 · 详情",
+    dimensions: [
+      { key: "type", label: "单据类型", cats: [
+          { name: "特级安保单", color: "#5e5ce6", filter: r => r._特保 },
+          { name: "普通单", color: "#0071e3", filter: r => !r._特保 } ]},
+      { key: "arrival", label: "到达状态", cats: [
+          { name: "已到达流入门岗", color: "#34c759", filter: r => { const o = orders[r.放行单号]; return o && o.已到达; } },
+          { name: "在途·流入门岗未放行", color: "#ff9f0a", filter: r => { const o = orders[r.放行单号]; return o && o.在途; } } ]},
+      { key: "timeout", label: "超时状态", cats: [
+          { name: "放行超时", color: "#ff3b30", filter: r => r._放行超时 },
+          { name: "未超时", color: "#34c759", filter: r => !r._放行超时 } ]}
+    ]
+  },
+  special: {
+    title: "🛡️ 特级安保单 · 详情",
+    chips(S) {
+      const sp = rows.filter(r => r._特保);
+      return [["特保单数", S.specialOrders, "var(--purple)"], ["特保记录数", sp.length, "var(--txt)"],
+        ["占全部单比", S.orderCount ? (S.specialOrders / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(rows.filter(r => r._特保)).groupBy(r => r.物品分类 || "未分类")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 130, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#5e5ce6" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "特级安保单记录", filter(r) { return r._特保; }
+  },
+  transitTimeout: {
+    title: "🚧 在途超时 · 流入门岗未放行 · 详情",
+    chips(S) {
+      const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
+      return [["在途超时单数", S.transitTimeoutOrders.length, "var(--warn)"], ["其中特保单", sp, "var(--purple)"],
+        ["占全部单比", S.orderCount ? (S.transitTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(S.transitTimeoutOrders).groupBy(o => o.申请部门 || "（空）")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").take(12).value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff9f0a" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "在途超时单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.在途超时; }
+  },
+  receiveTimeout: {
+    title: "📭 超时未接收 · 详情",
+    chips(S) {
+      const depts = new Set(S.receiveTimeoutRows.map(r => r.申请部门).filter(Boolean)).size;
+      return [["超时未接收记录", S.receiveTimeoutRows.length, "var(--bad)"],
+        ["涉及部门", depts, "var(--txt)"],
+        ["占全部记录比", S.total ? (S.receiveTimeoutRows.length / S.total * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(S.receiveTimeoutRows).groupBy(r => r.申请部门 || "（空）")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").take(12).value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff3b30" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "超时未接收记录明细", filter(r) { return r._接收超时未接收; }
+  },
+  rate: {
+    title: "✅ 放行结案完成率 · 详情",
+    chips(S) {
+      return [["放行结案完成率", (S.closeRate * 100).toFixed(1) + "%", "var(--ok)"],
+        ["结案完成单", S.closedOrders, "var(--ok)"],
+        ["纳入统计单", S.scopedOrders, "var(--accent)"],
+        ["在途未超时(不纳入)", S.inTransitNotTimeout, "var(--txt2)"]];
+    },
+    chart(S) {
+      return { tooltip: { trigger: "item" }, legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+        series: [{ type: "pie", radius: ["40%", "66%"], center: ["50%", "45%"],
+          itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+          label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+          data: [
+            { name: "结案完成(到达且未超时)", value: S.closedOrders, itemStyle: { color: "#34c759" } },
+            { name: "到达但超时", value: S.arrivedTimeout, itemStyle: { color: "#ff9f0a" } },
+            { name: "在途超时", value: S.transitTimeoutOrders.length, itemStyle: { color: "#ff3b30" } }
+          ] }] };
+    },
+    tableTitle: "纳入统计的放行记录", filter(r) { const o = orders[r.放行单号]; return o && (o.已到达 || o.放行超时); }
+  }
+};
+
+let overviewState = { dim: 0, cat: null };
+
+function detailCols(tRows) {
+  return Object.keys(CONFIG.字段映射)
+    .filter(k => tRows.some(r => r[k] !== "" && r[k] != null))
+    .map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
+}
+
+function openDetail(key) {
+  const cfg = KPI_DETAIL[key]; if (!cfg || !rows.length) return;
+  $("detailPanelTitle").textContent = cfg.title;
+  if (cfg.multi) {
+    overviewState = { dim: 0, cat: null };
+    $("detailDims").style.display = "";
+    renderOverview();
+  } else {
+    $("detailDims").style.display = "none";
+    $("detailCatFilters").innerHTML = "";
+    renderSimpleDetail(cfg);
+  }
+  $("detailOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => { if (detailChartInst) detailChartInst.resize(); }, 380);
+}
+
+// —— 普通单维度详情 ——
+function renderSimpleDetail(cfg) {
+  const S = computeStats();
+  $("detailChips").innerHTML = cfg.chips(S).map(([l, v, c]) =>
+    `<div class="detailChip"><div class="dc-label">${l}</div><div class="dc-value" style="color:${c}">${v}</div></div>`).join("");
+  if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
+  const opt = cfg.chart(S);
+  if (opt) { $("detailChartBox").style.display = ""; detailChartInst = echarts.init($("detailChart")); detailChartInst.setOption(withAnim(opt)); }
+  else { $("detailChartBox").style.display = "none"; }
+  if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  const tRows = cfg.filter ? rows.filter(cfg.filter) : rows;
+  $("detailTableTitle").textContent = `${cfg.tableTitle}（${tRows.length} 条）`;
+  detailTableInst = new Tabulator("#detailTable2", {
+    data: tRows.map(stripPrivate), columns: detailCols(tRows), layout: "fitColumns",
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+  });
+}
+
+// —— 多维度总览详情（单据类型 / 到达状态 / 超时状态） ——
+function renderOverview() {
+  const S = computeStats();
+  const dims = KPI_DETAIL.overview.dimensions;
+  const dim = dims[overviewState.dim];
+  $("detailChips").innerHTML = [
+    ["放行单总数", S.orderCount, "var(--accent)"],
+    ["放行记录总数", S.total, "var(--cyan)"],
+    ["特级安保单", S.specialOrders, "var(--purple)"],
+    ["在途单据", Object.values(orders).filter(o => o.在途).length, "var(--warn)"]
+  ].map(([l, v, c]) => `<div class="detailChip"><div class="dc-label">${l}</div><div class="dc-value" style="color:${c}">${v}</div></div>`).join("");
+  $("detailDims").innerHTML = dims.map((d, i) =>
+    `<button class="dimBtn ${i === overviewState.dim ? "active" : ""}" data-dim="${i}">${d.label}</button>`).join("");
+  $("detailDims").querySelectorAll(".dimBtn").forEach(b => b.onclick = () => {
+    overviewState.dim = +b.dataset.dim; overviewState.cat = null; renderOverview();
+    setTimeout(() => { if (detailChartInst) detailChartInst.resize(); }, 30);
+  });
+  if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
+  $("detailChartBox").style.display = "";
+  detailChartInst = echarts.init($("detailChart"));
+  detailChartInst.setOption(withAnim(overviewPieOption(dim)));
+  detailChartInst.off("click");
+  detailChartInst.on("click", p => { if (p && p.name) applyCatFilter(p.name); });
+  renderCatFilters(dim);
+  rebuildOverviewTable(dim);
+}
+
+function overviewPieOption(dim) {
+  return {
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{
+      type: "pie", radius: ["40%", "66%"], center: ["50%", "45%"],
+      selectedMode: "single", selectedOffset: 14,
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} ({d}%)" },
+      data: dim.cats.map(c => ({
+        name: c.name, value: rows.filter(c.filter).length,
+        itemStyle: { color: c.color }, selected: overviewState.cat === c.name
+      }))
+    }]
+  };
+}
+
+function renderCatFilters(dim) {
+  $("detailCatFilters").innerHTML = dim.cats.map(c => {
+    const cnt = rows.filter(c.filter).length;
+    return `<span class="catFilter ${overviewState.cat === c.name ? "active" : ""}" data-cat="${c.name}" style="--cc:${c.color}">${c.name} <b>${cnt}</b></span>`;
+  }).join("");
+  $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
+    el.onclick = () => applyCatFilter(el.dataset.cat));
+}
+
+function rebuildOverviewTable(dim) {
+  const cf = overviewState.cat ? dim.cats.find(c => c.name === overviewState.cat) : null;
+  const tRows = cf ? rows.filter(cf.filter) : rows;
+  $("detailTableTitle").textContent = `${cf ? cf.name : "全部放行记录"}（${tRows.length} 条）`;
+  if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  detailTableInst = new Tabulator("#detailTable2", {
+    data: tRows.map(stripPrivate), columns: detailCols(tRows), layout: "fitColumns",
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+  });
+}
+
+// —— 切换分类筛选：图表丝滑更新 + 明细表联动 ——
+function applyCatFilter(name) {
+  overviewState.cat = (overviewState.cat === name) ? null : name;
+  const dim = KPI_DETAIL.overview.dimensions[overviewState.dim];
+  if (detailChartInst) detailChartInst.setOption(overviewPieOption(dim));
+  $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
+    el.classList.toggle("active", el.dataset.cat === overviewState.cat));
+  rebuildOverviewTable(dim);
+}
+function closeDetail() {
+  $("detailOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+  setTimeout(() => {
+    if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
+    if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  }, 350);
+}
+document.querySelectorAll(".kpi[data-key], .analyzeCard[data-key]").forEach(el =>
+  el.addEventListener("click", () => openDetail(el.dataset.key)));
+$("btnDetailClose").onclick = closeDetail;
+$("detailOverlay").addEventListener("click", e => { if (e.target === $("detailOverlay")) closeDetail(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("detailOverlay").classList.contains("open")) closeDetail(); });
+
+// ---------- 实时流入动态栏 ----------
+function pushFeedItems(newRows) {
+  const box = $("feedItems");
+  const empty = box.querySelector(".empty");
+  if (empty) empty.remove();
+  newRows.forEach(r => {
+    const stCls = r._特保 ? "st-sp" : (String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")) ? "st-bad" : "st-ok";
+    const el = document.createElement("div");
+    el.className = "feedItem feedItem--new";
+    el.innerHTML =
+      `<span class="t">${(r._申请日期 || dayjs()).format("HH:mm:ss")}</span>` +
+      `<b>${r.放行单号}</b>` +
+      `<span>${r.申请部门} · ${r.放行物品名称} ×${r.数量}</span>` +
+      `<span class="route">${r.流出门岗}→${r.流入门岗}</span>` +
+      `<span class="stBadge ${stCls}">${r._特保 ? "特保" : (r.放行状态 || "正常")}</span>`;
+    box.prepend(el);
+  });
+  const N = CONFIG.实时演示.动态栏保留条数;
+  const items = [...box.querySelectorAll(".feedItem:not(.feedItem--out)")];
+  while (items.length > N) {
+    const out = items.pop();
+    out.classList.add("feedItem--out");
+    out.addEventListener("animationend", () => out.remove(), { once: true });
+  }
+}
+function clearFeed() { $("feedItems").innerHTML = '<span class="empty">等待新数据…</span>'; }
+
+// ---------- 实时演示模式 ----------
+function startLive() {
+  if (liveTimer) clearInterval(liveTimer);
+  clearFeed();
+  livePaused = false;
+  updateLiveBtn();
+  $("liveBadge").classList.remove("hidden");
+  $("btnLive").classList.remove("hidden");
+  $("liveFeed").classList.remove("hidden");
+  liveTimer = setInterval(liveTick, CONFIG.实时演示.刷新间隔毫秒);
+}
+function stopLive() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+  $("liveBadge").classList.add("hidden");
+  $("btnLive").classList.add("hidden");
+  $("liveFeed").classList.add("hidden");
+  clearFeed();
+}
+$("btnLive").onclick = () => { livePaused = !livePaused; updateLiveBtn(); };
+function updateLiveBtn() {
+  $("btnLive").textContent = livePaused ? "▶ 恢复刷新" : "⏸ 暂停刷新";
+  $("liveBadge").classList.toggle("paused", livePaused);
+}
+function liveTick() {
+  if (livePaused) return;
+  const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
+  const n = min + Math.floor(Math.random() * (max - min + 1));
+  const newRaw = [];
+  for (let i = 0; i < n; i++) newRaw.push(makeDemoRow(dayjs(), rows.length + i));
+  const newRows = newRaw.map(r => normalizeRow(r));
+  rows = rows.concat(newRows);
+  const S = computeStats();
+  counters.orders && counters.orders.update(S.orderCount);
+  counters.records && counters.records.update(S.total);
+  counters.special && counters.special.update(S.specialOrders);
+  counters.transit && counters.transit.update(S.transitTimeoutOrders.length);
+  counters.receive && counters.receive.update(S.receiveTimeoutRows.length);
+  CH.liquid && CH.liquid.setOption(optionBuilders.liquid(S));
+  CH.type && CH.type.setOption(optionBuilders.type(S));
+  CH.trend && CH.trend.setOption(optionBuilders.trend(S));
+  CH.dept && CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"));
+  CH.cat && CH.cat.setOption(catOption(S));
+  CH.route && CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"));
+  CH.status && CH.status.setOption(optionBuilders.status(S));
+  CH.deptCat && CH.deptCat.setOption(optionBuilders.deptCat(S));
+  renderAnalysisCards(S);
+  if (detailTable) detailTable.addData(newRows.map(stripPrivate), true);
+  pushFeedItems(newRows);
+  updateFileMeta(S);
+  $("liveTime").textContent = dayjs().format("HH:mm:ss");
+}
+
+// ---------- 导出：分析结果 Excel ----------
+$("btnExportExcel").onclick = () => {
+  const S = computeStats();
+  const wb = XLSX.utils.book_new();
+  const kpi = [["指标", "数值"],
+    ["放行单总数", S.orderCount], ["放行记录总数", S.total], ["特级安保单", S.specialOrders],
+    ["在途超时未放行单", S.transitTimeoutOrders.length], ["超时未接收记录", S.receiveTimeoutRows.length],
+    ["放行异常", S.abnormal], ["放行结案完成率", (S.closeRate * 100).toFixed(1) + "%"]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpi), "汇总指标");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+    S.transitTimeoutOrders.map(o => ({ 放行单号: o.单号, 类型: o.特保 ? "特级安保单" : "普通单", 申请部门: o.申请部门, 流入门岗: o.流入门岗, 物品分类: o.物品分类, 记录数: o.记录数 }))), "在途超时未放行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.receiveTimeoutRows.map(stripPrivate)), "超时未接收");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["时间", "申请量"], ...S.trend]), "时间趋势");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deptTop.map(d => ({ 部门: d.name, 记录数: d.value }))), "部门排行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(stripPrivate)), "明细数据");
+  XLSX.writeFile(wb, "物品放行监控分析结果.xlsx");
+  toast("分析结果已导出 ✅");
+};
+
+// ---------- 导出：看板截图 ----------
+$("btnShot").onclick = () => {
+  toast("正在生成截图，请稍候…");
+  html2canvas($("dashboard"), { backgroundColor: "#eef1f6", scale: 2 }).then(canvas => {
+    canvas.toBlob(b => saveAs(b, "物品放行监控看板.png"));
+  });
+};
+
+// ---------- 重新上传 ----------
+$("btnReupload").onclick = () => {
+  stopLive();
+  demoMode = false;
+  $("dashboard").classList.add("hidden");
+  $("dropzone").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnShot"].forEach(id => $(id).classList.add("hidden"));
+  $("fileInput").value = "";
+};
+
+// ---------- 示例数据生成（符合「物品放行监控」文件格式） ----------
+const DEMO = {
+  depts: ["MLB 撕石墨片 A線_ZZ", "品保IQC課_ZZ", "SMT 一課_ZZ", "組裝一課_ZZ", "倉儲物流課_ZZ", "設備維護課_ZZ", "研發一部_ZZ", "資訊部_ZZ"],
+  itemTypes: ["普通物品", "普通物品", "普通物品", "新产品A级物料", "新产品机台"],
+  categories: ["生產物料(非A類)", "耗材", "资讯物品", "设备", "新产品A级物料", "新产品机台"],
+  gates: ["ZZ-D07-1F-南一門", "ZZ-L07-1F-中碼頭崗", "ZZ-D03-1F-北二門", "ZZ-L02-1F-東一門", "ZZ-D05-2F-西三門", "ZZ-L09-1F-南二門"],
+  people: ["劉斌", "陳偉", "張麗", "王強", "李娜", "趙磊", "孫靜", "周濤"],
+  models: ["A2894", "B1032", "C7745", "D2210", "-"],
+  units: ["PCS", "台", "箱", "批"]
+};
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const pad = (n, l) => String(n).padStart(l, "0");
+
+function makeDemoRow(time, seq) {
+  const special = Math.random() < 0.18;  // 约18%为特级安保单（单号前缀 WF9897）
+  const orderNo = `${special ? CONFIG.特保单号前缀 : CONFIG.普通单号标识}${time.format("YYMMDD")}${pad(1 + (seq % 999999), 6)}`;
+  const itemType = special ? pick(["新产品A级物料", "新产品机台"]) : "普通物品";
+  const from = pick(DEMO.gates);
+  let to = pick(DEMO.gates);
+  if (to === from) to = DEMO.gates[(DEMO.gates.indexOf(from) + 1) % DEMO.gates.length];
+  const r = Math.random();
+  const arrived = r < 0.62;                 // 62% 已到达流入门岗
+  const releaseTimeout = !arrived && Math.random() < 0.45;  // 在途中部分超时
+  const released = arrived || Math.random() < 0.3;
+  const actualGate = arrived ? to : (released ? from : "");
+  const releaseTime = released ? time.add(Math.floor(Math.random() * 120), "minute") : null;
+  const recv = arrived && Math.random() < 0.55;
+  const recvTime = recv ? releaseTime.add(Math.floor(Math.random() * 90) + 10, "minute") : null;
+  const recvTimeout = arrived && !recv && Math.random() < 0.3;
+  return {
+    "申请日期": time.format("YYYY/MM/DD HH:mm:ss"),
+    "放行单号": orderNo,
+    "物品类型": itemType,
+    "申请人姓名": pick(DEMO.people),
+    "申请人部门": pick(DEMO.depts),
+    "放行单流出门岗": from,
+    "放行单流入门岗": to,
+    "实际放行门岗": actualGate,
+    "放行人姓名": released ? pick(DEMO.people) : "",
+    "实际放行时间": releaseTime ? releaseTime.format("YYYY/MM/DD HH:mm:ss") : "",
+    "放行状态": released ? (Math.random() < 0.06 ? "異常" : "正常") : "",
+    "放行超时": releaseTimeout ? 1 : 0,
+    "接收时间": recvTime ? recvTime.format("YYYY/MM/DD HH:mm:ss") : "",
+    "接收超时": recvTimeout ? 1 : 0,
+    "接收状态": recv ? "正常" : "未接收",
+    "接收人姓名": recv ? pick(DEMO.people) : "",
+    "物品分类": special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品"))),
+    "放行物品名称": pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]),
+    "放行数量": Math.ceil(Math.random() * 200),
+    "厂区": "鄭州"
+  };
+}
+
+$("btnDemo").onclick = async () => {
+  const list = [];
+  for (let i = 0; i < 300; i++) {
+    list.push(makeDemoRow(dayjs().subtract(Math.floor(Math.random() * 5), "day")
+      .hour(8 + Math.floor(Math.random() * 12)).minute(Math.floor(Math.random() * 60)), i));
+  }
+  currentFileName = "示例数据（实时演示）";
+  demoMode = true;
+  await processData(list);
+  startLive();
+  toast("实时演示已启动：每秒模拟新数据流入 📡");
+};
+
+// ========== 液态玻璃动态背景（漂浮几何 + 流动光晕 + rAF 动画循环） ==========
+const bgSrc = document.getElementById('bg-source');
+const bgCtx = bgSrc.getContext('2d');
+const BDPR = Math.min(window.devicePixelRatio || 1, 1.5);
+let bgW = 0, bgH = 0, bgGrad = null;
+
+function sizeBg() {
+  bgW = window.innerWidth;
+  bgH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+  bgSrc.width = Math.round(bgW * BDPR);
+  bgSrc.height = Math.round(bgH * BDPR);
+  bgSrc.style.width = bgW + 'px';
+  bgSrc.style.height = bgH + 'px';
+  bgCtx.setTransform(BDPR, 0, 0, BDPR, 0, 0);
+  bgGrad = bgCtx.createLinearGradient(0, 0, 0, bgH);
+  bgGrad.addColorStop(0, '#f5f7fc');
+  bgGrad.addColorStop(0.5, '#edf1f9');
+  bgGrad.addColorStop(1, '#e5ebf5');
+}
+function makeOrbSprite(r, g, b) {
+  const s = 256, c = document.createElement('canvas');
+  c.width = s; c.height = s;
+  const x = c.getContext('2d');
+  const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  gr.addColorStop(0, `rgba(${r},${g},${b},0.16)`);
+  gr.addColorStop(0.5, `rgba(${r},${g},${b},0.06)`);
+  gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  x.fillStyle = gr; x.fillRect(0, 0, s, s);
+  return c;
+}
+const orbSprites = [
+  makeOrbSprite(0, 113, 227), makeOrbSprite(52, 199, 89), makeOrbSprite(94, 92, 230),
+  makeOrbSprite(255, 159, 10), makeOrbSprite(0, 184, 212)
+];
+const orbs = [
+  { fx: 0.15, fy: 0.10, s: 1.6, sp: 0.00010, ph: 0, si: 0 },
+  { fx: 0.85, fy: 0.15, s: 1.3, sp: 0.00014, ph: 2.1, si: 1 },
+  { fx: 0.50, fy: 0.55, s: 1.8, sp: 0.00008, ph: 4.2, si: 2 },
+  { fx: 0.10, fy: 0.80, s: 1.2, sp: 0.00012, ph: 1.5, si: 3 },
+  { fx: 0.90, fy: 0.75, s: 1.5, sp: 0.00009, ph: 3.6, si: 4 }
+];
+const SHAPE_COLORS = [
+  [0, 113, 227], [52, 199, 89], [94, 92, 230], [255, 159, 10],
+  [0, 184, 212], [255, 45, 146], [48, 176, 199], [175, 82, 222]
+];
+let shapes = [];
+function initShapes() {
+  shapes = [];
+  const n = Math.max(16, Math.min(26, Math.round(bgW * bgH / 55000)));
+  const types = ['circle', 'hexagon', 'triangle', 'square', 'ring', 'diamond'];
+  for (let i = 0; i < n; i++) {
+    const col = SHAPE_COLORS[i % SHAPE_COLORS.length];
+    shapes.push({
+      x: Math.random() * bgW, y: Math.random() * bgH,
+      sz: 14 + Math.random() * 42,
+      vx: (Math.random() - 0.5) * 0.30, vy: (Math.random() - 0.5) * 0.22,
+      rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 0.003,
+      type: types[i % types.length],
+      rgba: `rgba(${col[0]},${col[1]},${col[2]},${(0.04 + Math.random() * 0.07).toFixed(3)})`,
+      ph: Math.random() * Math.PI * 2
+    });
+  }
+}
+function polyPath(c, n, r) {
+  c.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = (Math.PI * 2 / n) * i - Math.PI / 2;
+    i === 0 ? c.moveTo(Math.cos(a) * r, Math.sin(a) * r) : c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  c.closePath();
+}
+function drawShape(c, s, t) {
+  c.save();
+  c.translate(s.x, s.y);
+  c.rotate(s.rot);
+  const p = 1 + 0.12 * Math.sin(t * 0.0005 + s.ph);
+  c.scale(p, p);
+  c.fillStyle = s.rgba;
+  c.strokeStyle = s.rgba;
+  c.lineWidth = 1.5;
+  switch (s.type) {
+    case 'circle': c.beginPath(); c.arc(0, 0, s.sz / 2, 0, Math.PI * 2); c.fill(); break;
+    case 'hexagon': polyPath(c, 6, s.sz / 2); c.fill(); break;
+    case 'triangle': polyPath(c, 3, s.sz / 2); c.fill(); break;
+    case 'square': {
+      const h = s.sz * 0.42, r = 4;
+      c.beginPath();
+      c.moveTo(-h + r, -h); c.lineTo(h - r, -h); c.arcTo(h, -h, h, -h + r, r);
+      c.lineTo(h, h - r); c.arcTo(h, h, h - r, h, r);
+      c.lineTo(-h + r, h); c.arcTo(-h, h, -h, h - r, r);
+      c.lineTo(-h, -h + r); c.arcTo(-h, -h, -h + r, -h, r);
+      c.closePath(); c.fill(); break;
+    }
+    case 'ring': c.beginPath(); c.arc(0, 0, s.sz / 2, 0, Math.PI * 2); c.lineWidth = 2; c.stroke(); break;
+    case 'diamond': polyPath(c, 4, s.sz / 2); c.fill(); break;
+  }
+  c.restore();
+}
+let bgAnimId = 0, _bgSkip = false;
+function animBg(t) {
+  bgAnimId = requestAnimationFrame(animBg);
+  // 大数据量模式：背景动画隔帧渲染（约30fps），降低老机器 GPU/CPU 负载
+  if (rows.length > CONFIG.大数据量阈值) { _bgSkip = !_bgSkip; if (_bgSkip) return; }
+  bgCtx.clearRect(0, 0, bgW, bgH);
+  bgCtx.fillStyle = bgGrad;
+  bgCtx.fillRect(0, 0, bgW, bgH);
+  for (const o of orbs) {
+    const x = bgW * o.fx + Math.sin(t * o.sp + o.ph) * bgW * 0.07;
+    const y = bgH * o.fy + Math.cos(t * o.sp * 0.7 + o.ph) * bgH * 0.05;
+    const sz = Math.min(bgW, bgH) * o.s * (0.9 + 0.1 * Math.sin(t * o.sp * 1.3 + o.ph));
+    bgCtx.drawImage(orbSprites[o.si], x - sz / 2, y - sz / 2, sz, sz);
+  }
+  for (const s of shapes) {
+    s.x += s.vx; s.y += s.vy; s.rot += s.vr;
+    const m = s.sz;
+    if (s.x < -m) s.x = bgW + m; if (s.x > bgW + m) s.x = -m;
+    if (s.y < -m) s.y = bgH + m; if (s.y > bgH + m) s.y = -m;
+    drawShape(bgCtx, s, t);
+  }
+}
+sizeBg(); initShapes();
+bgAnimId = requestAnimationFrame(animBg);
+
+// ---------- 窗口自适应 ----------
+let _resizeRaf = 0, _lastDocH = bgH;
+window.addEventListener("resize", () => {
+  if (_resizeRaf) cancelAnimationFrame(_resizeRaf);
+  _resizeRaf = requestAnimationFrame(() => {
+    sizeBg(); initShapes();
+    Object.values(CH).forEach(c => c.resize());
+  });
+});
+window.addEventListener("scroll", () => {
+  const h = document.documentElement.scrollHeight;
+  if (h !== _lastDocH) { _lastDocH = h; sizeBg(); initShapes(); }
+}, { passive: true });
+</script>
+</body>
+</html>

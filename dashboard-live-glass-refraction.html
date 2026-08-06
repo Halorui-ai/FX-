@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物品放行数据看板（实时动态版）</title>
+<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="./lib/toastify.css">
+<style>
+/* ========== 全局样式（暗色大屏风） ========== */
+:root{
+  /* —— Apple 浅色玻璃风配色 —— */
+  --bg:#eef1f6;
+  --bg-glow1:rgba(0,113,227,0.10);
+  --bg-glow2:rgba(52,199,89,0.08);
+  --panel:rgba(255,255,255,0.55);      /* 玻璃卡片：半透明白 */
+  --panel2:rgba(255,255,255,0.72);
+  --glass-border:rgba(255,255,255,0.65);
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
+  --accent:#0071e3; --accent2:#2997ff;
+  --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a;
+  --shadow:rgba(0,0,0,0.08) 0 8px 30px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{background:
+    radial-gradient(1200px 600px at 12% -8%, var(--bg-glow1), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, var(--bg-glow2), transparent 55%),
+    radial-gradient(900px 700px at 88% 105%, rgba(255,159,10,0.06), transparent 55%),
+    linear-gradient(180deg,#f6f7fb,#e7ecf5);
+  color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:14px;-webkit-font-smoothing:antialiased}
+body{padding:18px 22px;min-height:100vh}
+h1{font-size:23px;letter-spacing:-0.3px;font-weight:600}
+.sub{color:var(--txt2);font-size:12px;margin-top:4px}
+button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--txt);border-radius:980px;padding:8px 16px;font-size:13px;transition:.18s}
+button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,255,255,0.85)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button.primary:hover{filter:brightness(1.06);color:#fff}
+.hidden{display:none!important}
+
+/* ========== 顶栏 ========== */
+#topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:14px 18px;border:1px solid var(--glass-border);border-radius:16px;
+  background:rgba(255,255,255,0.55);backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--shadow);margin-bottom:16px}
+#topbar .actions{display:flex;gap:8px;flex-wrap:wrap}
+.metaRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+#fileMeta{color:var(--txt2);font-size:12px}
+#fileMeta b{color:var(--accent);font-weight:600}
+
+/* ========== LIVE 实时数据流徽标 ========== */
+#liveBadge{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;
+  border:1px solid rgba(52,199,89,0.4);border-radius:20px;background:rgba(52,199,89,0.12);color:#1a7f37;font-size:12px}
+.liveDot{width:8px;height:8px;border-radius:50%;background:#34c759;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,199,89,.5)}70%{box-shadow:0 0 0 8px rgba(52,199,89,0)}100%{box-shadow:0 0 0 0 rgba(52,199,89,0)}}
+#liveBadge.paused .liveDot{background:var(--warn);animation:none}
+#liveBadge.paused{border-color:rgba(255,159,10,0.45);background:rgba(255,159,10,0.14);color:#9a6200}
+
+/* ========== 实时流入动态栏 ========== */
+#liveFeed{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.55);
+  backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid var(--glass-border);border-radius:16px;padding:10px 14px;margin-bottom:16px;overflow:hidden;min-height:46px}
+#liveFeed .feedLabel{flex:none;display:flex;align-items:center;gap:8px;color:#1a7f37;font-size:12px;
+  font-weight:600;border-right:1px solid var(--line);padding-right:12px;white-space:nowrap}
+#feedItems{display:flex;gap:8px;overflow:hidden;flex:1;align-items:center}
+#feedItems .empty{color:var(--txt2);font-size:12px}
+.feedItem{flex:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.7);border:1px solid var(--line);
+  border-radius:10px;padding:6px 10px;font-size:12px;color:var(--txt2);white-space:nowrap;
+  animation:slideIn .45s ease}
+.feedItem b{color:var(--txt);font-weight:600}
+.feedItem .t{color:var(--accent);font-family:"Segoe UI",monospace}
+.feedItem .route{color:var(--accent)}
+.stBadge{padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.st-ok{background:rgba(52,199,89,0.14);color:#1a7f37;border:1px solid rgba(52,199,89,0.4)}
+.st-bad{background:rgba(255,59,48,0.12);color:#c0392b;border:1px solid rgba(255,59,48,0.4)}
+.st-warn{background:rgba(255,159,10,0.16);color:#9a6200;border:1px solid rgba(255,159,10,0.45)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.feedItem--new{animation:slideIn .45s ease, flashNew 1s ease}
+@keyframes flashNew{0%{box-shadow:0 0 0 0 rgba(0,113,227,.45)}35%{box-shadow:0 0 0 3px rgba(0,113,227,.30)}100%{box-shadow:0 0 0 12px rgba(0,113,227,0)}}
+/* 最右侧旧条目流出：镜像左侧滑入，向右滑出淡出，形成流动感 */
+.feedItem--out{animation:slideOut .4s ease forwards;pointer-events:none}
+@keyframes slideOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(28px)}}
+
+/* ========== 上传区 ========== */
+#dropzone{border:2px dashed rgba(0,0,0,0.18);border-radius:20px;padding:60px 20px;text-align:center;
+  background:rgba(255,255,255,0.5);backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow);transition:.2s;margin-bottom:16px}
+#dropzone.over{border-color:var(--accent);background:rgba(0,113,227,0.08)}
+#dropzone .big{font-size:40px;margin-bottom:12px}
+#dropzone p{color:var(--txt2);line-height:1.9}
+#dropzone .btns{margin-top:18px;display:flex;gap:10px;justify-content:center}
+
+/* ========== 错误面板 ========== */
+#errPanel{border:1px solid rgba(255,59,48,0.45);background:rgba(255,59,48,0.08);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+#errPanel h3{color:var(--bad);margin-bottom:8px;font-size:15px}
+#errPanel li{color:#c0392b;margin-left:20px;line-height:1.8}
+
+/* ========== 液态玻璃真实折射（背景采样 + 边缘位移 + 色散） ========== */
+#bg-source{position:fixed; inset:0; z-index:-1; pointer-events:none;}
+/* ★ 关键：lg-* 玻璃层强制 absolute + 各自 z-index，避开下方"内容上浮"规则的误伤 */
+.lg-canvas,.lg-tint,.lg-edge{position:absolute !important;}
+.lg-canvas{inset:0; z-index:0 !important; pointer-events:none; border-radius:inherit;}
+.lg-tint  {inset:0; z-index:1 !important; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.03) 50%, rgba(0,0,0,.05) 100%);}
+.lg-edge  {inset:0; z-index:2 !important; pointer-events:none; border-radius:inherit;
+  border:1px solid rgba(255,255,255,.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.12);}
+/* 卡片里的"内容元素"上浮到玻璃层之上：排除 lg-* 三层 */
+.kpi>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge),
+.chartCard>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge),
+#detailCard>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge){
+  position:relative; z-index:3;
+}
+
+/* ========== KPI 卡片 ========== */
+#kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:16px;position:relative;overflow:hidden;isolation:isolate;
+  backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);z-index:4}
+.kpi .label{color:var(--txt2);font-size:12px;margin-bottom:8px}
+.kpi .value{font-size:28px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--txt)}
+#kpiRate{padding:0;display:flex;align-items:center;justify-content:center;min-height:110px}
+
+/* ========== 图表区 ========== */
+#charts{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:14px}
+.chartCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
+.chartCard h3{font-size:14px;color:var(--txt);margin-bottom:6px;padding-left:8px;border-left:3px solid var(--accent)}
+.chart{width:100%;height:300px}
+.chartCard,.kpi{transition:transform .22s ease, box-shadow .22s ease}
+.chartCard:hover,.kpi:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.12)}
+.span4{grid-column:span 4}.span6{grid-column:span 6}.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1100px){.span4,.span6,.span8{grid-column:span 12}}
+
+/* ========== 明细表 ========== */
+#detailCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
+#detailCard h3{font-size:14px;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent)}
+#detailTable{font-size:12px}
+.tabulator{background:transparent;border:1px solid var(--line);color:var(--txt);font-size:12px;border-radius:12px;overflow:hidden}
+.tabulator .tabulator-header{background:rgba(0,0,0,0.03)!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-header .tabulator-col{background:transparent!important;border-right:1px solid var(--line)!important}
+.tabulator .tabulator-row{background:transparent!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-row.tabulator-row-even{background:rgba(0,0,0,0.02)!important}
+.tabulator .tabulator-row:hover{background:rgba(0,113,227,0.06)!important}
+.tabulator .tabulator-cell{border-right:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-footer{background:transparent!important;color:var(--txt)!important}
+.tabulator .tabulator-page{color:var(--txt)!important;background:rgba(255,255,255,0.6)!important;border:1px solid var(--line)!important}
+.tabulator .tabulator-page.active{background:var(--accent)!important;color:#fff!important}
+.tabulator .tabulator-page:hover{background:rgba(0,113,227,0.1)!important}
+.footerNote{color:var(--txt2);font-size:12px;text-align:center;margin:18px 0 6px}
+</style>
+</head>
+<body>
+
+<!-- 折射背景源：全屏画布，供玻璃卡采样背景做真实折射 -->
+<canvas id="bg-source"></canvas>
+
+<!-- ========== 顶栏 ========== -->
+<div id="topbar">
+  <div>
+    <h1>📦 物品放行数据看板</h1>
+    <div class="sub">内网离线版 · 数据仅在本地浏览器处理，不会外传</div>
+    <div class="metaRow">
+      <span id="fileMeta"></span>
+      <span id="liveBadge" class="hidden"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b id="liveTime">--:--:--</b></span>
+    </div>
+  </div>
+  <div class="actions">
+    <button id="btnLive" class="hidden">⏸ 暂停刷新</button>
+    <button id="btnReupload" class="hidden">📂 重新上传</button>
+    <button id="btnExportExcel" class="hidden">📊 导出分析结果 Excel</button>
+    <button id="btnShot" class="hidden">🖼️ 导出看板截图</button>
+  </div>
+</div>
+
+<!-- ========== 实时流入动态栏（仅演示模式显示） ========== -->
+<div id="liveFeed" class="hidden">
+  <div class="feedLabel"><span class="liveDot"></span>实时流入</div>
+  <div id="feedItems"><span class="empty">等待新数据…</span></div>
+</div>
+
+<!-- ========== 上传区 ========== -->
+<div id="dropzone">
+  <div class="big">📁</div>
+  <p>把物品放行申请导出的 <b>.xls / .xlsx / .csv</b> 文件拖到此处<br>或点击下方按钮选择文件</p>
+  <div class="btns">
+    <button class="primary" id="btnPick">选择数据文件</button>
+    <button id="btnDemo">载入示例数据预览（实时演示）</button>
+  </div>
+  <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" class="hidden">
+</div>
+
+<!-- ========== 错误面板 ========== -->
+<div id="errPanel" class="hidden">
+  <h3>⚠️ 数据文件校验未通过</h3>
+  <ul id="errList"></ul>
+  <p style="color:#c0392b;margin-top:8px;font-size:12px">请检查导出的表头是否与上方要求一致，或联系模板维护人更新「字段映射」配置。</p>
+</div>
+
+<!-- ========== 看板主体 ========== -->
+<div id="dashboard" class="hidden">
+  <div id="kpis">
+    <div class="kpi"><div class="label">申请单总数</div><div class="value" id="kpiTotal">0</div></div>
+    <div class="kpi" id="kpiQtyCard"><div class="label">放行物品总数量</div><div class="value" id="kpiQty">0</div></div>
+    <div class="kpi"><div class="label">涉及部门数</div><div class="value" id="kpiDept">0</div></div>
+    <div class="kpi"><div class="label">待处理申请</div><div class="value" id="kpiPending" style="color:var(--warn)">0</div></div>
+    <div class="kpi" id="kpiRate"><div id="liquidChart" style="width:100%;height:110px"></div></div>
+  </div>
+
+  <div id="charts">
+    <div class="chartCard span4" id="cardStatus"><h3>申请状态分布</h3><div class="chart" id="chartStatus"></div></div>
+    <div class="chartCard span8" id="cardTrend"><h3>申请量时间趋势</h3><div class="chart" id="chartTrend"></div></div>
+    <div class="chartCard span6" id="cardDept"><h3>部门申请量 TOP10</h3><div class="chart" id="chartDept"></div></div>
+    <div class="chartCard span6" id="cardCat"><h3>物品类别分布</h3><div class="chart" id="chartCat"></div></div>
+    <div class="chartCard span6" id="cardItem"><h3>高频放行物品 TOP10</h3><div class="chart" id="chartItem"></div></div>
+    <div class="chartCard span6" id="cardRoute"><h3>园区流转方向 TOP10</h3><div class="chart" id="chartRoute"></div></div>
+    <div class="chartCard span12" id="cardDeptCat"><h3>部门 × 物品类别 交叉分布</h3><div class="chart" id="chartDeptCat"></div></div>
+  </div>
+
+  <div id="detailCard">
+    <h3>明细数据（可搜索 / 排序 / 导出）</h3>
+    <div id="detailTable"></div>
+  </div>
+</div>
+
+<div class="footerNote">本页面所有计算均在本地完成 · 模板版本 v1.2-live（实时动态栏版）</div>
+
+<!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
+<script src="./lib/echarts.min.js"></script>
+<script src="./lib/echarts-liquidfill.min.js"></script>
+<script src="./lib/xlsx.full.min.js"></script>
+<script src="./lib/papaparse.min.js"></script>
+<script src="./lib/dayjs.min.js"></script>
+<script src="./lib/lodash.min.js"></script>
+<script src="./lib/countUp.umd.js"></script>
+<script src="./lib/tabulator.min.js"></script>
+<script src="./lib/toastify.js"></script>
+<script src="./lib/html2canvas.min.js"></script>
+<script src="./lib/FileSaver.min.js"></script>
+
+<script>
+/* =====================================================================
+ * ★★★ 业务配置区（想调整分析逻辑，只改这里，全是中文配置，不需要写代码）★★★
+ * ===================================================================== */
+const CONFIG = {
+  // —— 字段映射：左边是"标准字段"，右边数组里是导出文件中可能出现的表头名（可继续往里加别名）——
+  字段映射: {
+    单号:   ["申请单号", "单号", "单据编号", "放行单号", "申请编号"],
+    物品名称: ["物品名称", "品名", "名称", "物料名称", "物品"],
+    物品类别: ["物品类别", "类别", "物品类型", "类型", "物料类别"],
+    数量:   ["数量", "申请数量", "放行数量", "件数"],
+    单位:   ["单位", "计量单位"],
+    申请部门: ["申请部门", "部门", "所属部门", "申请单位", "单位名称"],
+    申请人:  ["申请人", "经办人", "创建人"],
+    状态:   ["状态", "申请状态", "审批状态", "单据状态"],
+    申请日期: ["申请日期", "申请时间", "创建时间", "提交时间", "日期"],
+    放行日期: ["放行日期", "放行时间", "审批通过时间"],
+    出发园区: ["出发园区", "发货园区", "起始园区", "发出园区", "起点园区"],
+    目的园区: ["目的园区", "收货园区", "到达园区", "终点园区", "目的地点"]
+  },
+
+  // —— 必需字段：缺了这些列就无法分析，会提示用户 ——
+  必需字段: ["物品名称", "申请部门", "状态", "申请日期"],
+
+  // —— 状态归类：状态文字里包含哪个关键词，就归到哪一类 ——
+  状态分类: {
+    已通过: ["已放行", "已通过", "同意", "放行", "完成", "通过"],
+    已驳回: ["已驳回", "驳回", "拒绝", "不同意"],
+    // 其余未匹配到的状态自动归入"待处理"
+  },
+
+  TOPN: 10,          // 各排行榜显示前 N 名
+  趋势天数阈值: 62,   // 数据跨度 ≤ 此天数按"日"统计，否则按"月"统计
+  大文件警告行数: 50000,
+
+  // —— 实时演示模式（载入示例数据后，模拟每秒有新数据流入）——
+  实时演示: {
+    刷新间隔毫秒: 1000,   // 每隔多久产生一批新数据
+    每批最小条数: 1,
+    每批最大条数: 1,     // 每秒只流入 1 条，避免一次刷出多条显得突兀
+    动态栏保留条数: 4     // 顶部"实时流入"栏同时显示最近 N 条新数据
+  }
+};
+
+/* =====================================================================
+ * 以下为程序逻辑，一般不需要修改
+ * ===================================================================== */
+
+// ---------- 小工具 ----------
+const $ = id => document.getElementById(id);
+function toast(msg, ok = true) {
+  Toastify({ text: msg, duration: 3500, gravity: "top", position: "right",
+    style: { background: ok ? "rgba(52,199,89,0.92)" : "rgba(255,59,48,0.92)", color: "#fff", borderRadius: "12px", backdropFilter: "blur(10px)" } }).showToast();
+}
+// 解析各种格式的日期：Date 对象、Excel 序列数、"2026/7/1"、"2026-07-01 12:00:00"
+function parseDate(v) {
+  if (v == null || v === "") return null;
+  if (v instanceof Date && !isNaN(v)) return dayjs(v);
+  if (typeof v === "number" && v > 20000 && v < 80000) {           // Excel 日期序列
+    return dayjs(new Date(Math.round((v - 25569) * 86400 * 1000)));
+  }
+  const d = dayjs(String(v).trim().replace(/[./年月]/g, "-").replace(/日/g, ""));
+  return d.isValid() ? d : null;
+}
+// CSV 文本解码：先按 UTF-8 试，乱码则按 GBK（兼容老系统导出的 CSV）
+function decodeText(buf) {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder("gbk").decode(buf); }
+}
+
+// ---------- 全局状态 ----------
+let rows = [];            // 标准化后的数据行（键为标准字段名）
+let CH = {};              // ECharts 实例集合 {status, trend, dept, cat, item, route, liquid}
+let counters = {};        // countUp 实例集合
+let detailTable = null;
+let currentFileName = "";
+let liveTimer = null;     // 实时演示定时器
+let demoMode = false;     // 是否处于示例数据实时演示模式
+let livePaused = false;
+
+// ---------- 文件读取入口 ----------
+$("btnPick").onclick = () => $("fileInput").click();
+$("fileInput").onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0]); };
+const dz = $("dropzone");
+["dragover", "dragenter"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+function handleFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  if (!["xls", "xlsx", "csv"].includes(ext)) { toast("仅支持 .xls / .xlsx / .csv 文件", false); return; }
+  currentFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      let list;
+      if (ext === "csv") {
+        const text = decodeText(e.target.result);
+        list = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+      } else {
+        const wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
+        list = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+      }
+      if (!list.length) { toast("文件中没有读到数据行", false); return; }
+      if (list.length > CONFIG.大文件警告行数) toast(`数据量较大（${list.length} 行），渲染可能需要几秒`, false);
+      stopLive();          // 上传真实文件时退出演示模式
+      demoMode = false;
+      processData(list);
+    } catch (err) {
+      console.error(err);
+      toast("文件解析失败：" + err.message, false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------- 字段映射与校验 ----------
+function mapColumns(rawList) {
+  const headers = Object.keys(rawList[0]);
+  const colOf = {};   // 标准字段 -> 实际表头
+  for (const [std, aliases] of Object.entries(CONFIG.字段映射)) {
+    colOf[std] = headers.find(h => aliases.some(a => h.trim() === a)) || null;
+  }
+  const missing = CONFIG.必需字段.filter(f => !colOf[f]);
+  return { colOf, missing, headers };
+}
+
+let currentColOf = null;  // 记录本次的列映射，供标准化复用
+function processData(rawList) {
+  const { colOf, missing } = mapColumns(rawList);
+  if (missing.length) {
+    $("errList").innerHTML = missing.map(f =>
+      `<li>缺少必需列「${f}」（可识别的表头：${CONFIG.字段映射[f].join(" / ")}）</li>`).join("");
+    $("errPanel").classList.remove("hidden");
+    $("dashboard").classList.add("hidden");
+    window.scrollTo(0, 0);
+    return;
+  }
+  $("errPanel").classList.add("hidden");
+  currentColOf = colOf;
+
+  // —— 标准化每一行 ——
+  rows = rawList.map(r => normalizeRow(r));
+
+  renderAll();
+}
+
+function normalizeRow(r) {
+  const o = {};
+  for (const [std, col] of Object.entries(currentColOf)) o[std] = col ? (r[col] ?? "") : "";
+  o.数量 = parseFloat(o.数量) || 0;
+  o._申请日期 = parseDate(o.申请日期);
+  o._状态类 = classifyStatus(String(o.状态));
+  return o;
+}
+
+function classifyStatus(s) {
+  for (const [cls, kws] of Object.entries(CONFIG.状态分类))
+    if (kws.some(k => s.includes(k))) return cls;
+  return "待处理";
+}
+
+// ---------- 汇总计算（自然语言式逻辑，方便日后调整） ----------
+function computeStats() {
+  const valid = rows.filter(r => r._申请日期);
+  const byStatus = _.countBy(rows, "_状态类");
+  const total = rows.length;
+  const pass = byStatus["已通过"] || 0;
+
+  // 趋势：按日或按月
+  let trend = [];
+  if (valid.length) {
+    const min = _.minBy(valid, r => r._申请日期.valueOf())._申请日期;
+    const max = _.maxBy(valid, r => r._申请日期.valueOf())._申请日期;
+    const fmt = max.diff(min, "day") <= CONFIG.趋势天数阈值 ? "YYYY-MM-DD" : "YYYY-MM";
+    const grouped = _.countBy(valid, r => r._申请日期.format(fmt));
+    trend = Object.keys(grouped).sort().map(k => [k, grouped[k]]);
+  }
+
+  const top = (fn, n = CONFIG.TOPN) =>
+    _(rows).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
+      .orderBy("value", "desc").take(n).value();
+
+  return {
+    total,
+    qty: _.sumBy(rows, "数量"),
+    deptCount: _(rows).map("申请部门").uniq().filter(Boolean).size(),
+    pending: byStatus["待处理"] || 0,
+    passRate: total ? pass / total : 0,
+    byStatus,
+    trend,
+    deptTop: top("申请部门"),
+    catTop: top(r => r.物品类别 || "未分类"),
+    itemTop: top("物品名称"),
+    routeTop: _(rows).filter(r => r.出发园区 && r.目的园区)
+      .groupBy(r => `${r.出发园区} → ${r.目的园区}`)
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(CONFIG.TOPN).value(),
+
+    // —— 部门 × 类别交叉：取申请量 TOP 部门，堆叠展示其各类别构成 ——
+    deptCat: (() => {
+      const matrix = {};
+      rows.forEach(r => {
+        const d = r.申请部门 || "（空）", c = r.物品类别 || "未分类";
+        (matrix[d] = matrix[d] || {})[c] = (matrix[d][c] || 0) + 1;
+      });
+      const depts = Object.entries(matrix)
+        .map(([d, obj]) => [d, _.sum(Object.values(obj))])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, CONFIG.TOPN)
+        .map(x => x[0]);
+      const catTotals = Object.entries(_(rows).map(r => r.物品类别 || "未分类").countBy().value())
+        .sort((a, b) => b[1] - a[1]).map(x => x[0]);
+      return {
+        depts, cats: catTotals,
+        series: catTotals.map(cat => ({ name: cat, data: depts.map(d => matrix[d][cat] || 0) }))
+      };
+    })()
+  };
+}
+
+// ---------- 图表配置生成 ----------
+const PALETTE = ["#0071e3", "#34c759", "#ff9f0a", "#ff3b30", "#5e5ce6", "#00b8d4", "#ff2d92", "#30b0c7", "#af52de", "#ff9500"];
+const baseAxis = {
+  axisLine: { lineStyle: { color: "rgba(0,0,0,0.14)" } },
+  axisLabel: { color: "rgba(0,0,0,0.55)" },
+  splitLine: { lineStyle: { color: "rgba(0,0,0,0.06)" } }
+};
+const STATUS_COLORS = { "已通过": "#34c759", "已驳回": "#ff3b30", "待处理": "#ff9f0a" };
+
+const optionBuilders = {
+  liquid: S => ({
+    series: [{
+      type: "liquidFill", radius: "85%", center: ["50%", "55%"],
+      data: [S.passRate], color: ["#34c759"],
+      backgroundStyle: { color: "rgba(255,255,255,0.5)", borderWidth: 0 },
+      outline: { borderDistance: 2, itemStyle: { borderColor: "rgba(52,199,89,0.6)", borderWidth: 2 } },
+      label: { formatter: `放行通过率\n${(S.passRate * 100).toFixed(1)}%`, fontSize: 14, color: "#1d1d1f", insideColor: "#1d1d1f" }
+    }]
+  }),
+  status: S => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{
+      type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+      data: Object.entries(S.byStatus).map(([k, v]) =>
+        ({ name: k, value: v, itemStyle: { color: STATUS_COLORS[k] || "#0071e3" } }))
+    }]
+  }),
+  trend: S => ({
+    tooltip: { trigger: "axis" },
+    grid: { left: 50, right: 20, top: 30, bottom: 40 },
+    xAxis: { type: "category", data: S.trend.map(t => t[0]), ...baseAxis },
+    yAxis: { type: "value", ...baseAxis },
+    dataZoom: S.trend.length > 40 ? [{ type: "inside" }] : [],
+    series: [{
+      type: "line", data: S.trend.map(t => t[1]), smooth: true, symbolSize: 6,
+      lineStyle: { width: 3, color: "#0071e3" }, itemStyle: { color: "#0071e3" },
+      areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: "rgba(0,113,227,.28)" }, { offset: 1, color: "rgba(0,113,227,0)" }] } }
+    }]
+  })
+};
+// 横向条形图通用配置
+function hbarOption(data, color) {
+  return {
+    tooltip: {},
+    grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+    xAxis: { type: "value", ...baseAxis },
+    yAxis: { type: "category", data: data.map(d => d.name).reverse(), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", width: 110, overflow: "truncate" } },
+    series: [{
+      type: "bar", data: data.map(d => d.value).reverse(), barWidth: "55%",
+      itemStyle: { borderRadius: [0, 5, 5, 0], color },
+      label: { show: true, position: "right", color: "#1d1d1f" }
+    }]
+  };
+}
+function catOption(S) {
+  return {
+    tooltip: {},
+    grid: { left: 40, right: 20, top: 30, bottom: 60 },
+    xAxis: { type: "category", data: S.catTop.map(d => d.name), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", rotate: 25, width: 90, overflow: "truncate" } },
+    yAxis: { type: "value", ...baseAxis },
+    series: [{
+      type: "bar", data: S.catTop.map((d, i) => ({ value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } })),
+      barWidth: "50%", itemStyle: { borderRadius: [5, 5, 0, 0] },
+      label: { show: true, position: "top", color: "#1d1d1f" }
+    }]
+  };
+}
+
+// 部门 × 类别交叉：堆叠柱状图（TOP 部门，按类别堆叠）
+function deptCatOption(S) {
+  const { depts, series } = S.deptCat;
+  return {
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    legend: { type: "scroll", bottom: 0, textStyle: { color: baseAxis.axisLabel.color } },
+    grid: { left: 10, right: 20, top: 20, bottom: 66, containLabel: true },
+    xAxis: { type: "category", data: depts, ...baseAxis,
+      axisLabel: { rotate: 25, width: 80, overflow: "truncate" } },
+    yAxis: { type: "value", ...baseAxis },
+    series: series.map((s, i) => ({
+      name: s.name, type: "bar", stack: "total", data: s.data, barWidth: "58%",
+      itemStyle: { color: PALETTE[i % PALETTE.length],
+        borderRadius: i === series.length - 1 ? [5, 5, 0, 0] : 0 },
+      emphasis: { focus: "series" }
+    }))
+  };
+}
+
+// ---------- 渲染 ----------
+function destroyCharts() { Object.values(CH).forEach(c => c.dispose()); CH = {}; counters = {}; }
+
+function renderAll() {
+  destroyCharts();
+  const S = computeStats();
+
+  // —— 顶栏信息 ——
+  updateFileMeta(S);
+
+  // —— KPI ——
+  counters.total = new countUp.CountUp("kpiTotal", S.total, { separator: ",", duration: 0.9 });
+  counters.qty = new countUp.CountUp("kpiQty", S.qty, { separator: ",", duration: 0.9 });
+  counters.dept = new countUp.CountUp("kpiDept", S.deptCount, { separator: ",", duration: 0.9 });
+  counters.pending = new countUp.CountUp("kpiPending", S.pending, { separator: ",", duration: 0.9 });
+  Object.values(counters).forEach(c => c.start());
+
+  // —— 建图 ——
+  CH.liquid = echarts.init($("liquidChart")); CH.liquid.setOption(optionBuilders.liquid(S));
+  CH.status = echarts.init($("chartStatus")); CH.status.setOption(optionBuilders.status(S));
+  if (S.trend.length) {
+    CH.trend = echarts.init($("chartTrend")); CH.trend.setOption(optionBuilders.trend(S));
+    $("cardTrend").classList.remove("hidden");
+  } else { $("cardTrend").classList.add("hidden"); }
+  CH.dept = echarts.init($("chartDept")); CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"));
+  CH.item = echarts.init($("chartItem")); CH.item.setOption(hbarOption(S.itemTop, "#5e5ce6"));
+  CH.cat = echarts.init($("chartCat")); CH.cat.setOption(catOption(S));
+  if (S.routeTop.length) {
+    CH.route = echarts.init($("chartRoute")); CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"));
+    $("cardRoute").classList.remove("hidden");
+  } else { $("cardRoute").classList.add("hidden"); }
+  CH.deptCat = echarts.init($("chartDeptCat")); CH.deptCat.setOption(deptCatOption(S));
+
+  // —— 明细表 ——
+  const cols = Object.keys(CONFIG.字段映射)
+    .filter(k => rows.some(r => r[k] !== "" && r[k] != null))
+    .map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: k === "物品名称" ? 2 : 1 }));
+  if (detailTable) detailTable.destroy();
+  detailTable = new Tabulator("#detailTable", {
+    data: rows.map(stripPrivate),
+    columns: cols,
+    layout: "fitColumns",
+    pagination: true, paginationSize: 20,
+    movableColumns: true,
+    placeholder: "暂无数据"
+  });
+
+  // —— 显示界面 ——
+  $("dropzone").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnShot"].forEach(id => $(id).classList.remove("hidden"));
+  $("btnLive").classList.toggle("hidden", !demoMode);
+  $("liveBadge").classList.toggle("hidden", !demoMode);
+  $("liveFeed").classList.toggle("hidden", !demoMode);
+  setTimeout(() => Object.values(CH).forEach(c => c.resize()), 50);
+  // 玻璃卡真实折射：等布局+ECharts 稳定后再采样；rAF 内重试 2 次，规避 grid stretch 未稳定时的尺寸竞态
+  setTimeout(() => scheduleRefraction(), 90);
+
+function scheduleRefraction(attempt = 0) {
+  requestAnimationFrame(() => {
+    applyRefraction();
+    if (attempt < 1) setTimeout(() => scheduleRefraction(attempt + 1), 180);
+  });
+}
+  toast(`已加载 ${S.total} 行数据 ✅`);
+}
+
+function stripPrivate({ _申请日期, _状态类, ...rest }) { return rest; }
+
+function updateFileMeta(S) {
+  const dates = rows.filter(r => r._申请日期).map(r => r._申请日期);
+  const range = dates.length
+    ? `${_.min(dates).format("YYYY-MM-DD")} ~ ${_.max(dates).format("YYYY-MM-DD")}` : "无有效日期";
+  $("fileMeta").innerHTML = `文件：<b>${currentFileName}</b> ｜ 共 <b>${S.total}</b> 行 ｜ 时间范围：<b>${range}</b>`;
+}
+
+// ---------- 实时流入动态栏 ----------
+function pushFeedItems(newRows) {
+  const box = $("feedItems");
+  const empty = box.querySelector(".empty");
+  if (empty) empty.remove();
+  newRows.forEach(r => {
+    const stCls = r._状态类 === "已通过" ? "st-ok" : r._状态类 === "已驳回" ? "st-bad" : "st-warn";
+    const el = document.createElement("div");
+    el.className = "feedItem feedItem--new";
+    el.innerHTML =
+      `<span class="t">${(r._申请日期 || dayjs()).format("HH:mm:ss")}</span>` +
+      `<b>${r.单号}</b>` +
+      `<span>${r.申请部门} · ${r.物品名称} ×${r.数量}</span>` +
+      `<span class="route">${r.出发园区}→${r.目的园区}</span>` +
+      `<span class="stBadge ${stCls}">${r.状态}</span>`;
+    box.prepend(el);
+  });
+  // 只保留最近 N 条；超出部分从最右侧逐条滑出（镜像左侧滑入），形成流动感
+  const N = CONFIG.实时演示.动态栏保留条数;
+  const items = [...box.querySelectorAll(".feedItem:not(.feedItem--out)")];
+  while (items.length > N) {
+    const out = items.pop();          // 最右侧（最旧）一条
+    out.classList.add("feedItem--out");
+    out.addEventListener("animationend", () => out.remove(), { once: true });
+  }
+}
+function clearFeed() {
+  $("feedItems").innerHTML = '<span class="empty">等待新数据…</span>';
+}
+
+// ---------- 实时演示模式：模拟秒级数据流入 ----------
+function startLive() {
+  if (liveTimer) clearInterval(liveTimer);   // 只清定时器，不隐藏界面
+  clearFeed();
+  livePaused = false;
+  updateLiveBtn();
+  // 确保实时演示相关界面处于显示状态
+  $("liveBadge").classList.remove("hidden");
+  $("btnLive").classList.remove("hidden");
+  $("liveFeed").classList.remove("hidden");
+  liveTimer = setInterval(liveTick, CONFIG.实时演示.刷新间隔毫秒);
+}
+function stopLive() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+  $("liveBadge").classList.add("hidden");
+  $("btnLive").classList.add("hidden");
+  $("liveFeed").classList.add("hidden");
+  clearFeed();
+}
+$("btnLive").onclick = () => {
+  livePaused = !livePaused;
+  updateLiveBtn();
+};
+function updateLiveBtn() {
+  $("btnLive").textContent = livePaused ? "▶ 恢复刷新" : "⏸ 暂停刷新";
+  $("liveBadge").classList.toggle("paused", livePaused);
+}
+
+function liveTick() {
+  if (livePaused) return;
+  // 1) 生成一批新数据（时间戳为当前时刻，像 API 实时推送）
+  const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
+  const n = min + Math.floor(Math.random() * (max - min + 1));
+  const newRaw = [];
+  for (let i = 0; i < n; i++) newRaw.push(makeDemoRow(dayjs(), rows.length + i));
+  const newRows = newRaw.map(r => normalizeRow(r));
+  rows = rows.concat(newRows);
+
+  // 2) 重算并增量刷新所有视图（不销毁图表，平滑过渡）
+  const S = computeStats();
+  counters.total.update(S.total);
+  counters.qty.update(S.qty);
+  counters.dept.update(S.deptCount);
+  counters.pending.update(S.pending);
+  CH.liquid && CH.liquid.setOption(optionBuilders.liquid(S));
+  CH.status && CH.status.setOption(optionBuilders.status(S));
+  CH.trend && CH.trend.setOption(optionBuilders.trend(S));
+  CH.dept && CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"));
+  CH.item && CH.item.setOption(hbarOption(S.itemTop, "#5e5ce6"));
+  CH.cat && CH.cat.setOption(catOption(S));
+  CH.route && CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"));
+  CH.deptCat && CH.deptCat.setOption(deptCatOption(S));
+  // 明细表：新行插到最上方
+  if (detailTable) detailTable.addData(newRows.map(stripPrivate), true);
+  // 动态栏：展示新流入的数据详情
+  pushFeedItems(newRows);
+  updateFileMeta(S);
+  $("liveTime").textContent = dayjs().format("HH:mm:ss");
+}
+
+// ---------- 导出：分析结果 Excel ----------
+$("btnExportExcel").onclick = () => {
+  const S = computeStats();
+  const wb = XLSX.utils.book_new();
+  const kpi = [
+    ["指标", "数值"],
+    ["申请单总数", S.total], ["放行物品总数量", S.qty],
+    ["涉及部门数", S.deptCount], ["待处理申请", S.pending],
+    ["放行通过率", (S.passRate * 100).toFixed(1) + "%"]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpi), "汇总指标");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+    Object.entries(S.byStatus).map(([k, v]) => ({ 状态: k, 单数: v }))), "状态分布");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["时间", "申请量"], ...S.trend]), "时间趋势");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deptTop.map(d => ({ 部门: d.name, 申请量: d.value }))), "部门排行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.itemTop.map(d => ({ 物品名称: d.name, 次数: d.value }))), "高频物品");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(stripPrivate)), "明细数据");
+  XLSX.writeFile(wb, "物品放行分析结果.xlsx");
+  toast("分析结果已导出 ✅");
+};
+
+// ---------- 导出：看板截图 ----------
+$("btnShot").onclick = () => {
+  toast("正在生成截图，请稍候…");
+  html2canvas($("dashboard"), { backgroundColor: "#eef1f6", scale: 2 }).then(canvas => {
+    canvas.toBlob(b => saveAs(b, "物品放行看板.png"));
+  });
+};
+
+// ---------- 重新上传 ----------
+$("btnReupload").onclick = () => {
+  stopLive();
+  demoMode = false;
+  $("dashboard").classList.add("hidden");
+  $("dropzone").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnShot"].forEach(id => $(id).classList.add("hidden"));
+  $("fileInput").value = "";
+};
+
+// ---------- 示例数据生成 ----------
+const DEMO = {
+  depts: ["生产一部", "生产二部", "品质部", "工程部", "采购部", "行政部", "研发部", "仓储物流部"],
+  items: { 生产物料: ["PCB板", "显示屏模组", "电池电芯", "摄像头模组", "结构件"],
+    办公耗材: ["A4打印纸", "硒鼓", "标签纸"], 治工具: ["测试治具", "组装夹具"],
+    仪器设备: ["万用表", "示波器"], 样品: ["工程样机", "客户样机"], 劳保用品: ["防静电服", "无尘手套"] },
+  people: ["张三", "李四", "王五", "赵六", "陈七"],
+  parks: ["A园区", "B园区", "C园区"],
+  statuses: ["已放行", "已放行", "已放行", "已放行", "审批中", "已驳回"]
+};
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function makeDemoRow(time, seq) {
+  const cat = pick(Object.keys(DEMO.items));
+  const from = pick(DEMO.parks);
+  let to = pick(DEMO.parks);
+  if (to === from) to = DEMO.parks[(DEMO.parks.indexOf(from) + 1) % DEMO.parks.length];
+  return {
+    "申请单号": "FX" + time.format("YYYYMMDD") + "-" + String(1000 + (seq % 9000)),
+    "物品名称": pick(DEMO.items[cat]),
+    "物品类别": cat,
+    "数量": Math.ceil(Math.random() * 200),
+    "单位": "PCS",
+    "申请部门": pick(DEMO.depts),
+    "申请人": pick(DEMO.people),
+    "状态": pick(DEMO.statuses),
+    "申请日期": time.format("YYYY-MM-DD HH:mm:ss"),
+    "出发园区": from, "目的园区": to
+  };
+}
+
+$("btnDemo").onclick = () => {
+  // 先生成过去 90 天的历史数据作为"存量"
+  const list = [];
+  for (let i = 0; i < 260; i++) {
+    list.push(makeDemoRow(dayjs().subtract(Math.floor(Math.random() * 90), "day")
+      .hour(Math.floor(Math.random() * 24)).minute(Math.floor(Math.random() * 60)), i));
+  }
+  currentFileName = "示例数据（实时演示）";
+  demoMode = true;
+  processData(list);
+  startLive();   // 启动秒级实时数据流
+  toast("实时演示已启动：每秒模拟新数据流入 📡");
+};
+
+// ---------- 窗口自适应 ----------
+// ========== 液态玻璃真实折射（集成自 liquid-glass 技术：背景采样 + 边缘位移 + 色散） ==========
+const RDPR = Math.min(window.devicePixelRatio || 1, 2);
+const bgSrc = document.getElementById('bg-source');
+const bgCtxR = bgSrc.getContext('2d', { willReadFrequently: true });
+function renderBgSource() {
+  const W = window.innerWidth, H = window.innerHeight;
+  bgSrc.width = W * RDPR; bgSrc.height = H * RDPR;
+  bgSrc.style.width = W + 'px'; bgSrc.style.height = H + 'px';
+  bgCtxR.setTransform(RDPR, 0, 0, RDPR, 0, 0);
+  const g = bgCtxR.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#f6f7fb'); g.addColorStop(1, '#e7ecf5');
+  bgCtxR.fillStyle = g; bgCtxR.fillRect(0, 0, W, H);
+  const rg1 = bgCtxR.createRadialGradient(W*0.12, -H*0.08, 0, W*0.12, -H*0.08, 1200);
+  rg1.addColorStop(0, 'rgba(0,113,227,0.10)'); rg1.addColorStop(1, 'transparent');
+  bgCtxR.fillStyle = rg1; bgCtxR.fillRect(0, 0, W, H);
+  const rg2 = bgCtxR.createRadialGradient(W, 0, 0, W, 0, 1000);
+  rg2.addColorStop(0, 'rgba(52,199,89,0.08)'); rg2.addColorStop(1, 'transparent');
+  bgCtxR.fillStyle = rg2; bgCtxR.fillRect(0, 0, W, H);
+  // 极淡网格：为边缘折射提供可弯曲的纹理（商务浅色下不突兀）
+  bgCtxR.strokeStyle = 'rgba(0,0,0,0.04)'; bgCtxR.lineWidth = 1;
+  for (let x = 0; x < W; x += 40){ bgCtxR.beginPath(); bgCtxR.moveTo(x,0); bgCtxR.lineTo(x,H); bgCtxR.stroke(); }
+  for (let y = 0; y < H; y += 40){ bgCtxR.beginPath(); bgCtxR.moveTo(0,y); bgCtxR.lineTo(W,y); bgCtxR.stroke(); }
+}
+renderBgSource();
+
+function computeRefraction(buffer, p) {
+  const input = new Uint8ClampedArray(buffer);
+  const output = new Uint8ClampedArray(input.length);
+  const { Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd, Hd } = p;
+  const cx = Wp/2, cy = Hp/2;
+  const L = pad, R = pad + Wd, Tp = pad, B = pad + Hd;
+  for (let y = 0; y < Hp; y++) {
+    for (let x = 0; x < Wp; x++) {
+      const dx = Math.min(x - L, R - x), dy = Math.min(y - Tp, B - y);
+      const d = Math.min(dx, dy);
+      let rX=x,gX=x,bX=x,rY=y,gY=y,bY=y;
+      if (d >= 0 && d < edgeZone) {
+        const t = 1 - d/edgeZone, strength = Math.pow(t,1.6)*maxStrength;
+        const dist = Math.hypot(x-cx, y-cy) || 1, nx=(x-cx)/dist, ny=(y-cy)/dist;
+        rX = x + nx*strength; gX = x + nx*strength*(1-chroma); bX = x + nx*strength*(1-chroma*2);
+        rY = y + ny*strength; gY = y + ny*strength*(1-chroma); bY = y + ny*strength*(1-chroma*2);
+        rX = Math.max(0, Math.min(Wp-1, rX))|0; gX = Math.max(0, Math.min(Wp-1, gX))|0; bX = Math.max(0, Math.min(Wp-1, bX))|0;
+        rY = Math.max(0, Math.min(Hp-1, rY))|0; gY = Math.max(0, Math.min(Hp-1, gY))|0; bY = Math.max(0, Math.min(Hp-1, bY))|0;
+      }
+      const rIdx=(rY*Wp+rX)*4, gIdx=(gY*Wp+gX)*4, bIdx=(bY*Wp+bX)*4, dst=(y*Wp+x)*4;
+      output[dst]=input[rIdx]; output[dst+1]=input[gIdx+1]; output[dst+2]=input[bIdx+2]; output[dst+3]=255;
+    }
+  }
+  return output;
+}
+
+function applyRefractionTo(card) {
+  const edgeZone = 20 * RDPR, maxStrength = 14 * RDPR, chroma = 0.16;
+  let cv = card.querySelector(':scope > .lg-canvas');
+  if (!cv) {
+    cv = document.createElement('canvas'); cv.className = 'lg-canvas';
+    const tint = document.createElement('div'); tint.className = 'lg-tint';
+    const edge = document.createElement('div'); edge.className = 'lg-edge';
+    card.insertBefore(edge, card.firstChild);
+    card.insertBefore(tint, card.firstChild);
+    card.insertBefore(cv, card.firstChild);
+  }
+  const rect = card.getBoundingClientRect();
+  const W = rect.width, H = rect.height;
+  if (W < 4 || H < 4) return;
+  const padCss = 22, pad = Math.round(padCss * RDPR);
+  const Wp = Math.round((W + padCss*2) * RDPR), Hp = Math.round((H + padCss*2) * RDPR);
+  cv.width = Wp; cv.height = Hp;
+  cv.style.width = (W+padCss*2)+'px'; cv.style.height = (H+padCss*2)+'px';
+  cv.style.left = (-padCss)+'px'; cv.style.top = (-padCss)+'px';
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(bgSrc, Math.round((rect.left - padCss)*RDPR), Math.round((rect.top - padCss)*RDPR), Wp, Hp, 0, 0, Wp, Hp);
+  const img = ctx.getImageData(0,0,Wp,Hp);
+  const out = computeRefraction(img.data.buffer, { Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd: Math.round(W*RDPR), Hd: Math.round(H*RDPR) });
+  ctx.putImageData(new ImageData(out, Wp, Hp), 0, 0);
+}
+
+function applyRefraction() {
+  document.querySelectorAll('.kpi, .chartCard, #detailCard').forEach(applyRefractionTo);
+}
+
+// ---------- 窗口自适应 + 折射重绘（rAF 节流，避免 12+ 卡同步阻塞主线程） ----------
+let _refractionRaf = 0, _bgRaf = 0;
+window.addEventListener("resize", () => {
+  if (_bgRaf) cancelAnimationFrame(_bgRaf);
+  _bgRaf = requestAnimationFrame(() => { renderBgSource(); Object.values(CH).forEach(c => c.resize()); });
+  if (_refractionRaf) cancelAnimationFrame(_refractionRaf);
+  _refractionRaf = requestAnimationFrame(applyRefraction);
+});
+</script>
+</body>
+</html>
