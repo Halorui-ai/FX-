@@ -980,7 +980,7 @@ function computeOrders() {
       申请部门: arr[0].申请部门 || "",
       流入门岗: arr[0].流入门岗 || "",
       流出门岗: last.流出门岗 || "",                     // 取最后一笔记录的流转方向
-      物品分类: arr.map(r => r.物品分类).filter(Boolean).join("/"),
+      物品分类: arr.map(r => r.物品分类).find(Boolean) || "",  // 一单仅一种物品分类（多记录只是经过不同门岗）
       _日期: arr[0]._申请日期
     };
   }
@@ -1021,7 +1021,6 @@ function _computeStatsRaw() {
     trend = Object.keys(grouped).sort().map(k => [k, grouped[k]]);
   }
   // —— TOP 排行：订单级 groupBy ——
-  const firstCat = o => (o.物品分类 || "未分类").split("/")[0] || "未分类";
   const top = (fn, n = CONFIG.TOPN) =>
     _(orderList).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
       .orderBy("value", "desc").take(n).value();
@@ -1035,7 +1034,7 @@ function _computeStatsRaw() {
     typeDist: { 特级安保单: specialOrders, 普通单: orderCount - specialOrders },
     trend,
     deptTop: top(o => o.申请部门),
-    catTop: top(firstCat),
+    catTop: top(o => o.物品分类 || "未分类"),
     routeTop: _(orderList).filter(o => o.流出门岗 && o.流入门岗)
       .groupBy(o => `${o.流出门岗} → ${o.流入门岗}`)
       .map((arr, k) => ({ name: k, value: arr.length }))
@@ -1049,12 +1048,12 @@ function _computeStatsRaw() {
     deptCat: (() => {
       const matrix = {};
       orderList.forEach(o => {
-        const d = o.申请部门 || "（空）", c = firstCat(o);
+        const d = o.申请部门 || "（空）", c = o.物品分类 || "未分类";
         (matrix[d] = matrix[d] || {})[c] = (matrix[d][c] || 0) + 1;
       });
       const depts = Object.entries(matrix).map(([d, obj]) => [d, _.sum(Object.values(obj))])
         .sort((a, b) => b[1] - a[1]).slice(0, CONFIG.TOPN).map(x => x[0]);
-      const cats = Object.entries(_(orderList).map(firstCat).countBy().value())
+      const cats = Object.entries(_(orderList).map(o => o.物品分类 || "未分类").countBy().value())
         .sort((a, b) => b[1] - a[1]).map(x => x[0]);
       return { depts, cats, series: cats.map(cat => ({ name: cat, data: depts.map(d => matrix[d][cat] || 0) })) };
     })(),
@@ -1065,20 +1064,19 @@ function _computeStatsRaw() {
       let npi = 0, general = 0, other = 0;
       orderList.forEach(o => {
         if (o.特保) { npi++; }
-        else {
-          const cats = (o.物品分类 || "").split("/");
-          if (cats.some(c => c.includes("生產物料") || c.includes("生产物料"))) general++;
-          else other++;
-        }
+        else if ((o.物品分类 || "").includes("生產物料") || (o.物品分类 || "").includes("生产物料")) general++;
+        else other++;
       });
       return { NPI物料: npi, 一般物料: general, 非物料類: other };
     })(),
     // 超时统计细分（广义超时 = 放行超时 ∪ 接收超时；接收超时含「已接收但接收时超时」与「超时未接收」两个子集）
     timeoutAll: orderList.filter(o => o.超时).length,
+    // NPI（新产品）即特保单；特保单的物品分类仅「A级物料」与「新产品机台」两类，两者之和 = NPI超时
     timeoutNPI: orderList.filter(o => o.特保 && o.超时).length,
-    timeoutGeneral: orderList.filter(o => !o.特保 && o.超时 &&
-      (o.物品分类 || "").split("/").some(c => c.includes("生產物料") || c.includes("生产物料"))).length,
-    timeoutMachine: orderList.filter(o => o.超时 && (o.物品分类 || "").includes("机台")).length,
+    timeoutNPIMaterial: orderList.filter(o => o.特保 && o.超时 &&
+      ((o.物品分类 || "").includes("A级物料") || (o.物品分类 || "").includes("A級物料"))).length,
+    timeoutNPIMachine: orderList.filter(o => o.特保 && o.超时 &&
+      ((o.物品分类 || "").includes("机台") || (o.物品分类 || "").includes("機台"))).length,
     // 超时By部门（订单级）
     timeoutByDept: _(orderList).filter(o => o.放行超时)
       .groupBy(o => o.申请部门 || "（空）")
@@ -1088,7 +1086,7 @@ function _computeStatsRaw() {
     timeoutByCat: (() => {
       const cats = {};
       orderList.filter(o => o.放行超时).forEach(o => {
-        const c = (o.物品分类 || "未分类").split("/")[0] || "未分类";
+        const c = o.物品分类 || "未分类";
         cats[c] = (cats[c] || 0) + 1;
       });
       return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -1385,7 +1383,7 @@ const CARD_DEFS = {
         ["放行单总数", S.orderCount, "var(--accent)"], ["NPI物料", mc.NPI物料, "var(--purple)"],
         ["一般物料", mc.一般物料, "var(--accent2)"], ["非物料类", mc.非物料類, "var(--txt2)"],
         ["超时总数", S.timeoutAll, "var(--bad)"], ["NPI超时", S.timeoutNPI, "var(--purple)"],
-        ["特保物料超时", S.timeoutNPI, "var(--warn)"], ["待保攜台超时", S.timeoutMachine, "var(--cyan)"]
+        ["特保物料超时", S.timeoutNPIMaterial, "var(--warn)"], ["特保机台超时", S.timeoutNPIMachine, "var(--cyan)"]
       ];
       body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:100%;align-content:center">' +
         items.map(([l, v, c]) => '<div style="text-align:center;padding:6px 4px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.25)">' +
@@ -1840,7 +1838,7 @@ const KPI_DETAIL = {
     },
     chart(S) {
       const d = _(Object.values(orders)).filter(o => o.特保)
-        .groupBy(o => (o.物品分类 || "未分类").split("/")[0] || "未分类")
+        .groupBy(o => o.物品分类 || "未分类")
         .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").value();
       return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
         xAxis: { type: "value", ...baseAxis },
@@ -2103,7 +2101,7 @@ function liveTick() {
   const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
   const n = min + Math.floor(Math.random() * (max - min + 1));
   const newRaw = [];
-  for (let i = 0; i < n; i++) newRaw.push(makeDemoRow(dayjs(), rows.length + i));
+  for (let i = 0; i < n; i++) newRaw.push(...makeDemoOrder(dayjs(), rows.length + i));
   const newRows = newRaw.map(r => normalizeRow(r));
   rows = rows.concat(newRows);
   invalidateStats();          // 新增数据后失效缓存，确保重算
@@ -2194,50 +2192,81 @@ const DEMO = {
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const pad = (n, l) => String(n).padStart(l, "0");
 
-function makeDemoRow(time, seq) {
+// 模拟一张放行单（符合真实业务规则）：
+//   ① 一单建单后物品种类固定（物品分类整单唯一），多记录仅因经过不同门岗产生；
+//   ② 超时/接收状态记在最后一笔记录上（最后一笔决定整单状态）。
+// 返回 1~3 条记录的数组（每条 = 经过一个门岗）。
+function makeDemoOrder(time, seq) {
   const special = Math.random() < 0.18;  // 约18%为特级安保单（单号前缀 WF9897）
   const orderNo = `${special ? CONFIG.特保单号前缀 : CONFIG.普通单号标识}${time.format("YYMMDD")}${pad(1 + (seq % 999999), 6)}`;
+  // —— 整单固定属性：物品类型/分类/申请人/门岗路线 ——
   const itemType = special ? pick(["新产品A级物料", "新产品机台"]) : "普通物品";
+  const category = special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品")));
+  const itemName = pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]);
+  const applicant = pick(DEMO.people), dept = pick(DEMO.depts), qty = Math.ceil(Math.random() * 200);
   const from = pick(DEMO.gates);
   let to = pick(DEMO.gates);
   if (to === from) to = DEMO.gates[(DEMO.gates.indexOf(from) + 1) % DEMO.gates.length];
-  const r = Math.random();
-  const arrived = r < 0.62;                 // 62% 已到达流入门岗
-  const releaseTimeout = !arrived && Math.random() < 0.45;  // 在途中部分超时
-  const released = arrived || Math.random() < 0.3;
-  const actualGate = arrived ? to : (released ? from : "");
-  const releaseTime = released ? time.add(Math.floor(Math.random() * 120), "minute") : null;
-  const recv = arrived && Math.random() < 0.55;
-  const recvTime = recv ? releaseTime.add(Math.floor(Math.random() * 90) + 10, "minute") : null;
-  const recvTimeout = arrived && !recv && Math.random() < 0.3;
-  return {
-    "申请日期": time.format("YYYY/MM/DD HH:mm:ss"),
-    "放行单号": orderNo,
-    "物品类型": itemType,
-    "申请人姓名": pick(DEMO.people),
-    "申请人部门": pick(DEMO.depts),
-    "放行单流出门岗": from,
-    "放行单流入门岗": to,
-    "实际放行门岗": actualGate,
-    "放行人姓名": released ? pick(DEMO.people) : "",
-    "实际放行时间": releaseTime ? releaseTime.format("YYYY/MM/DD HH:mm:ss") : "",
-    "放行状态": released ? (Math.random() < 0.06 ? "異常" : "正常") : "",
-    "放行超时": releaseTimeout ? 1 : 0,
-    "接收时间": recvTime ? recvTime.format("YYYY/MM/DD HH:mm:ss") : "",
-    "接收超时": recvTimeout ? 1 : 0,
-    "接收状态": recv ? "正常" : "未接收",
-    "接收人姓名": recv ? pick(DEMO.people) : "",
-    "物品分类": special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品"))),
-    "放行物品名称": pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]),
-    "放行数量": Math.ceil(Math.random() * 200),
-    "厂区": "鄭州"
-  };
+  // —— 整单状态 ——
+  const arrived = Math.random() < 0.62;                       // 62% 已到达流入门岗
+  const releaseTimeout = Math.random() < (arrived ? 0.18 : 0.45);  // 放行超时（到达超时/在途超时）
+  const recv = arrived && Math.random() < 0.55;               // 已接收
+  const recvTimeout = arrived && Math.random() < 0.3;         // 接收超时（含已接收但超时 + 超时未接收）
+  // —— 门岗路径：流出门岗 → (中途门岗) → 流入门岗(已到达时) ——
+  const path = [from];
+  if (arrived) {
+    if (Math.random() < 0.4) { const mid = pick(DEMO.gates); if (mid !== from && mid !== to) path.push(mid); }
+    path.push(to);
+  } else if (Math.random() < 0.5) {
+    const mid = pick(DEMO.gates); if (mid !== from && mid !== to) path.push(mid);
+  }
+  // —— 逐门岗生成放行记录；超时标记只打在最后一笔 ——
+  const recs = [];
+  let t = time.add(Math.floor(Math.random() * 60), "minute");
+  path.forEach((gate, idx) => {
+    if (idx > 0) t = t.add(Math.floor(Math.random() * 120) + 30, "minute");
+    recs.push({
+      "申请日期": time.format("YYYY/MM/DD HH:mm:ss"),
+      "放行单号": orderNo,
+      "物品类型": itemType,
+      "申请人姓名": applicant,
+      "申请人部门": dept,
+      "放行单流出门岗": from,
+      "放行单流入门岗": to,
+      "实际放行门岗": gate,
+      "放行人姓名": pick(DEMO.people),
+      "实际放行时间": t.format("YYYY/MM/DD HH:mm:ss"),
+      "放行状态": Math.random() < 0.06 ? "異常" : "正常",
+      "放行超时": (idx === path.length - 1 && releaseTimeout) ? 1 : 0,
+      "接收时间": "",
+      "接收超时": 0,
+      "接收状态": "",
+      "接收人姓名": "",
+      "物品分类": category,
+      "放行物品名称": itemName,
+      "放行数量": qty,
+      "厂区": "鄭州"
+    });
+  });
+  // —— 接收字段仅记在最后一笔（接收发生在流入门岗） ——
+  if (arrived) {
+    const lastRec = recs[recs.length - 1];
+    if (recv) {
+      lastRec["接收时间"] = t.add(Math.floor(Math.random() * 90) + 10, "minute").format("YYYY/MM/DD HH:mm:ss");
+      lastRec["接收状态"] = "正常";
+      lastRec["接收人姓名"] = pick(DEMO.people);
+    } else {
+      lastRec["接收状态"] = "未接收";
+    }
+    if (recvTimeout) lastRec["接收超时"] = 1;
+  }
+  return recs;
 }
 
 $("btnDemo").onclick = async () => {
   const list = [];
-  for (let i = 0; i < 300; i++) {
-    list.push(makeDemoRow(dayjs().subtract(Math.floor(Math.random() * 5), "day")
+  for (let i = 0; i < 200; i++) {
+    list.push(...makeDemoOrder(dayjs().subtract(Math.floor(Math.random() * 5), "day")
       .hour(8 + Math.floor(Math.random() * 12)).minute(Math.floor(Math.random() * 60)), i));
   }
   currentFileName = "示例数据（实时演示）";
