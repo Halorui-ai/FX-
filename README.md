@@ -50,19 +50,49 @@
 
 ```
 液态玻璃看板Qoder/
+│
+│  ── 主交付物 ──
 ├── dashboard-release-monitor-v5.1.html  # ★ 当前主交付物（v5.1 GDMS 增强版）
-├── dashboard-release-monitor-v5.html   # 归档：v5.0 自由布局版
-├── dashboard-release-monitor-v4.html   # 归档：v4.0 模块化卡片版
-├── dashboard-release-monitor-v3.1.html # 归档：v3.1 后台解析·内联依赖版
-├── dashboard-release-monitor-v3.html   # 归档：v3.0 性能自适应版
-├── dashboard-release-monitor-v2.html   # 归档：v2.x 实时动态版
+│
+│  ── 归档版本 ──
+├── dashboard-release-monitor-v5.html    # 归档：v5.0 自由布局版
+├── dashboard-release-monitor-v4.html    # 归档：v4.0 模块化卡片版
+├── dashboard-release-monitor-v3.1.html  # 归档：v3.1 后台解析·内联依赖版
+├── dashboard-release-monitor-v3.html    # 归档：v3.0 性能自适应版
+├── dashboard-release-monitor-v2.html    # 归档：v2.x 实时动态版
+│
+│  ── 模板与预研 ──
 ├── dashboard-live-glass-refraction-fixed.html  # v2 的直接模板（折射效果修正版）
 ├── dashboard-live-glass-refraction.html        # 历史版本：折射效果实验版
 ├── dashboard-live-glass.html                   # 历史版本：基础实时玻璃看板
 ├── liquid-glass-demo.html                      # 技术预研：液态玻璃效果演示
 ├── liquid-glass-compare.html                   # 技术预研：效果对比页
 ├── liquid-glass-vue.html                       # 技术预研：Vue 集成验证
+│
+│  ── 工具与实验 ──
+├── dashboard-style-gallery.html                # 正式：看板视觉风格库（样式展示与选型）
+├── xls-to-csv-converter.html                   # 正式：xls→csv 离线转换工具（配合看板使用）
+├── _gridstack_test.html                        # 探针：gridstack 布局引擎独立测试页
+│
+│  ── Python 数据脚本 ──
+├── gen_monitor_data.py                         # 模拟数据生成器
+├── gen_monitor_data02.py                       # 模拟数据生成器 v2
+├── gen_monitor_data_big.py                     # 大数据量模拟生成器
+├── make_xlsx.py                                # 测试用 xlsx 生成
+├── make_xlsx2.py                               # 测试用 xlsx 生成 v2
+│
+│  ── 截图 ──
+├── v5.1-default-view.png                       # v5.1 默认视图截图
+├── v5.1-data-loaded.png                        # v5.1 数据加载后截图
+├── v5.1-gdms-view.png                          # v5.1 GDMS 预设视图截图
+├── v5.1-screenshot.png                         # v5.1 完整看板截图
+│
+│  ── 数据文件（测试/示例，非交付物） ──
+├── 物品放行监控*.xlsx / .xls / .csv            # 测试数据文件（含多种格式与量级）
+│
 ├── README.md                                   # 本文档
+├── .gitignore                                  # Git 忽略规则
+│
 └── lib/                                        # 离线依赖库（禁止改为 CDN 引用）
     ├── echarts.min.js            # 图表引擎
     ├── echarts-liquidfill.min.js # 水球图（完成率 liquidFill）
@@ -72,12 +102,13 @@
     ├── lodash.min.js             # 工具函数（groupBy/orderBy 等）
     ├── countUp.umd.js            # KPI 数字滚动动画
     ├── tabulator.min.js          # 明细数据表格
-    ├── tabulator_midnight.min.css
+    ├── tabulator_midnight.min.css # Tabulator 暗色主题
     ├── toastify.js / toastify.css # 轻提示
     ├── html2canvas.min.js        # 看板截图
     ├── gridstack-all.min.js      # 二维网格拖拽布局引擎（v5）
     ├── gridstack.min.css         # gridstack 样式
     ├── FileSaver.min.js          # 文件保存
+    ├── Sortable.min.js           # ⚠️ 仅归档 v4.html 使用；v5+ 已改用 gridstack，待 v4 归档后可删除
     └── vue.global.prod.js        # Vue（预研页使用，主看板未使用）
 ```
 
@@ -188,6 +219,22 @@
   ```
 - **数学自洽**：`纳入统计单 + 在途未超时单 = 放行单总数`。
 
+#### 超时分类体系（广义超时）
+
+「超时」是一个广义概念，完整分类如下（均为**订单级**判定）：
+
+```
+超时总数（广义超时 = 放行超时 ∪ 接收超时）
+├── 放行超时（任一记录 _放行超时 → 整单超时）
+│   ├── 在途超时：尚未到达流入门岗且已超时（流入门岗还未放行就已超时）
+│   └── 到达超时：流入门岗放行时已超时
+└── 接收超时（任一记录 _接收超时 → 整单接收超时）
+    ├── 已接收但接收时超时：有接收时间 && 接收超时标记为真
+    └── 超时未接收：无接收时间 && 接收超时标记为真
+```
+
+> 注：「在途超时」与「到达超时」互斥，两者之和 = 放行超时单数；「已接收但超时」与「超时未接收」互斥，两者之和 = 接收超时单数。标题明确标注「放行超时By××」的卡片仅统计放行超时；标题为泛称「超时」的指标（超时总数/NPI超时/待保攜台超时等）均使用广义超时口径。
+
 ### 2.3 状态标识说明
 
 | 状态字段 | 取值/判定 | 业务含义 |
@@ -199,44 +246,201 @@
 
 > 超时判定使用 `isTimeout()` 函数，对字段值做 `trim().toUpperCase()` 后与 `CONFIG.超时标记` 逐一比对，兼容数字、中英文等多种导出格式。
 
-### 2.4 看板卡片分析逻辑总览
+### 2.4 全量卡片统计逻辑汇总（v5.1 共 21 张卡片）
 
-#### KPI 卡片区（顶部，共 5 张）
+> 本节记录 `dashboard-release-monitor-v5.1.html` 中全部卡片的统计口径、数据来源与计算层级，是审计口径一致性的唯一基准。
 
-| 卡片 | 主指标 | 点击下钻的二级详情 |
-|------|--------|--------------------|
-| **放行单总数**（overview） | 放行单总数 + 记录数副标题 | 多维度总览：单据类型 / 到达状态 / 超时状态 三维度切换，饼图 + 明细联动筛选 |
-| **特级安保单**（special） | 特保单数 | 特保记录数、占比、特保物品分类分布条形图、特保明细表 |
-| **在途超时未放行**（transitTimeout） | 在途超时单数 | 其中特保单数、占比、按部门分布条形图、在途超时明细表 |
-| **超时未接收**（receiveTimeout） | 超时未接收记录数 | 涉及部门数、占比、按部门分布条形图、超时未接收明细表 |
-| **放行结案完成率**（rate） | liquidFill 水球图显示完成率 | 完成率、结案完成单、纳入统计单、在途未超时(不纳入)，三段式饼图，纳入统计记录明细表 |
+#### 2.4.1 统计层级说明
 
-#### 图表区（中部）
+| 层级 | 含义 | 数据来源 |
+|------|------|----------|
+| **记录级** | 以 `rows[]` 中的每一行为统计对象 | `rows.filter(...)` |
+| **订单级** | 以 `computeOrders()` 输出的订单对象为统计对象，任一记录命中即整单命中 | `orderList.filter(...)` |
 
-| 图表 | 分析逻辑 |
+> **全局口径原则**：一张放行单可含多条门岗放行记录，因此看板所有统计数字**一律以「单」（订单级）为计算单位**。仅以下场景保留记录级：① `kpi_overview` 副标题「记录 N 条」（明确标注）；② 明细数据表与下钻明细表（展示记录本身）；③ 实时流入动态栏（逐笔模拟流入）。
+
+#### 2.4.2 KPI 指标卡（共 5 张）
+
+| 卡片 ID | 名称 | 统计层级 | 数据源 | 精确计算公式 |
+|---------|------|----------|--------|-------------|
+| `kpi_overview` | 放行单总数 | 订单级 + 记录级 | `S.orderCount` / `S.total` | 主数字 = 按放行单号去重的订单数；副标题 = `rows.length` |
+| `kpi_special` | 特级安保单 | 订单级 | `S.specialOrders` | `orderList.filter(o => o.特保).length` |
+| `kpi_transit` | 在途超时未放行 | 订单级 | `S.transitTimeoutOrders.length` | `orderList.filter(o => o.在途超时).length`，其中 `在途超时 = !已到达 && 放行超时` |
+| `kpi_receive` | 超时未接收 | 订单级 | `S.receiveTimeoutOrders.length` | `orderList.filter(o => o.超时未接收).length`，其中订单 `超时未接收 = 任一记录满足（实际放行门岗非空 && 无接收时间 && 接收超时）` |
+| `kpi_rate` | 放行结案完成率 | 订单级 | `S.closeRate` | `closedOrders / scopedOrders`（公式见 2.2 结案完成率） |
+
+#### 2.4.3 分布分析图表（共 6 张）
+
+| 卡片 ID | 名称 | 统计层级 | 数据源 | 精确计算公式 |
+|---------|------|----------|--------|-------------|
+| `chart_type` | 单据类型分布 | 订单级 | `S.typeDist` | `{特级安保单: specialOrders, 普通单: orderCount - specialOrders}` |
+| `chart_trend` | 申请量时间趋势 | 订单级 | `S.trend` | 按订单 `_日期`（申请日期）计数；跨度 >62天按月聚合 |
+| `chart_dept` | 申请部门 TOP10 | 订单级 | `S.deptTop` | 按 `o.申请部门` groupBy 订单计数，取前 N |
+| `chart_cat` | 物品分类分布 | 订单级 | `S.catTop` | 按订单首分类 `物品分类.split("/")[0]` groupBy 订单计数，取前 N |
+| `chart_route` | 门岗流转方向 TOP10 | 订单级 | `S.routeTop` | 订单取最后一笔记录的 `流出门岗 → 流入门岗`，过滤均非空后 groupBy 取前 N |
+| `chart_status` | 放行/接收状态分布 | 订单级 | `S.statusDist` | 见下方 statusDist 详细口径 |
+| `chart_deptCat` | 部门×物品分类交叉 | 订单级 | `S.deptCat` | 按 `o.申请部门` × 订单首分类 交叉计数矩阵 |
+
+**`statusDist` 四项精确口径：**
+
+| 分类 | 公式 | 说明 |
+|------|------|------|
+| 放行异常 | `orderList.filter(o => o.放行异常).length` | **订单级**（任一记录含「异常/異常」即整单异常） |
+| 放行超时 | `orderList.filter(o => o.放行超时).length` | **订单级**（一张单任一记录超时即整单超时） |
+| 接收超时 | `orderList.filter(o => o.接收超时).length` | **订单级**，广义接收超时（含「已接收但接收时超时」与「超时未接收」两个子集） |
+| 已接收 | `orderList.filter(o => o.已接收).length` | **订单级**（任一记录有接收时间即整单已接收） |
+
+#### 2.4.4 异常监控卡（共 2 张）
+
+| 卡片 ID | 名称 | 统计层级 | 数据源 | 精确计算公式 |
+|---------|------|----------|--------|-------------|
+| `alert_transit` | 在途超时·流入门岗未放行 | 订单级 | `S.transitTimeoutOrders` | 与 `kpi_transit` 同一数据源，展示前 3 单预览 |
+| `alert_receive` | 超时未接收 | 订单级 | `S.receiveTimeoutOrders` | 与 `kpi_receive` 同一数据源，展示前 3 单预览（单号/部门/流入门岗） |
+
+#### 2.4.5 明细数据表（1 张）
+
+| 卡片 ID | 名称 | 统计层级 | 数据源 |
+|---------|------|----------|--------|
+| `table_detail` | 明细数据 | 记录级 | 全量 `rows`，支持搜索/排序/分页/导出 |
+
+#### 2.4.6 GDMS 超时管控卡（v5.1 新增，共 6 张）
+
+| 卡片 ID | 名称 | 统计层级 | 数据源 | 精确计算公式 |
+|---------|------|----------|--------|-------------|
+| `gdms_summary` | 放行汇总指标 | 订单级 | `S.orderCount` + `S.materialClass` + `S.timeoutAll/NPI/General/Machine` | 8 格 KPI 网格，见下方详细口径 |
+| `gdms_timeout_trend` | 超时+结案率日趋势 | 订单级（每日重算） | `S.timeoutTrend` | 按天 groupBy 后重新按订单聚合，见下方 |
+| `gdms_timeout_cat` | 放行超时By物品类型 | 订单级 | `S.timeoutByCat` | `orderList.filter(o => o.放行超时)` → 按 `物品分类.split("/")[0]` 分组 |
+| `gdms_timeout_duration` | 超时By时间段分析 | 订单级 | `S.timeoutByDuration` | `orderList.filter(o => o.放行超时)` → 按申请日期至今时长分 4 桶 |
+| `gdms_timeout_dept` | 放行超时By部门 | 订单级 | `S.timeoutByDept` | `orderList.filter(o => o.放行超时)` → 按申请部门 groupBy 取前 12 |
+| `gdms_unclosed` | 超时未结案查询 | 订单级 | `S.transitTimeoutOrders` | 与 `kpi_transit` / `alert_transit` 同一数据源，展示前 20 单表格 |
+
+**`gdms_summary` 8 格指标详细口径：**
+
+| 格位 | 标签 | 数据源 | 公式 |
+|------|------|--------|------|
+| 1 | 放行单总数 | `S.orderCount` | 订单级去重计数 |
+| 2 | NPI物料 | `S.materialClass.NPI物料` | `orderList.filter(o => o.特保).length` |
+| 3 | 一般物料 | `S.materialClass.一般物料` | 非特保 && 物品分类含「生產物料」或「生产物料」 |
+| 4 | 非物料類 | `S.materialClass.非物料類` | 其余订单 |
+| 5 | 超时总数 | `S.timeoutAll` | 广义超时（订单级）：`orderList.filter(o => o.超时).length`，= 放行超时 ∪ 接收超时 |
+| 6 | NPI超时 | `S.timeoutNPI` | `orderList.filter(o => o.特保 && o.超时).length`（广义超时） |
+| 7 | 特保物料超时 | `S.timeoutNPI` | ⚠️ **与第 6 格完全相同**，重复展示 |
+| 8 | 待保攜台超时 | `S.timeoutMachine` | `orderList.filter(o => o.超时 && 物品分类含"机台").length`（广义超时） |
+
+**`gdms_timeout_trend` 每日聚合逻辑：**
+
+```js
+// 按天 groupBy 后，每天内重新按订单聚合：
+timeout = arr.some(r => r._放行超时) || arr.some(r => r._接收超时)   // 广义超时（含全部接收超时）
+transitTimeout = arr.some(r => r._放行超时) && !arr.some(r => r._已到达)
+closeRate = closed / (closed + arrivedTimeout + transitTimeout)
+```
+
+#### 2.4.7 二级详情面板（KPI_DETAIL）
+
+| detailKey | 对应卡片 | chips 指标 | 图表层级 | 明细过滤条件 |
+|-----------|----------|-----------|----------|-------------|
+| `overview` | kpi_overview | 订单/记录总数 | 三维度切换，饼图与芯片计数均为订单级（命中记录所属单去重） | 按维度 filter 记录 |
+| `special` | kpi_special | 特保单数(订单级)、特保记录数(记录级)、占比 | 特保单按首分类(订单级) | `r._特保` |
+| `transitTimeout` | kpi_transit / alert_transit / gdms_unclosed | 在途超时单数、其中特保、占比 | 在途超时单按部门(订单级) | `orders[r.放行单号].在途超时` |
+| `receiveTimeout` | kpi_receive / alert_receive | 超时未接收单数、涉及部门、占全部单比 | 超时未接收单按部门(订单级) | `orders[r.放行单号].超时未接收` |
+| `rate` | kpi_rate | 完成率、结案完成单、纳入统计单、在途未超时 | 三段式饼图(订单级) | `o.已到达 \|\| o.在途超时` |
+
+---
+
+### 2.5 统计口径不一致问题清单
+
+> 以下问题经逐行审计 `computeStats()` 与 `CARD_DEFS` 交叉比对确认，建议后续版本统一修正。
+
+#### ❗ 问题 1：「放行超时」在 chart_status 与 GDMS 卡片中统计层级不同（✅ 已修复）
+
+**业务规则确认**：一张放行单经过多个门岗产生多条记录，该单是否超时由最后一笔记录的超时字段决定，超时是**订单级**属性。因此订单级是正确口径。
+
+| 卡片 | 统计层级 | 状态 |
+|------|----------|------|
+| `gdms_timeout_dept` / `gdms_timeout_cat` / `gdms_timeout_duration` | 订单级 | ✅ 正确 |
+| `chart_status`（statusDist.放行超时） | ~~记录级~~ → **订单级** | ✅ 已修正为 `orderList.filter(o => o.放行超时).length` |
+| `overview` 详情「超时状态」维度 | ~~记录级~~ → **订单级** | ✅ 已修正为 `orders[r.放行单号].放行超时` |
+
+#### ❗ 问题 2：「超时总数」(timeoutAll) 口径不完整（✅ 已修复）
+
+**业务规则确认**：超时总数是广义概念 = 放行超时（含在途超时 + 到达超时）∪ 接收超时（含已接收但接收时超时 + 超时未接收），分类体系见 2.2「超时分类体系」。
+
+| 指标 | 原口径 | 修正后 |
+|------|--------|--------|
+| `S.timeoutAll`（超时总数） | 放行超时 ∪ **仅超时未接收**，漏「已接收但超时」 | ✅ `orderList.filter(o => o.超时).length`（广义超时） |
+| `S.timeoutNPI`（NPI超时） | 仅 `特保 && 放行超时` | ✅ `特保 && 广义超时` |
+| `S.timeoutGeneral` | 仅 `放行超时 && 生产物料` | ✅ `广义超时 && 生产物料` |
+| `S.timeoutMachine`（待保攜台超时） | 仅 `放行超时 && 机台` | ✅ `广义超时 && 机台` |
+| `gdms_timeout_dept/cat/duration` | 仅 `o.放行超时` | ✅ 保持不变（卡片标题即「放行超时By××」，口径与标题一致） |
+
+配套改动：`computeOrders()` 新增订单级属性 `接收超时`（任一记录 `_接收超时`）与 `超时`（= 放行超时 ∪ 接收超时）。
+
+#### ❗ 问题 3：gdms_timeout_trend 的「总超时」口径不完整（✅ 已修复）
+
+- **原口径**：`_放行超时 || _接收超时未接收`，漏「已接收但接收时超时」
+- **修正后**：`_放行超时 || _接收超时`（广义超时，与 timeoutAll 一致）
+- 主看板 statusDist 的「接收超时」同步改为订单级广义接收超时，两处口径现已对齐。
+
+#### ❗ 问题 4：gdms_summary 第 6/7 格重复展示相同数据
+
+| 格位 | 标签 | 实际数据 |
+|------|------|----------|
+| 第 6 格 | NPI超时 | `S.timeoutNPI` |
+| 第 7 格 | 特保物料超时 | `S.timeoutNPI` ← **相同** |
+
+**影响**：8 格中有 2 格显示完全相同的数字，浪费展示位。
+
+#### ❗ 问题 5：物品分类 split 处理不一致
+
+| 场景 | 处理方式 |
 |------|----------|
-| **单据类型分布**（特保/普通） | 按订单级特保属性分组的环形饼图 |
-| **申请量时间趋势** | 按申请日期聚合的折线面积图；日期跨度 > 62 天自动按月聚合，> 40 个点启用缩放 |
-| **申请部门 TOP10** | 按申请部门分组计数的横向条形图（取前 10） |
-| **物品分类分布** | 按物品分类计数的纵向柱状图 |
-| **门岗流转方向 TOP10** | 按「流出门岗 → 流入门岗」组合分组的横向条形图 |
-| **放行/接收状态分布** | 已接收 / 放行超时 / 接收超时 / 放行异常 四类计数环形饼图 |
-| **部门 × 物品分类交叉分布** | 堆叠柱状图，横轴为 TOP10 部门，每根柱按物品分类堆叠 |
+| `materialClass`（三分类） | `split("/")` 后 `.some(c => c.includes(...))`，检查所有子项 |
+| `timeoutByCat`（超时By物品类型） | `split("/")[0]`，**只取第一个** |
+| `special` 详情图表 | 直接用 `r.物品分类`（不 split） |
 
-#### 专项分析卡片区（图表区下方，共 2 张）
+**影响**：物品分类为 `"A/B"` 的订单，在三分类中可能被归为一般物料，但在超时By物品类型中只统计为 A。
 
-| 卡片 | 内容 |
-|------|------|
-| **🚧 在途超时 · 流入门岗未放行** | 显示总数 + 前 3 张单据预览（单号/部门/门岗），点击下钻完整明细 |
-| **📭 超时未接收** | 显示总数 + 前 3 条记录预览，点击下钻完整明细 |
+#### ❗ 问题 6：statusDist「接收超时」实际是「超时未接收」子集（✅ 已修复）
 
-#### 明细数据表（底部）
+- 原口径：字段名叫「接收超时」，但统计的是 `receiveTimeoutRows` = `_接收超时未接收`（需同时满足：实际放行门岗非空、无接收时间、接收超时标记为真）
+- **修正后**：`orderList.filter(o => o.接收超时).length`，订单级广义接收超时（含「已接收但接收时超时」与「超时未接收」两个子集）
+- 「超时未接收」子集仍由专属卡片 `kpi_receive` / `alert_receive` 展示，口径不变。
 
-全量放行记录的 Tabulator 表格，支持**列搜索、排序、分页、列拖动**。大数据量（≥3 万行）时自动启用渐进渲染 + 虚拟 DOM。
+#### ❗ 问题 7：timeoutGeneral 可能重复计数（✅ 已修复）
 
-#### 实时流入动态栏（仅演示模式）
+原实现：
 
-演示模式下顶部显示「实时流入」滚动栏，每秒模拟 1 条新单据流入，展示单号、部门、物品、门岗路线与状态徽标。
+```js
+timeoutGeneral = orderList.filter(o => !o.特保 && o.放行超时 && 含"生產物料").length
+              + orderList.filter(o => !o.特保 && o.放行超时 && 含"生产物料").length
+```
+
+若某订单物品分类同时包含「生產物料」和「生产物料」（如 `"生產物料(非A類)/生产物料"`），会被**计数两次**。
+
+**修正后**：改为 `split("/").some(c => 含"生產物料" || 含"生产物料")` 单一 filter（与 materialClass 的 split 处理方式对齐），不会重复计数；同时超时口径同步改为广义超时（见问题 2）。
+
+#### ❗ 问题 8：默认视图多个统计数字误用记录级口径（✅ 已修复）
+
+**业务规则确认**：一张放行单可含多条门岗放行记录，看板所有统计数字一律以「单」（订单级）为计算单位。
+
+本次统一修正的记录级统计：
+
+| 位置 | 原口径（记录级） | 修正后（订单级） |
+|------|------------------|------------------|
+| `kpi_receive` / `alert_receive` | `receiveTimeoutRows.length` | `receiveTimeoutOrders.length`（新增订单属性 `超时未接收`） |
+| `chart_trend` 申请量趋势 | 记录按日期计数 | 订单按申请日期计数 |
+| `chart_dept` 部门 TOP10 | 记录 groupBy | 订单 groupBy |
+| `chart_cat` 物品分类分布 | 记录 groupBy | 订单按首分类 `split("/")[0]` groupBy |
+| `chart_route` 门岗流转 | 记录 groupBy | 订单取最后一笔记录的流转方向 groupBy（新增订单属性 `流出门岗`） |
+| `statusDist.放行异常` / `已接收` | 记录 filter | 订单属性 `放行异常` / `已接收`（任一记录命中即整单命中） |
+| `chart_deptCat` 交叉分布 | 记录矩阵 | 订单矩阵（部门 × 首分类） |
+| overview 详情饼图/芯片 | 命中记录数 | 命中记录所属单去重数 |
+| special 详情图表 | 特保记录按分类 | 特保单按首分类 |
+| receiveTimeout 详情 chips/图表 | 记录数/记录 groupBy | 单数/订单 groupBy |
+| Excel 导出汇总/超时未接收 Sheet/部门排行 | 记录级 | 订单级 |
+
+**保留记录级的场景**（均有明确标注或展示性质）：`kpi_overview` 副标题「记录 N 条」、明细数据表与各下钻明细表、实时流入动态栏、special 详情 chip「特保记录数」。
 
 ---
 
@@ -501,7 +705,7 @@
 
 ### 4.3 发布流程
 
-1. **开发**：在 `dashboard-release-monitor-v2.html` 上修改，遵循[第九章开发规范](#九开发规范)。
+1. **开发**：在 `dashboard-release-monitor-v5.1.html` 上修改，遵循[第九章开发规范](#九开发规范)。
 2. **自测**：
    - 载入演示数据，确认 KPI / 图表 / 实时模拟 / 二级详情全部正常；
    - 浏览器控制台**零错误、零警告**；
@@ -576,7 +780,7 @@
 
 ### 5.3 代码结构（单文件分区）
 
-`dashboard-release-monitor-v2.html` 采用单文件架构，内部按职责分区：
+`dashboard-release-monitor-v5.1.html` 采用单文件架构，内部按职责分区：
 
 | 区块 | 位置 | 内容 |
 |------|------|------|
@@ -664,7 +868,7 @@
 ### 7.2 启动方式
 
 1. 将项目文件夹（含 `lib/` 与 HTML）拷贝到目标电脑。
-2. 双击 `dashboard-release-monitor-v5.html`，浏览器自动打开（`file://` 协议）。
+2. 双击 `dashboard-release-monitor-v5.1.html`，浏览器自动打开（`file://` 协议）。
 3. 首次打开会根据硬件自动选择高画质/流畅模式（顶栏标签可见）。
 4. 三种载入数据方式：
    - **拖拽**：将导出文件拖入上传区；
@@ -749,7 +953,7 @@ v3 新增 `PERF` 自适应层，不属于 `CONFIG`，位于脚本顶部：
 
 ### 9.1 代码组织原则
 
-- **单文件架构**：所有逻辑保持在 `dashboard-release-monitor-v2.html` 内，便于离线分发与版本管理；不拆分外部 JS 文件。
+- **单文件架构**：所有逻辑保持在 `dashboard-release-monitor-v5.1.html` 内，便于离线分发与版本管理；不拆分外部 JS 文件。
 - **配置与逻辑分离**：业务规则（字段映射、前缀、阈值）**只写在 `CONFIG`**；程序逻辑区一般不需修改。
 - **单向数据流**：解析 → 标准化 → 计算 → 渲染，禁止逆向依赖（渲染层不得修改 rows/orders）。
 

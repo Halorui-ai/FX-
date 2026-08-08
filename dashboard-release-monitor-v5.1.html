@@ -963,15 +963,23 @@ function computeOrders() {
     const arrived = arr.some(r => r._已到达);           // 任一记录到达流入门岗 → 整单已到达
     const special = arr.some(r => r._特保);
     const releaseTimeout = arr.some(r => r._放行超时);
+    const receiveTimeout = arr.some(r => r._接收超时);
+    const last = arr[arr.length - 1];
     map[no] = {
       单号: no, 记录数: arr.length,
       特保: special,
       已到达: arrived,
       在途: !arrived,                                    // 尚未到达流入门岗 → 在途
       放行超时: releaseTimeout,
+      接收超时: receiveTimeout,
+      超时: releaseTimeout || receiveTimeout,           // ★ 广义超时 = 放行超时 ∪ 接收超时
       在途超时: !arrived && releaseTimeout,             // ★ 在途超时流入门岗未放行
+      超时未接收: arr.some(r => r._接收超时未接收),      // 任一记录超时未接收 → 整单超时未接收
+      放行异常: arr.some(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")),
+      已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
       申请部门: arr[0].申请部门 || "",
       流入门岗: arr[0].流入门岗 || "",
+      流出门岗: last.流出门岗 || "",                     // 取最后一笔记录的流转方向
       物品分类: arr.map(r => r.物品分类).filter(Boolean).join("/"),
       _日期: arr[0]._申请日期
     };
@@ -989,10 +997,10 @@ function _computeStatsRaw() {
   const total = rows.length;
   const orderCount = orderList.length;
   const specialOrders = orderList.filter(o => o.特保).length;
-  const abnormal = rows.filter(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")).length;
+  const abnormal = orderList.filter(o => o.放行异常).length;        // 订单级：任一记录异常即整单异常
   const transitTimeoutOrders = orderList.filter(o => o.在途超时);
-  const receiveTimeoutRows = rows.filter(r => r._接收超时未接收);
-  const received = rows.filter(r => r._接收日期).length;
+  const receiveTimeoutOrders = orderList.filter(o => o.超时未接收); // 订单级超时未接收
+  const received = orderList.filter(o => o.已接收).length;          // 订单级已接收
 
   // —— 放行结案完成率：在规定时间内到达流入门岗完成放行的单据 ——
   const closedOrders = orderList.filter(o => o.已到达 && !o.放行超时).length;      // 结案完成（到达且未超时）
@@ -1002,48 +1010,51 @@ function _computeStatsRaw() {
   const inTransitNotTimeout = orderList.filter(o => !o.已到达 && !o.放行超时).length; // 在途未超时（不纳入统计）
   const closeRate = scopedOrders ? closedOrders / scopedOrders : 0;
 
-  const valid = rows.filter(r => r._申请日期);
+  // —— 申请量时间趋势：订单级（按订单申请日期计数） ——
+  const validOrders = orderList.filter(o => o._日期);
   let trend = [];
-  if (valid.length) {
-    const min = _.minBy(valid, r => r._申请日期.valueOf())._申请日期;
-    const max = _.maxBy(valid, r => r._申请日期.valueOf())._申请日期;
+  if (validOrders.length) {
+    const min = _.minBy(validOrders, o => o._日期.valueOf())._日期;
+    const max = _.maxBy(validOrders, o => o._日期.valueOf())._日期;
     const fmt = max.diff(min, "day") <= CONFIG.趋势天数阈值 ? "YYYY-MM-DD" : "YYYY-MM";
-    const grouped = _.countBy(valid, r => r._申请日期.format(fmt));
+    const grouped = _.countBy(validOrders, o => o._日期.format(fmt));
     trend = Object.keys(grouped).sort().map(k => [k, grouped[k]]);
   }
+  // —— TOP 排行：订单级 groupBy ——
+  const firstCat = o => (o.物品分类 || "未分类").split("/")[0] || "未分类";
   const top = (fn, n = CONFIG.TOPN) =>
-    _(rows).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
+    _(orderList).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
       .orderBy("value", "desc").take(n).value();
 
   return {
     total, orderCount, specialOrders, abnormal,
-    transitTimeoutOrders, receiveTimeoutRows,
-    receiveRate: total ? received / total : 0,
+    transitTimeoutOrders, receiveTimeoutOrders,
+    receiveRate: orderCount ? received / orderCount : 0,
     received,
     closedOrders, arrivedTimeout, scopedOrders, inTransitNotTimeout, closeRate,
     typeDist: { 特级安保单: specialOrders, 普通单: orderCount - specialOrders },
     trend,
-    deptTop: top("申请部门"),
-    catTop: top(r => r.物品分类 || "未分类"),
-    routeTop: _(rows).filter(r => r.流出门岗 && r.流入门岗)
-      .groupBy(r => `${r.流出门岗} → ${r.流入门岗}`)
+    deptTop: top(o => o.申请部门),
+    catTop: top(firstCat),
+    routeTop: _(orderList).filter(o => o.流出门岗 && o.流入门岗)
+      .groupBy(o => `${o.流出门岗} → ${o.流入门岗}`)
       .map((arr, k) => ({ name: k, value: arr.length }))
       .orderBy("value", "desc").take(CONFIG.TOPN).value(),
     statusDist: {
       "放行异常": abnormal,
-      "放行超时": rows.filter(r => r._放行超时).length,
-      "接收超时": receiveTimeoutRows.length,
+      "放行超时": orderList.filter(o => o.放行超时).length,
+      "接收超时": orderList.filter(o => o.接收超时).length,
       "已接收": received
     },
     deptCat: (() => {
       const matrix = {};
-      rows.forEach(r => {
-        const d = r.申请部门 || "（空）", c = r.物品分类 || "未分类";
+      orderList.forEach(o => {
+        const d = o.申请部门 || "（空）", c = firstCat(o);
         (matrix[d] = matrix[d] || {})[c] = (matrix[d][c] || 0) + 1;
       });
       const depts = Object.entries(matrix).map(([d, obj]) => [d, _.sum(Object.values(obj))])
         .sort((a, b) => b[1] - a[1]).slice(0, CONFIG.TOPN).map(x => x[0]);
-      const cats = Object.entries(_(rows).map(r => r.物品分类 || "未分类").countBy().value())
+      const cats = Object.entries(_(orderList).map(firstCat).countBy().value())
         .sort((a, b) => b[1] - a[1]).map(x => x[0]);
       return { depts, cats, series: cats.map(cat => ({ name: cat, data: depts.map(d => matrix[d][cat] || 0) })) };
     })(),
@@ -1062,16 +1073,12 @@ function _computeStatsRaw() {
       });
       return { NPI物料: npi, 一般物料: general, 非物料類: other };
     })(),
-    // 超时统计细分（超时总数 = 放行超时订单 ∪ 存在接收超时未接收的订单，确保 >= 超时未接收）
-    timeoutAll: (() => {
-      const s = new Set(orderList.filter(o => o.放行超时).map(o => o.单号));
-      receiveTimeoutRows.forEach(r => { if (r.放行单号) s.add(r.放行单号); });
-      return s.size;
-    })(),
-    timeoutNPI: orderList.filter(o => o.特保 && o.放行超时).length,
-    timeoutGeneral: orderList.filter(o => !o.特保 && o.放行超时 && (o.物品分类 || "").includes("生產物料")).length +
-                    orderList.filter(o => !o.特保 && o.放行超时 && (o.物品分类 || "").includes("生产物料")).length,
-    timeoutMachine: orderList.filter(o => o.放行超时 && (o.物品分类 || "").includes("机台")).length,
+    // 超时统计细分（广义超时 = 放行超时 ∪ 接收超时；接收超时含「已接收但接收时超时」与「超时未接收」两个子集）
+    timeoutAll: orderList.filter(o => o.超时).length,
+    timeoutNPI: orderList.filter(o => o.特保 && o.超时).length,
+    timeoutGeneral: orderList.filter(o => !o.特保 && o.超时 &&
+      (o.物品分类 || "").split("/").some(c => c.includes("生產物料") || c.includes("生产物料"))).length,
+    timeoutMachine: orderList.filter(o => o.超时 && (o.物品分类 || "").includes("机台")).length,
     // 超时By部门（订单级）
     timeoutByDept: _(orderList).filter(o => o.放行超时)
       .groupBy(o => o.申请部门 || "（空）")
@@ -1113,7 +1120,7 @@ function _computeStatsRaw() {
       return Object.keys(byDay).sort().map(day => {
         const dayRows = byDay[day];
         const dayOrders = Object.values(_.groupBy(dayRows, "放行单号")).map(arr => ({
-          timeout: arr.some(r => r._放行超时) || arr.some(r => r._接收超时未接收),
+          timeout: arr.some(r => r._放行超时) || arr.some(r => r._接收超时),
           transitTimeout: arr.some(r => r._放行超时) && !arr.some(r => r._已到达),
           arrived: arr.some(r => r._已到达),
           releaseTimeout: arr.some(r => r._放行超时)
@@ -1196,7 +1203,7 @@ const optionBuilders = {
     legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
     series: [{ type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
       itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
-      label: { color: "#1d1d1f", formatter: "{b}\n{c} ({d}%)" },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
       data: [
         { name: "已接收", value: S.statusDist.已接收, itemStyle: { color: "#34c759" } },
         { name: "放行超时", value: S.statusDist.放行超时, itemStyle: { color: "#ff9f0a" } },
@@ -1299,10 +1306,10 @@ const CARD_DEFS = {
     id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "receiveTimeout",
     render(body, ctx) {
       body.innerHTML = '<div class="kpiLabel">超时未接收</div><div class="kpiValue" id="kpiReceive" style="color:var(--bad)">0</div><div class="clickHint">点击查看详情</div>';
-      counters.kpi_receive = new countUp.CountUp("kpiReceive", ctx.S.receiveTimeoutRows.length, { separator: ",", duration: 0.9 });
+      counters.kpi_receive = new countUp.CountUp("kpiReceive", ctx.S.receiveTimeoutOrders.length, { separator: ",", duration: 0.9 });
       counters.kpi_receive.start();
     },
-    update(body, ctx) { if (counters.kpi_receive) counters.kpi_receive.update(ctx.S.receiveTimeoutRows.length); }
+    update(body, ctx) { if (counters.kpi_receive) counters.kpi_receive.update(ctx.S.receiveTimeoutOrders.length); }
   },
   kpi_rate: {
     id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 4, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 4, detailKey: "rate",
@@ -1789,19 +1796,19 @@ function analysisTransitHTML(S) {
 }
 function analysisReceiveHTML(S) {
   let preview;
-  if (!S.receiveTimeoutRows.length) {
-    preview = '<div class="ac-empty">✅ 暂无超时未接收记录</div>';
+  if (!S.receiveTimeoutOrders.length) {
+    preview = '<div class="ac-empty">✅ 暂无超时未接收单据</div>';
   } else {
-    preview = S.receiveTimeoutRows.slice(0, 3).map(r =>
+    preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
-      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${r._特保 ? "特保" : "普通"}</span>` +
-      `<b style="color:var(--txt)">${r.放行单号}</b></span>` +
-      `<span style="color:var(--txt2)">${r.申请部门 || "-"} · ${r.放行物品名称 || "-"}</span></div>`).join("") +
-      (S.receiveTimeoutRows.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutRows.length - 3} 条</div>` : "");
+      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
+      `<b style="color:var(--txt)">${o.单号}</b></span>` +
+      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
-    `<span style="font-size:12px;color:var(--txt2)">超时未接收记录</span>` +
-    `<span class="ac-count" style="color:var(--bad)">${S.receiveTimeoutRows.length}</span></div>` +
+    `<span style="font-size:12px;color:var(--txt2)">超时未接收单数</span>` +
+    `<span class="ac-count" style="color:var(--bad)">${S.receiveTimeoutOrders.length}</span></div>` +
     `<div class="ac-desc">流入门岗已放行，但接收人超过规定时间仍未接收。点击卡片查看完整明细。</div>` +
     `<div class="ac-preview">${preview}</div>`;
 }
@@ -1820,8 +1827,8 @@ const KPI_DETAIL = {
           { name: "已到达流入门岗", color: "#34c759", filter: r => { const o = orders[r.放行单号]; return o && o.已到达; } },
           { name: "在途·流入门岗未放行", color: "#ff9f0a", filter: r => { const o = orders[r.放行单号]; return o && o.在途; } } ]},
       { key: "timeout", label: "超时状态", cats: [
-          { name: "放行超时", color: "#ff3b30", filter: r => r._放行超时 },
-          { name: "未超时", color: "#34c759", filter: r => !r._放行超时 } ]}
+          { name: "放行超时", color: "#ff3b30", filter: r => { const o = orders[r.放行单号]; return o && o.放行超时; } },
+          { name: "未超时", color: "#34c759", filter: r => { const o = orders[r.放行单号]; return o && !o.放行超时; } } ]}
     ]
   },
   special: {
@@ -1832,7 +1839,8 @@ const KPI_DETAIL = {
         ["占全部单比", S.orderCount ? (S.specialOrders / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
     },
     chart(S) {
-      const d = _(rows.filter(r => r._特保)).groupBy(r => r.物品分类 || "未分类")
+      const d = _(Object.values(orders)).filter(o => o.特保)
+        .groupBy(o => (o.物品分类 || "未分类").split("/")[0] || "未分类")
         .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").value();
       return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
         xAxis: { type: "value", ...baseAxis },
@@ -1863,13 +1871,13 @@ const KPI_DETAIL = {
   receiveTimeout: {
     title: "📭 超时未接收 · 详情",
     chips(S) {
-      const depts = new Set(S.receiveTimeoutRows.map(r => r.申请部门).filter(Boolean)).size;
-      return [["超时未接收记录", S.receiveTimeoutRows.length, "var(--bad)"],
+      const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
+      return [["超时未接收单数", S.receiveTimeoutOrders.length, "var(--bad)"],
         ["涉及部门", depts, "var(--txt)"],
-        ["占全部记录比", S.total ? (S.receiveTimeoutRows.length / S.total * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+        ["占全部单比", S.orderCount ? (S.receiveTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
     },
     chart(S) {
-      const d = _(S.receiveTimeoutRows).groupBy(r => r.申请部门 || "（空）")
+      const d = _(S.receiveTimeoutOrders).groupBy(o => o.申请部门 || "（空）")
         .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").take(12).value();
       return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
         xAxis: { type: "value", ...baseAxis },
@@ -1877,7 +1885,7 @@ const KPI_DETAIL = {
         series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
           itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff3b30" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
     },
-    tableTitle: "超时未接收记录明细", filter(r) { return r._接收超时未接收; }
+    tableTitle: "超时未接收单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.超时未接收; }
   },
   rate: {
     title: "✅ 放行结案完成率 · 详情",
@@ -1969,8 +1977,8 @@ function renderOverview() {
     overviewState.dim = +b.dataset.dim; overviewState.cat = null; renderOverview();
     setTimeout(() => { if (detailChartInst) detailChartInst.resize(); }, 30);
   });
-  // —— 分类计数一次性算好，饼图与芯片复用，避免重复 filter().length ——
-  const counts = dim.cats.map(c => rows.filter(c.filter).length);
+  // —— 分类计数一次性算好（订单级：命中记录所属单去重），饼图与芯片复用 ——
+  const counts = dim.cats.map(c => new Set(rows.filter(c.filter).map(r => r.放行单号)).size);
   if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
   $("detailChartBox").style.display = "";
   detailChartInst = initEC($("detailChart"));
@@ -2021,7 +2029,7 @@ function rebuildOverviewTable(dim) {
 function applyCatFilter(name) {
   overviewState.cat = (overviewState.cat === name) ? null : name;
   const dim = KPI_DETAIL.overview.dimensions[overviewState.dim];
-  const counts = dim.cats.map(c => rows.filter(c.filter).length);
+  const counts = dim.cats.map(c => new Set(rows.filter(c.filter).map(r => r.放行单号)).size);
   if (detailChartInst) detailChartInst.setOption(overviewPieOption(dim, counts));
   $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
     el.classList.toggle("active", el.dataset.cat === overviewState.cat));
@@ -2114,14 +2122,15 @@ $("btnExportExcel").onclick = async () => {
   const wb = XLSX.utils.book_new();
   const kpi = [["指标", "数值"],
     ["放行单总数", S.orderCount], ["放行记录总数", S.total], ["特级安保单", S.specialOrders],
-    ["在途超时未放行单", S.transitTimeoutOrders.length], ["超时未接收记录", S.receiveTimeoutRows.length],
+    ["在途超时未放行单", S.transitTimeoutOrders.length], ["超时未接收单", S.receiveTimeoutOrders.length],
     ["放行异常", S.abnormal], ["放行结案完成率", (S.closeRate * 100).toFixed(1) + "%"]];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpi), "汇总指标");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
     S.transitTimeoutOrders.map(o => ({ 放行单号: o.单号, 类型: o.特保 ? "特级安保单" : "普通单", 申请部门: o.申请部门, 流入门岗: o.流入门岗, 物品分类: o.物品分类, 记录数: o.记录数 }))), "在途超时未放行");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.receiveTimeoutRows.map(stripPrivate)), "超时未接收");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+    S.receiveTimeoutOrders.map(o => ({ 放行单号: o.单号, 类型: o.特保 ? "特级安保单" : "普通单", 申请部门: o.申请部门, 流入门岗: o.流入门岗, 物品分类: o.物品分类, 记录数: o.记录数 }))), "超时未接收");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["时间", "申请量"], ...S.trend]), "时间趋势");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deptTop.map(d => ({ 部门: d.name, 记录数: d.value }))), "部门排行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deptTop.map(d => ({ 部门: d.name, 单数: d.value }))), "部门排行");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(stripPrivate)), "明细数据");
   XLSX.writeFile(wb, "物品放行监控分析结果.xlsx");
   toast("分析结果已导出 ✅");
