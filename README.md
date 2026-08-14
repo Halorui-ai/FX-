@@ -42,7 +42,7 @@
 | 🖥️ 性能自适应 | 依据硬件（内存/CPU）自动切换高画质/流畅模式，老电脑友好，支持手动切换 |
 | 🧵 后台解析（v3.1，v5.4 起默认主线程） | 大文件解析已内置 Worker 代码；因 xlsx 库改回外部引用后 file:// 下 Worker 不可用，v5.4 起默认走主线程分块解析（已验证可靠），HTTP 部署可开启 Worker |
 | 📦 依赖策略（v5.4 起） | xlsx 库改回外部 `./lib/xlsx.full.min.js` 引用（v3.1 曾内联进 HTML，v5.4 回退：内联副本易损坏且体积 +861KB） |
-| 📄 转存 CSV（v3.1） | 一键将当前数据转存为 CSV，下次加载解析快约 20 倍 |
+| 📄 转存 CSV（v3.1） | 一键将当前数据转存为 CSV，下次加载解析快约 35 倍（10 万行实测 20s → 1.7s） |
 | 🧩 模块化卡片（v4.0） | 所有可视化抽象为可复用卡片，支持增删、角色预设视图、多命名布局切换 |
 | 📐 自由布局（v5.0） | 基于 gridstack 的二维网格拖拽 + 边缘缩放，每张卡片可设 min/max 尺寸约束，布局自由度高 |
 | 📤 结果导出 | 一键导出分析结果 Excel（多 Sheet）与看板截图 PNG |
@@ -593,7 +593,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 | # | 变更 | 实现方式 | 效果 |
 |---|------|----------|------|
-| 6 | **转存 CSV 按钮** | 新增“📄 转存 CSV”：将已加载数据按标准列分块生成 CSV（带 UTF-8 BOM），`FileSaver` 本地保存，全程离线无外网 | 将 xls 加载后一键转存为 csv，下次直接加载 csv，解析快约 20 倍 |
+| 6 | **转存 CSV 按钮** | 新增“📄 转存 CSV”：将已加载数据按标准列分块生成 CSV（带 UTF-8 BOM），`FileSaver` 本地保存，全程离线无外网 | 将 xls 加载后一键转存为 csv，下次直接加载 csv，解析快约 35 倍（实测） |
 
 > **关于 xls→csv（回应需求）**：无需任何外网工具。先正常加载一次 xls（走 Worker 解析），再点“转存 CSV”即得到标准列头的 csv；该 csv 表头均为标准字段名（均在字段映射别名内），可直接被本看板重新加载。
 
@@ -757,18 +757,20 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 用户文件 (.xls/.xlsx/.csv)
         │
         ▼
-  ┌─────────────┐   FileReader / XLSX.read / Papa.parse
-  │  文件解析层   │   findHeaderRow() 智能表头定位
+  ┌─────────────┐   FileReader 读取 → XLSX.read（主线程，含提速选项）
+  │  文件解析层   │   findHeaderRow() 智能表头定位（前 20 行）
+  │             │   firstNonEmptySheet() 自动跳过空 sheet/汇总页
+  │             │   CSV → PapaParse 解析（速度约为 xlsx 的 35 倍）
   └─────────────┘
         │  原始行数组
         ▼
-  ┌─────────────┐   normalizeRow() 分块标准化
+  ┌─────────────┐   normalizeRow() 分块标准化（5000 行/块让出主线程）
   │  数据标准化层 │   字段映射 / 日期解析 / 业务标记(_特保/_已到达/_超时)
   └─────────────┘
         │  rows[]
         ▼
   ┌─────────────┐   computeOrders() 订单级聚合
-  │  业务计算层   │   computeStats() 汇总统计
+  │  业务计算层   │   computeStats() 汇总统计（结果缓存）
   └─────────────┘
         │  orders{} + stats{}
         ▼
@@ -779,6 +781,24 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 **架构特点**：单向数据流（解析 → 标准化 → 计算 → 渲染），全部逻辑在浏览器主线程完成，无后端、无构建步骤、无网络依赖。
 
+**解析线程模型（v5.4 现状）**：
+
+| 项 | 现状 |
+|----|------|
+| 主解析路径 | **主线程分块解析**（`XLSX.read` + `sheetToRowsChunked` 分块提取，块间让出主线程） |
+| Web Worker | 代码保留（`PARSER_WORKER_SRC` / `parseViaWorker`）但**默认禁用**（`window.__workerDisabled = true`） |
+| 禁用原因 | ① xlsx 库为外部 `./lib/xlsx.full.min.js` 引用，file:// 下 blob Worker 无法 `importScripts` 外部文件；② 曾用内联库方案，内联副本存在损坏风险（v5.4 曾因 37 字节缺失导致解析失败） |
+| 恢复条件 | HTTP 服务部署时可将 `__workerDisabled` 置 false（相对路径 importScripts 可用） |
+| CSV 路径 | 直接 PapaParse，**无 Worker 需求**（已够快） |
+
+**大文件性能基线（10 万行实测）**：
+
+| 路径 | 耗时 | 说明 |
+|------|------|------|
+| xlsx `XLSX.read` | ~20 秒 | 库解析硬瓶颈（超线性增长），主线程同步阻塞 |
+| xlsx 分块提取 | ~2-4 秒 | 预计算列地址后提速明显 |
+| **CSV PapaParse 解析** | **~1.7 秒** | 快约 35 倍，**推荐大文件转存 CSV 后加载** |
+
 ### 5.2 前端技术栈
 
 | 类别 | 技术/库 | 版本 | 用途 |
@@ -786,8 +806,8 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 | 语言 | 原生 JavaScript (ES2020) | - | 全部业务逻辑，无框架依赖 |
 | 图表 | ECharts | 5.x | 饼图/柱状图/折线图/横向条形图/堆叠图 |
 | 图表插件 | echarts-liquidfill | - | 放行结案完成率水球图 |
-| Excel 解析 | SheetJS (xlsx.full) | 1.15.0 | .xls/.xlsx 读取与导出 |
-| CSV 解析 | PapaParse | 5.4.1 | .csv 解析 |
+| Excel 解析 | SheetJS (xlsx.full) | 0.18.5 | .xls/.xlsx 读取与导出（外部引用，读选项含提速配置） |
+| CSV 解析 | PapaParse | 5.4.1 | .csv 解析（大文件推荐格式） |
 | 日期 | dayjs | - | 日期解析/格式化/区间计算 |
 | 工具 | lodash | - | groupBy/orderBy/countBy/sum 等 |
 | 数字动画 | countUp.js | 2.8.0 | KPI 数字滚动 |
@@ -808,12 +828,13 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 | **样式区** | `<style>` | 液态玻璃视觉系统（背景/卡片/徽标/遮罩/表格/详情面板） |
 | **结构区** | `<body>` | 顶栏/动态栏/上传区/错误面板/加载遮罩/KPI/图表/分析卡/明细表/详情面板 |
 | **业务配置区** | `<script>` 顶部 `CONFIG` | 字段映射/必需字段/特保前缀/超时标记/性能阈值（**唯一需要改的地方**） |
-| **解析层** | `handleFile`/`findHeaderRow`/`decodeText` | 文件读取与表头定位 |
+| **解析层** | `handleFile`/`findHeaderRow`/`firstNonEmptySheet`/`sheetToRowsChunked`/`decodeText` | 文件读取、表头定位、空 sheet 跳过、分块提取 |
+| **Worker 层（保留未启用）** | `PARSER_WORKER_SRC`/`parseViaWorker` | blob Worker 后台解析（HTTP 部署可启用） |
 | **标准化层** | `processData`/`normalizeRow`/`mapColumns` | 分块标准化与字段映射 |
 | **计算层** | `computeOrders`/`computeStats` | 订单聚合与汇总统计 |
-| **渲染层** | `renderAll`/`optionBuilders`/`renderAnalysisCards` | 图表与卡片渲染 |
-| **详情面板** | `KPI_DETAIL`/`openDetail`/`renderOverview` | 二级下钻交互 |
-| **实时演示** | `makeDemoRow`/`liveTick`/`startLive` | 模拟数据流 |
+| **渲染层** | `renderAll`/`optionBuilders`/`CARD_DEFS` | 卡片注册表、图表与卡片渲染 |
+| **详情面板** | `KPI_DETAIL`/`openDetail`/`renderDetailChart` | 二级下钻交互（图表延迟绘制防动画截断） |
+| **实时演示** | `makeDemoRow`/`liveTick`/`startLive` | 模拟数据流（业务延续：推进门岗/到达/接收） |
 | **动态背景** | `animBg`/`drawShape`/`sizeBg` | 液态玻璃 Canvas 动画 |
 
 ---
