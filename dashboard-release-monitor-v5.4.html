@@ -583,7 +583,7 @@ const CONFIG = {
  *   lite  = 老电脑友好（静态背景 + 纯色卡片 + 关高开销动画）
  * 手动选择记忆在 localStorage.perfMode，优先级高于自动判定。
  * ===================================================================== */
-const PERF = (() => {
+let PERF = (() => {
   const mem = navigator.deviceMemory || 8;          // 单位 GB，浏览器不支持时按 8 估计
   const cores = navigator.hardwareConcurrency || 4; // 逻辑核心数
   // 自动判定：内存 ≤4GB 或 核心 ≤2 → 判定为低性能设备
@@ -604,9 +604,16 @@ function applyPerfTag() {
   el.title = `当前：${PERF.lite ? "流畅（适配老电脑/小内存）" : "高画质（完整液态玻璃）"} · 检测：内存${PERF.mem}GB/${PERF.cores}核 · ${PERF.manual ? "手动选择" : "自动判定"}`;
 }
 function togglePerfMode() {
+  // 无重载切换：file:// 下 location.reload() 会触发 Chrome "Unsafe attempt to load URL" 安全警告，
+  // 改为就地重建（更新 PERF → 应用降级 class → 重建背景/图表/表格），体验连续不闪屏。
   const next = PERF.lite ? "full" : "lite";
   try { localStorage.setItem("perfMode", next); } catch (e) { }
-  location.reload();  // 重新加载以正确重建图表 DPR 与背景，确保档位彻底切换
+  PERF = { ...PERF, mode: next, manual: true, lite: next === "lite" };
+  document.body.classList.toggle("perf-lite", PERF.lite);
+  applyPerfTag();
+  if (rows.length) { renderAll(); }        // 已有数据 → 整体重建（图表 DPR/背景档位随之切换）
+  else { sizeBg(); scheduleRefraction(); } // 无数据 → 仅重建背景与玻璃层
+  toast(`已切换为${PERF.lite ? "流畅" : "高画质"}模式 ✅`);
 }
 
 /* =====================================================================
