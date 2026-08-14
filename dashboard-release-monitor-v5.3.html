@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>物品放行监控数据看板 v5.1（GDMS 增强版）</title>
+<title>物品放行监控数据看板 v5.3（GDMS 增强版）</title>
 
 <link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
 <link rel="stylesheet" href="./lib/toastify.css">
@@ -74,6 +74,7 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 .st-bad{background:rgba(255,59,48,0.12);color:#c0392b;border:1px solid rgba(255,59,48,0.4)}
 .st-warn{background:rgba(255,159,10,0.16);color:#9a6200;border:1px solid rgba(255,159,10,0.45)}
 .st-sp{background:rgba(94,92,230,0.14);color:#4240c8;border:1px solid rgba(94,92,230,0.4)}
+.st-ev{background:rgba(0,113,227,0.12);color:#0a5fb8;border:1px solid rgba(0,113,227,0.4)}
 @keyframes slideIn{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .feedItem--new{animation:slideIn .45s ease, flashNew 1s ease}
 @keyframes flashNew{0%{box-shadow:0 0 0 0 rgba(0,113,227,.45)}35%{box-shadow:0 0 0 3px rgba(0,113,227,.30)}100%{box-shadow:0 0 0 12px rgba(0,113,227,0)}}
@@ -296,11 +297,13 @@ body.perf-lite .lg-tint,body.perf-lite .lg-edge{display:none!important}
 .cardSlot:hover{background:rgba(255,255,255,0.10)}
 
 .cardHead{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex:none}
-.dragHandle{cursor:grab;color:var(--txt2);font-size:15px;user-select:none;padding:0 2px;line-height:1;display:none}
-.dragHandle:active{cursor:grabbing}
-body.editing .dragHandle{display:inline}
 .cardTitle{font-size:13px;font-weight:600;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   padding-left:7px;border-left:3px solid var(--accent)}
+/* 编辑布局模式：整条卡片头部为拖动区（点击不松手即可拖动） */
+body.editing .cardHead{cursor:grab;user-select:none;border-radius:8px;transition:background .15s}
+body.editing .cardHead::before{content:"⠿";color:var(--accent);font-size:13px;line-height:1;opacity:.75}
+body.editing .cardHead:hover{background:rgba(0,113,227,0.07)}
+body.editing .cardHead:active{cursor:grabbing;background:rgba(0,113,227,0.12)}
 .cardRemove{cursor:pointer;border:none;background:transparent;color:var(--txt2);font-size:13px;width:22px;height:22px;
   border-radius:6px;align-items:center;justify-content:center;transition:.15s;padding:0;line-height:1;display:none}
 .cardRemove:hover{background:rgba(255,59,48,0.12);color:var(--bad)}
@@ -359,25 +362,44 @@ body.editing .cardRemove{display:flex}
 .grid-stack-item>.ui-resizable-handle{transition:opacity .2s}
 .grid-stack-item:not(:hover)>.ui-resizable-handle{opacity:0}
 .grid-stack-item:hover>.ui-resizable-handle{opacity:1}
-/* 缩放角标视觉提示 */
-.grid-stack-item>.ui-resizable-se::after{content:"";position:absolute;right:5px;bottom:5px;width:10px;height:10px;
-  border-right:2px solid rgba(0,113,227,0.45);border-bottom:2px solid rgba(0,113,227,0.45);border-radius:0 0 3px 0}
-.grid-stack-item>.ui-resizable-nw::after{content:"";position:absolute;left:5px;top:5px;width:10px;height:10px;
-  border-left:2px solid rgba(0,113,227,0.45);border-top:2px solid rgba(0,113,227,0.45);border-radius:3px 0 0 0}
-.grid-stack-item>.ui-resizable-ne::after{content:"";position:absolute;right:5px;top:5px;width:10px;height:10px;
-  border-right:2px solid rgba(0,113,227,0.45);border-top:2px solid rgba(0,113,227,0.45);border-radius:0 3px 0 0}
-.grid-stack-item>.ui-resizable-sw::after{content:"";position:absolute;left:5px;bottom:5px;width:10px;height:10px;
-  border-left:2px solid rgba(0,113,227,0.45);border-bottom:2px solid rgba(0,113,227,0.45);border-radius:0 0 0 3px}
+/* 清除 gridstack 默认灰色箭头底图与旋转，改为液态玻璃风圆角手柄 */
+.grid-stack-item>.ui-resizable-ne,.grid-stack-item>.ui-resizable-nw,
+.grid-stack-item>.ui-resizable-se,.grid-stack-item>.ui-resizable-sw{
+  background-image:none;transform:none;
+  width:18px;height:18px;
+  background:rgba(255,255,255,0.55);
+  border:1px solid rgba(0,113,227,0.25);
+  border-radius:7px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+/* 手柄内角标：与整体 UI 一致的单线圆角箭头（accent 蓝） */
+.grid-stack-item>.ui-resizable-se::after{content:"";position:absolute;right:4px;bottom:4px;width:9px;height:9px;
+  border-right:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 3px 0}
+.grid-stack-item>.ui-resizable-nw::after{content:"";position:absolute;left:4px;top:4px;width:9px;height:9px;
+  border-left:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:3px 0 0 0}
+.grid-stack-item>.ui-resizable-ne::after{content:"";position:absolute;right:4px;top:4px;width:9px;height:9px;
+  border-right:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:0 3px 0 0}
+.grid-stack-item>.ui-resizable-sw::after{content:"";position:absolute;left:4px;bottom:4px;width:9px;height:9px;
+  border-left:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 0 3px}
+/* 手柄 hover 高亮 */
+.grid-stack-item>.ui-resizable-handle:hover{background:rgba(0,113,227,0.14)!important;border-color:rgba(0,113,227,0.55)!important}
+.grid-stack-item>.ui-resizable-handle:hover::after{border-color:rgba(0,113,227,0.95)!important}
 /* 拖拽中的卡片提升层级 + 阴影增强 */
 .grid-stack-item.ui-draggable-dragging{z-index:100;box-shadow:0 16px 48px rgba(0,0,0,0.15)}
 .grid-stack-item.ui-draggable-dragging .cardSlot{box-shadow:0 16px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.45)}
 /* 低性能模式：gridstack 降级 */
 body.perf-lite .grid-stack-item{transition:none!important}
 body.perf-lite .grid-stack-item>.ui-resizable-handle{opacity:1}
-body.perf-lite .grid-stack-item>.ui-resizable-se::after,
-body.perf-lite .grid-stack-item>.ui-resizable-nw::after,
+body.perf-lite .grid-stack-item>.ui-resizable-ne,
+body.perf-lite .grid-stack-item>.ui-resizable-nw,
+body.perf-lite .grid-stack-item>.ui-resizable-se,
+body.perf-lite .grid-stack-item>.ui-resizable-sw{
+  background:rgba(0,0,0,0.06);border-color:rgba(0,0,0,0.18);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 body.perf-lite .grid-stack-item>.ui-resizable-ne::after,
-body.perf-lite .grid-stack-item>.ui-resizable-sw::after{border-color:rgba(0,0,0,0.2)}
+body.perf-lite .grid-stack-item>.ui-resizable-nw::after,
+body.perf-lite .grid-stack-item>.ui-resizable-se::after,
+body.perf-lite .grid-stack-item>.ui-resizable-sw::after{border-color:rgba(0,0,0,0.45)}
 
 /* 低性能模式：卡片槽降级 */
 body.perf-lite .cardSlot{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(255,255,255,0.82)!important;transition:none!important}
@@ -483,7 +505,7 @@ body.perf-lite .cardSlot:hover{transform:none!important}
   </div>
 </div>
 
-<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v5.1（GDMS 增强版）</div>
+<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v5.3（GDMS 增强版）</div>
 
 <!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
 <script src="./lib/echarts.min.js"></script>
@@ -585,6 +607,7 @@ const CONFIG = {
     接收超时:   ["接收超时", "接收超時"],
     接收状态:   ["接收状态", "接收狀態"],
     接收人:     ["接收人姓名", "接收人"],
+    接收人部门: ["接收人部门", "接收人部門"],
     物品分类:   ["物品分类", "物品分類"],
     放行物品名称: ["放行物品名称", "放行物品名稱", "物品名称"],
     数量:       ["放行数量", "放行數量", "数量"],
@@ -686,6 +709,7 @@ function isSpecialOrder(r) {
 // ---------- 全局状态 ----------
 let rows = [];            // 标准化后的记录行
 let orders = {};          // 按放行单号聚合的订单级信息
+let _rowSeq = 0;          // 行唯一 ID 自增计数器（normalizeRow 生成 _rowId 用）
 let CH = {};              // ECharts 实例
 let counters = {};        // countUp 实例
 let detailTable = null;
@@ -951,6 +975,8 @@ function normalizeRow(r) {
   o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
   // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
   o._接收超时未接收 = !!o.实际放行门岗 && !o._接收日期 && o._接收超时;
+  // 行唯一 ID（供明细表增量更新定位；真实文件与演示数据统一生成，演示更新时保留原 ID）
+  o._rowId = r._rowId || ("R" + (++_rowSeq));
   return o;
 }
 
@@ -978,6 +1004,7 @@ function computeOrders() {
       放行异常: arr.some(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")),
       已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
       申请部门: arr[0].申请部门 || "",
+      接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
       流入门岗: arr[0].流入门岗 || "",
       流出门岗: last.流出门岗 || "",                     // 取最后一笔记录的流转方向
       物品分类: arr.map(r => r.物品分类).find(Boolean) || "",  // 一单仅一种物品分类（多记录只是经过不同门岗）
@@ -1080,6 +1107,11 @@ function _computeStatsRaw() {
     // 超时By部门（订单级）
     timeoutByDept: _(orderList).filter(o => o.放行超时)
       .groupBy(o => o.申请部门 || "（空）")
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(12).value(),
+    // 接收超时By接收部门（订单级，责任主体 = 接收人所在部门，即收货方部门）
+    receiveTimeoutByDept: _(orderList).filter(o => o.接收超时)
+      .groupBy(o => o.接收人部门 || "（空）")
       .map((arr, k) => ({ name: k, value: arr.length }))
       .orderBy("value", "desc").take(12).value(),
     // 超时By物品类型（订单级）
@@ -1232,6 +1264,45 @@ const optionBuilders = {
         itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: i === series.length - 1 ? [5, 5, 0, 0] : 0 },
         emphasis: { focus: "series" } }))
     };
+  },
+
+  // ===== v5.2 新增：GDMS option 构造（抽离供 render/update 复用，实现增量刷新不重建） =====
+  gdmsTrend: data => ({
+    tooltip: { trigger: "axis" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    grid: { left: 50, right: 50, top: 30, bottom: 40 },
+    xAxis: { type: "category", data: data.map(d => d.day), ...baseAxis },
+    yAxis: [
+      { type: "value", name: "数量", ...baseAxis },
+      { type: "value", name: "结案率", min: 0, max: 1, axisLabel: { formatter: v => (v * 100) + "%", color: "rgba(0,0,0,0.55)" }, splitLine: { show: false } }
+    ],
+    series: [
+      { name: "总超时", type: "bar", data: data.map(d => d.totalTimeout), barWidth: "30%", itemStyle: { color: "#ff9f0a", borderRadius: [4, 4, 0, 0] } },
+      { name: "在途超时未放行", type: "bar", data: data.map(d => d.transitTimeout), barWidth: "30%", itemStyle: { color: "#ff3b30", borderRadius: [4, 4, 0, 0] } },
+      { name: "结案率", type: "line", yAxisIndex: 1, data: data.map(d => d.closeRate), smooth: true, symbolSize: 6, lineStyle: { width: 3, color: "#34c759" }, itemStyle: { color: "#34c759" } }
+    ]
+  }),
+  gdmsCatPie: data => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["38%", "65%"], center: ["50%", "44%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c}单 ({d}%)" },
+      data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } }))
+    }]
+  }),
+  gdmsDuration: bk => {
+    const keys = Object.keys(bk), vals = Object.values(bk);
+    const total = vals.reduce((a, b) => a + b, 0) || 1;
+    return {
+      tooltip: { trigger: "axis", formatter: p => p.map(s => s.name + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
+      grid: { left: 10, right: 30, top: 20, bottom: 10, containLabel: true },
+      xAxis: { type: "value", ...baseAxis },
+      yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
+      series: [{ type: "bar", data: vals.reverse(), barWidth: "50%",
+        itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#34c759", "#ff9f0a", "#ff3b30", "#af52de"][p.dataIndex % 4] },
+        label: { show: true, position: "right", color: "#1d1d1f", formatter: p => p.value + "单" } }]
+    };
   }
 };
 
@@ -1259,7 +1330,7 @@ function buildDetailTable() {
   if (detailTable) { try { detailTable.destroy(); } catch (e) { } detailTable = null; }
   const isLarge = rows.length > CONFIG.大数据量阈值;
   detailTable = new Tabulator("#detailTable", {
-    data: rows, columns: cols, layout: "fitColumns",
+    data: rows, columns: cols, layout: "fitColumns", index: "_rowId",
     pagination: true, paginationSize: isLarge ? 50 : 20,
     ...(isLarge ? { progressiveLoad: "scroll", renderVertical: "virtual" } : {}),
     movableColumns: true, placeholder: "暂无数据"
@@ -1398,23 +1469,15 @@ const CARD_DEFS = {
       const data = ctx.S.timeoutTrend;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无数据</div>'; return; }
       body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_trend", body.firstChild).setOption({
-        tooltip: { trigger: "axis" },
-        legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
-        grid: { left: 50, right: 50, top: 30, bottom: 40 },
-        xAxis: { type: "category", data: data.map(d => d.day), ...baseAxis },
-        yAxis: [
-          { type: "value", name: "数量", ...baseAxis },
-          { type: "value", name: "结案率", min: 0, max: 1, axisLabel: { formatter: v => (v * 100) + "%", color: "rgba(0,0,0,0.55)" }, splitLine: { show: false } }
-        ],
-        series: [
-          { name: "总超时", type: "bar", data: data.map(d => d.totalTimeout), barWidth: "30%", itemStyle: { color: "#ff9f0a", borderRadius: [4, 4, 0, 0] } },
-          { name: "在途超时未放行", type: "bar", data: data.map(d => d.transitTimeout), barWidth: "30%", itemStyle: { color: "#ff3b30", borderRadius: [4, 4, 0, 0] } },
-          { name: "结案率", type: "line", yAxisIndex: 1, data: data.map(d => d.closeRate), smooth: true, symbolSize: 6, lineStyle: { width: 3, color: "#34c759" }, itemStyle: { color: "#34c759" } }
-        ]
-      }, true);
+      cardChart("gdms_timeout_trend", body.firstChild).setOption(optionBuilders.gdmsTrend(data), true);
     },
-    update(body, ctx) { if (liveCharts.gdms_timeout_trend && ctx.S.timeoutTrend.length) this.render(body, ctx); }
+    update(body, ctx) {
+      // 增量刷新：复用已有实例 setOption，不销毁重建（避免闪烁）
+      const ch = liveCharts.gdms_timeout_trend;
+      if (!ch) { this.render(body, ctx); return; }
+      if (!ctx.S.timeoutTrend.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsTrend(ctx.S.timeoutTrend));
+    }
   },
   gdms_timeout_cat: {
     id: "gdms_timeout_cat", title: "放行超时By物品类型分析", icon: "🥧", cat: "GDMS超时管控", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
@@ -1422,36 +1485,26 @@ const CARD_DEFS = {
       const data = ctx.S.timeoutByCat;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
       body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_cat", body.firstChild).setOption({
-        tooltip: { trigger: "item" },
-        legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
-        series: [{ type: "pie", radius: ["38%", "65%"], center: ["50%", "44%"],
-          itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
-          label: { color: "#1d1d1f", formatter: "{b}\n{c}单 ({d}%)" },
-          data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } }))
-        }]
-      }, true);
+      cardChart("gdms_timeout_cat", body.firstChild).setOption(optionBuilders.gdmsCatPie(data), true);
     },
-    update(body, ctx) { if (liveCharts.gdms_timeout_cat) this.render(body, ctx); }
+    update(body, ctx) {
+      const ch = liveCharts.gdms_timeout_cat;
+      if (!ch) { this.render(body, ctx); return; }
+      if (!ctx.S.timeoutByCat.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsCatPie(ctx.S.timeoutByCat));
+    }
   },
   gdms_timeout_duration: {
     id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
     render(body, ctx) {
-      const bk = ctx.S.timeoutByDuration;
-      const keys = Object.keys(bk), vals = Object.values(bk);
-      const total = vals.reduce((a, b) => a + b, 0) || 1;
       body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_duration", body.firstChild).setOption({
-        tooltip: { trigger: "axis", formatter: p => p.map(s => s.name + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
-        grid: { left: 10, right: 30, top: 20, bottom: 10, containLabel: true },
-        xAxis: { type: "value", ...baseAxis },
-        yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
-        series: [{ type: "bar", data: vals.reverse(), barWidth: "50%",
-          itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#34c759", "#ff9f0a", "#ff3b30", "#af52de"][p.dataIndex % 4] },
-          label: { show: true, position: "right", color: "#1d1d1f", formatter: p => p.value + "单" } }]
-      }, true);
+      cardChart("gdms_timeout_duration", body.firstChild).setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration), true);
     },
-    update(body, ctx) { if (liveCharts.gdms_timeout_duration) this.render(body, ctx); }
+    update(body, ctx) {
+      const ch = liveCharts.gdms_timeout_duration;
+      if (!ch) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration));
+    }
   },
   gdms_timeout_dept: {
     id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
@@ -1463,13 +1516,23 @@ const CARD_DEFS = {
     },
     update(body, ctx) { if (liveCharts.gdms_timeout_dept && ctx.S.timeoutByDept.length) liveCharts.gdms_timeout_dept.setOption(hbarOption(ctx.S.timeoutByDept, "#ff3b30")); }
   },
+  gdms_receive_dept: {
+    id: "gdms_receive_dept", title: "接收超时By接收部门分析", icon: "📥", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      const data = ctx.S.receiveTimeoutByDept;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无接收超时单据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_receive_dept", body.firstChild).setOption(hbarOption(data, "#ff9f0a"), true);
+    },
+    update(body, ctx) { if (liveCharts.gdms_receive_dept && ctx.S.receiveTimeoutByDept.length) liveCharts.gdms_receive_dept.setOption(hbarOption(ctx.S.receiveTimeoutByDept, "#ff9f0a")); }
+  },
   gdms_unclosed: {
     id: "gdms_unclosed", title: "超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 6, h: 4, minW: 4, maxW: 12, minH: 3, maxH: 8, detailKey: "transitTimeout",
     render(body, ctx) {
       const list = ctx.S.transitTimeoutOrders;
       if (!list.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时未结案件</div>'; return; }
-      let html = '<div style="font-size:12px;overflow-y:auto;max-height:100%">';
-      html += '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:2px solid var(--line);text-align:left">' +
+      let html = '<div style="font-size:12px;overflow:auto;max-height:100%">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="border-bottom:2px solid var(--line);text-align:left">' +
         '<th style="padding:5px 6px">#</th><th style="padding:5px 6px">放行单号</th><th style="padding:5px 6px">部门</th><th style="padding:5px 6px">门岗</th><th style="padding:5px 6px">状态</th></tr></thead><tbody>';
       list.slice(0, 20).forEach((o, i) => {
         html += '<tr style="border-bottom:1px solid var(--line)"><td style="padding:4px 6px;color:var(--txt2)">' + (i + 1) + '</td>' +
@@ -1519,17 +1582,19 @@ const BUILTIN_LAYOUTS = {
     { id: "table_detail", x: 0, y: 12, w: 12, h: 5 }
   ],
   "GDMS超时管控": [
-    { id: "gdms_summary", x: 0, y: 0, w: 12, h: 2 },
-    { id: "gdms_timeout_trend", x: 0, y: 2, w: 8, h: 3 },
-    { id: "gdms_timeout_cat", x: 8, y: 2, w: 4, h: 3 },
-    { id: "gdms_timeout_dept", x: 0, y: 5, w: 6, h: 3 },
-    { id: "gdms_timeout_duration", x: 6, y: 5, w: 6, h: 3 },
-    { id: "gdms_unclosed", x: 0, y: 8, w: 12, h: 4 },
-    { id: "kpi_rate", x: 0, y: 12, w: 4, h: 2 },
-    { id: "kpi_transit", x: 4, y: 12, w: 2, h: 2 },
-    { id: "kpi_receive", x: 6, y: 12, w: 2, h: 2 },
-    { id: "kpi_special", x: 8, y: 12, w: 2, h: 2 },
-    { id: "kpi_overview", x: 10, y: 12, w: 2, h: 2 }
+    // —— 顶部：5 张 KPI 指标卡（v5.2 起从底部上移，一眼掌握全局） ——
+    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 },
+    { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
+    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 },
+    { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
+    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
+    { id: "gdms_summary", x: 0, y: 2, w: 12, h: 2 },
+    { id: "gdms_timeout_trend", x: 0, y: 4, w: 8, h: 3 },
+    { id: "gdms_timeout_cat", x: 8, y: 4, w: 4, h: 3 },
+    { id: "gdms_timeout_dept", x: 0, y: 7, w: 6, h: 3 },
+    { id: "gdms_receive_dept", x: 6, y: 7, w: 6, h: 3 },
+    { id: "gdms_timeout_duration", x: 0, y: 10, w: 6, h: 3 },
+    { id: "gdms_unclosed", x: 6, y: 10, w: 6, h: 4 }
   ]
 };
 let layoutState = { active: "默认视图", custom: {} };
@@ -1575,13 +1640,14 @@ function buildCardContent(def) {
   ce.dataset.card = def.id;
   const head = document.createElement("div");
   head.className = "cardHead";
-  head.innerHTML = '<span class="dragHandle" title="拖拽移动">⠿</span>' +
-    '<span class="cardTitle">' + def.icon + ' ' + def.title + '</span>' +
+  head.innerHTML = '<span class="cardTitle">' + def.icon + ' ' + def.title + '</span>' +
     '<button class="cardRemove" title="移除卡片">✕</button>';
   const body = document.createElement("div");
   body.className = "cardBody";
   ce.appendChild(head);
   ce.appendChild(body);
+  // 编辑模式下整条头部为拖动区；✕ 按钮阻止冒泡，避免误触拖动
+  head.querySelector(".cardRemove").addEventListener("mousedown", e => e.stopPropagation());
   head.querySelector(".cardRemove").onclick = e => { e.stopPropagation(); removeCard(def.id); };
   if (def.detailKey) body.addEventListener("click", () => { if (!editMode) openDetail(def.detailKey); });
   const item = document.createElement("div");   // 外层 .grid-stack-item
@@ -1598,7 +1664,7 @@ function renderDashboard() {
   gridEl.innerHTML = "";
   grid = GridStack.init({
     column: 12, cellHeight: 95, margin: 8, float: false, animate: true,
-    draggable: { handle: ".dragHandle" },
+    draggable: { handle: ".cardHead" },   // 编辑模式下整条卡片头部为拖动区（非编辑模式 enableMove=false 自动禁用）
     resizable: { handles: "all" }
   }, gridEl);
   const ctx = { S: computeStats(), rows, orders };
@@ -2046,7 +2112,7 @@ $("detailOverlay").addEventListener("click", e => { if (e.target === $("detailOv
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("detailOverlay").classList.contains("open")) closeDetail(); });
 
 // ---------- 实时流入动态栏 ----------
-function pushFeedItems(newRows) {
+function pushFeedItems(newRows, eventText) {
   const box = $("feedItems");
   const empty = box.querySelector(".empty");
   if (empty) empty.remove();
@@ -2059,7 +2125,9 @@ function pushFeedItems(newRows) {
       `<b>${r.放行单号}</b>` +
       `<span>${r.申请部门} · ${r.放行物品名称} ×${r.数量}</span>` +
       `<span class="route">${r.流出门岗}→${r.流入门岗}</span>` +
-      `<span class="stBadge ${stCls}">${r._特保 ? "特保" : (r.放行状态 || "正常")}</span>`;
+      (eventText
+        ? `<span class="stBadge st-ev">${eventText}</span>`
+        : `<span class="stBadge ${stCls}">${r._特保 ? "特保" : (r.放行状态 || "正常")}</span>`);
     box.prepend(el);
   });
   const N = CONFIG.实时演示.动态栏保留条数;
@@ -2098,17 +2166,118 @@ function updateLiveBtn() {
 }
 function liveTick() {
   if (livePaused) return;
-  const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
-  const n = min + Math.floor(Math.random() * (max - min + 1));
-  const newRaw = [];
-  for (let i = 0; i < n; i++) newRaw.push(...makeDemoOrder(dayjs(), rows.length + i));
-  const newRows = newRaw.map(r => normalizeRow(r));
-  rows = rows.concat(newRows);
-  invalidateStats();          // 新增数据后失效缓存，确保重算
+  // —— 从当前数据挑选业务延续动作：新开单 / 推进门岗 / 到达流入门岗 / 接收 ——
+  const orderList = Object.values(computeOrders());
+  const inTransit = orderList.filter(o => o.在途);
+  const arrivedUnrecv = orderList.filter(o => o.已到达 && !o.已接收);
+  const roll = Math.random();
+  let action = "new";
+  if (roll < 0.30) action = "new";
+  else if (roll < 0.55 && inTransit.length) action = "advance";
+  else if (roll < 0.80 && inTransit.length) action = "arrive";
+  else if (arrivedUnrecv.length) action = "receive";
+  if ((action === "advance" || action === "arrive") && !inTransit.length) action = "new";
+  if (action === "receive" && !arrivedUnrecv.length) action = "new";
+
+  const newRows = [], modifiedRows = [], feedRows = [];
+  let feedText = "";
+  const now = dayjs();
+  const fmt = "YYYY/MM/DD HH:mm:ss";
+
+  if (action === "new") {
+    // ① 新开一张放行单（保留原有逻辑）
+    const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
+    const n = min + Math.floor(Math.random() * (max - min + 1));
+    for (let i = 0; i < n; i++) newRows.push(...makeDemoOrder(now, rows.length + i).map(r => normalizeRow(r)));
+    rows.push(...newRows);
+    feedRows.push(...newRows);
+  } else if (action === "advance") {
+    // ② 随机选一张在途单，在途中新增一个门岗的放行记录
+    const o = inTransit[Math.floor(Math.random() * inTransit.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const last = recs[recs.length - 1];
+    let gate = pick(DEMO.gates);
+    let guard = 0;
+    while (gate === o.流入门岗 && guard++ < 10) gate = pick(DEMO.gates);   // 中间门岗 ≠ 流入门岗
+    const wasTimeout = o.放行超时;
+    // 清原末笔超时标记（超时标记只在末笔），新末笔保持原单超时状态或按概率新增
+    if (last._放行超时) {
+      last.放行超时 = 0; last._放行超时 = false;
+      modifiedRows.push(last);
+    }
+    const rec = {
+      申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
+      实际放行门岗: gate, 放行人姓名: pick(DEMO.people),
+      实际放行时间: now.format(fmt), 放行状态: Math.random() < 0.06 ? "異常" : "正常",
+      放行超时: wasTimeout ? 1 : (Math.random() < 0.25 ? 1 : 0),
+      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
+    };
+    const newRow = normalizeRow(rec);
+    newRows.push(newRow); rows.push(newRow);
+    feedRows.push(newRow); feedText = wasTimeout ? "在途超时 · 继续流转" : "途经新门岗";
+  } else if (action === "arrive") {
+    // ③ 随机选一张在途单，到达流入门岗完成放行（可能直接接收）
+    const o = inTransit[Math.floor(Math.random() * inTransit.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const last = recs[recs.length - 1];
+    const wasTimeout = o.放行超时;
+    if (last._放行超时) {
+      last.放行超时 = 0; last._放行超时 = false;
+      modifiedRows.push(last);
+    }
+    const rec = {
+      申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
+      实际放行门岗: o.流入门岗, 放行人姓名: pick(DEMO.people),
+      实际放行时间: now.format(fmt), 放行状态: "正常",
+      放行超时: wasTimeout ? 1 : (Math.random() < 0.12 ? 1 : 0),
+      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
+    };
+    // 40% 概率到达后立即完成接收
+    if (Math.random() < 0.4) {
+      rec.接收时间 = now.add(Math.floor(Math.random() * 20) + 5, "minute").format(fmt);
+      rec.接收状态 = "正常";
+      rec.接收人姓名 = pick(DEMO.people);
+      rec.接收人部门 = pick(DEMO.depts);
+      rec.接收超时 = Math.random() < 0.2 ? 1 : 0;
+    }
+    const newRow = normalizeRow(rec);
+    newRows.push(newRow); rows.push(newRow);
+    feedRows.push(newRow);
+    feedText = rec.接收时间 ? (wasTimeout ? "到达流入门岗（超时）·已接收" : "到达流入门岗 · 已接收") : (wasTimeout ? "到达流入门岗（超时）" : "到达流入门岗");
+  } else if (action === "receive") {
+    // ④ 随机选一张已到达未接收单，执行接收动作
+    const o = arrivedUnrecv[Math.floor(Math.random() * arrivedUnrecv.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const rec = recs.find(r => r._已到达) || recs[recs.length - 1];
+    rec.接收时间 = now.add(Math.floor(Math.random() * 30) + 1, "minute").format(fmt);
+    rec.接收状态 = "正常";
+    rec.接收人姓名 = pick(DEMO.people);
+    rec.接收人部门 = pick(DEMO.depts);
+    rec.接收超时 = Math.random() < 0.25 ? 1 : 0;
+    // 重算派生字段（_接收日期 / _接收超时未接收 等）
+    const idx = rows.indexOf(rec);
+    const newRow = normalizeRow(rec);
+    newRow._rowId = rec._rowId;   // 保留行 ID，表格按 ID 增量更新
+    rows[idx] = newRow;
+    modifiedRows.push(newRow);
+    feedRows.push(newRow);
+    feedText = newRow._接收超时 ? "完成接收（接收超时）" : "完成接收";
+  }
+
+  invalidateStats();          // 数据已变，失效缓存
   const S = computeStats();
   refreshCards();             // 增量刷新各卡片（KPI/图表/异常卡）
-  if (detailTable) detailTable.addData(newRows, true);
-  pushFeedItems(newRows);
+  if (detailTable) {
+    if (newRows.length) detailTable.addData(newRows, true);
+    if (modifiedRows.length) detailTable.updateData(modifiedRows);
+  }
+  if (feedRows.length) pushFeedItems(feedRows, feedText);
   updateFileMeta(S);
   $("liveTime").textContent = dayjs().format("HH:mm:ss");
 }
@@ -2242,6 +2411,7 @@ function makeDemoOrder(time, seq) {
       "接收超时": 0,
       "接收状态": "",
       "接收人姓名": "",
+      "接收人部门": "",
       "物品分类": category,
       "放行物品名称": itemName,
       "放行数量": qty,
@@ -2255,6 +2425,7 @@ function makeDemoOrder(time, seq) {
       lastRec["接收时间"] = t.add(Math.floor(Math.random() * 90) + 10, "minute").format("YYYY/MM/DD HH:mm:ss");
       lastRec["接收状态"] = "正常";
       lastRec["接收人姓名"] = pick(DEMO.people);
+      lastRec["接收人部门"] = pick(DEMO.depts);   // 接收人属收货方，部门取随机（与申请部门可不同）
     } else {
       lastRec["接收状态"] = "未接收";
     }
