@@ -1,7 +1,7 @@
 # 物品放行监控数据看板 · 项目管理文档
 
 > **当前版本**：`v5.4.0`（GDMS 增强版）
-> **主文件**：`dashboard-release-monitor-v5.3.html`（v5 / v4 / v3.1 / v3 / v2 保留归档，见文件清单）
+> **主文件**：`dashboard-release-monitor-v5.4.html`（v5 / v4 / v3.1 / v3 / v2 保留归档，见文件清单）
 > **运行方式**：完全离线 · 双击 HTML 直接在浏览器打开（`file://` 协议可用）
 > **文档性质**：本文档为项目唯一权威管理文档，涵盖业务术语、版本历史、版本管理体系与运维指南。
 
@@ -53,7 +53,7 @@
 液态玻璃看板Qoder/
 │
 │  ── 主交付物 ──
-├── dashboard-release-monitor-v5.3.html  # ★ 当前主交付物（v5.3 GDMS 增强版，由 v5.1.html 重命名而来）
+├── dashboard-release-monitor-v5.4.html  # ★ 当前主交付物（v5.4 GDMS 增强版，由 v5.3.html 重命名而来）
 │
 │  ── 归档版本 ──
 ├── dashboard-release-monitor-v5.html    # 归档：v5.0 自由布局版
@@ -252,7 +252,7 @@
 
 ### 2.4 全量卡片统计逻辑汇总（v5.2 共 22 张卡片）
 
-> 本节记录 `dashboard-release-monitor-v5.3.html` 中全部卡片的统计口径、数据来源与计算层级，是审计口径一致性的唯一基准。
+> 本节记录 `dashboard-release-monitor-v5.4.html` 中全部卡片的统计口径、数据来源与计算层级，是审计口径一致性的唯一基准。
 #### 2.4.1 统计层级说明
 
 | 层级 | 含义 | 数据来源 |
@@ -366,7 +366,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 ### v5.4.0（当前版本）— 二级详情面板体验优化 · 解析健壮性修复
 
-**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.3.html`（同文件内升级，不新建文件）
+**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.4.html`（由 v5.3.html 重命名，主文件随版本号同步）
 
 > 背景：① 二级详情面板图表展开动画卡顿/结尾跳跃；② 明细表把全部字段列挤入窄容器；③ 上传的 xlsx 文件解析失败（首 sheet 为空时报错且无提示）。
 
@@ -396,10 +396,11 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 | 3 | **进度显示工作表名** | Worker 提取进度与表头定位提示携带工作表名称，便于用户确认读取的是哪个 Sheet |
 | 4 | **放弃内联 xlsx 库（回归外部引用）** | 内联副本（v3.1 引入）经排查存在 37 字节缺失导致语法错乱（主线程与 Worker 加载均失败 → xlsx 解析失败而 CSV 正常）。改回 `<script src="./lib/xlsx.full.min.js">` 外部引用（用户已本地化 lib 目录，file:// 离线可用），HTML 体积 1018KB → 152KB |
 | 5 | **Worker 默认禁用** | file:// 下 blob Worker 无法 `importScripts` 外部库（相对路径基于 blob URL 无效），统一走主线程分块解析（v3.0.1 已验证）；保留 Worker 代码，HTTP 部署时可开启 |
+| 6 | **性能模式无重载切换** | `location.reload()` 在 file:// 下触发 Chrome "Unsafe attempt to load URL ... from frame" 安全警告。改为就地切换：更新 `PERF` → 应用降级 class → 有数据时 `renderAll()` 重建、无数据时重建背景，体验连续不闪屏 |
 
 ### v5.3.0 — 布局交互优化 · 图表平滑刷新 · 演示业务延续
 
-**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.3.html`（由 v5.1.html 重命名，主文件随版本号同步）
+**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.3.html`（由 v5.1.html 重命名；后随 v5.4.0 重命名为 `dashboard-release-monitor-v5.4.html`）
 
 > 背景：功能已趋成熟，本轮聚焦交互细节与演示真实度：① 编辑布局时拖动按钮太小且与缩放手柄重叠；② 缩放手柄图标与液态玻璃风格不协调；③ GDMS 部分图表每次刷新整图重建观感突兀；④ 演示模式每秒只"新增一张新单"，缺乏对既有单据的状态延续。
 
@@ -440,7 +441,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 ### v5.2.0 — 接收超时责任部门分析
 
-**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.1.html`（同文件内升级；后随 v5.3.0 重命名为 `dashboard-release-monitor-v5.3.html`）
+**发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.1.html`（同文件内升级；后随 v5.3.0 重命名为 `dashboard-release-monitor-v5.3.html`，再随 v5.4.0 重命名为 `dashboard-release-monitor-v5.4.html`）
 
 > 背景：业务确认「接收超时的责任主体是接收人（收货方）所在部门」，导出文件含「接收人部門」列，但此前看板未映射该字段，无法按接收部门考核超时责任。
 
@@ -467,7 +468,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 ### v5.1.0 — GDMS 增强版（超时管控专区）
 
-**发布日期**：2026-08-01 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.1.html`（不覆盖 v5/v4/v3.1/v3/v2；该文件后续经 v5.2 / v5.3 迭代并于 v5.3.0 重命名为 `dashboard-release-monitor-v5.3.html`）
+**发布日期**：2026-08-01 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.1.html`（不覆盖 v5/v4/v3.1/v3/v2；该文件后续经 v5.2 / v5.3 / v5.4 迭代，最终重命名为 `dashboard-release-monitor-v5.4.html`）
 
 > 背景：参考公司 IT 部门 GDMS 数据看板「放行物品監測」页面，新增超时管控专区卡片与 GDMS 预设布局，强化超时维度的深度分析。
 
@@ -724,14 +725,14 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 ### 4.3 发布流程
 
-1. **开发**：在 `dashboard-release-monitor-v5.3.html` 上修改，遵循[第九章开发规范](#九开发规范)。
+1. **开发**：在 `dashboard-release-monitor-v5.4.html` 上修改，遵循[第九章开发规范](#九开发规范)。
 2. **自测**：
    - 载入演示数据，确认 KPI / 图表 / 实时模拟 / 二级详情全部正常；
    - 浏览器控制台**零错误、零警告**；
    - 用真实导出文件（含首行合并标题的 .xls）验证解析；
    - 大数据文件（≥3 万行）验证性能优化生效。
 3. **定版**：按 4.1 规则确定新版本号，更新：
-   - **文件名称与版本号同步**：将主交付物重命名为 `dashboard-release-monitor-v{N.M}.html`（如 v5.3.0 → `dashboard-release-monitor-v5.3.html`），并在本文档文件清单同步更新；
+   - **文件名称与版本号同步**：将主交付物重命名为 `dashboard-release-monitor-v{N.M}.html`（如 v5.4.0 → `dashboard-release-monitor-v5.4.html`），并在本文档文件清单同步更新；
    - HTML 内 `<title>` 与页脚 `footerNote` 的版本标识；
    - 本文档[第三章](#三版本更新历史记录)追加版本记录；
    - 本文档顶部「当前版本」字段。
@@ -800,7 +801,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 ### 5.3 代码结构（单文件分区）
 
-`dashboard-release-monitor-v5.3.html` 采用单文件架构，内部按职责分区：
+`dashboard-release-monitor-v5.4.html` 采用单文件架构，内部按职责分区：
 
 | 区块 | 位置 | 内容 |
 |------|------|------|
@@ -889,7 +890,7 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 ### 7.2 启动方式
 
 1. 将项目文件夹（含 `lib/` 与 HTML）拷贝到目标电脑。
-2. 双击 `dashboard-release-monitor-v5.3.html`，浏览器自动打开（`file://` 协议）。
+2. 双击 `dashboard-release-monitor-v5.4.html`，浏览器自动打开（`file://` 协议）。
 3. 首次打开会根据硬件自动选择高画质/流畅模式（顶栏标签可见）。
 4. 三种载入数据方式：
    - **拖拽**：将导出文件拖入上传区；
@@ -974,7 +975,7 @@ v3 新增 `PERF` 自适应层，不属于 `CONFIG`，位于脚本顶部：
 
 ### 9.1 代码组织原则
 
-- **单文件架构**：所有逻辑保持在 `dashboard-release-monitor-v5.3.html` 内，便于离线分发与版本管理；不拆分外部 JS 文件。
+- **单文件架构**：所有逻辑保持在 `dashboard-release-monitor-v5.4.html` 内，便于离线分发与版本管理；不拆分外部 JS 文件。
 - **配置与逻辑分离**：业务规则（字段映射、前缀、阈值）**只写在 `CONFIG`**；程序逻辑区一般不需修改。
 - **单向数据流**：解析 → 标准化 → 计算 → 渲染，禁止逆向依赖（渲染层不得修改 rows/orders）。
 
