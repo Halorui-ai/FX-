@@ -407,6 +407,15 @@ closeRate = closed / (closed + arrivedTimeout + transitTimeout)
 
 > ⚠️ 分享时未附带 `style/`、`views/` 不影响使用——主题与视图自动回退为默认；同事拿到主文件后可自行放入自己预设的主题/视图文件。
 
+#### 🔧 主题插件修复（v5.5.0 内）
+
+| # | 问题 | 修复 |
+|---|------|------|
+| 1 | 探测即生效：启动探测外部主题时，探测用 `<link>` 未标记，Material3 CSS 立即加载且无法被"默认"清除 → 一进页面就是外部风格、选默认无反应 | 探测资源加 `data-probe` 标记，探测完成后统一移除；`applyTheme` 清理范围扩展为 `data-theme` + `data-probe` |
+| 2 | 主题下拉框为浏览器原生样式，与视图下拉/按钮严重不搭 | `#layoutSelect` 与 `#themeSelect` 共用液态玻璃风样式（圆角/毛玻璃/hover/focus/option 统一） |
+
+> 💡 若此前曾手动切到过外部主题，浏览器记住了选择（localStorage.dashTheme）。想恢复默认：控制台执行 `localStorage.removeItem("dashTheme")` 后刷新，或直接在主题下拉选「默认」。
+
 ### v5.4.0 — 二级详情面板体验优化 · 解析健壮性修复
 
 **发布日期**：2026-08-13 ｜ **类型**：功能优化版（MINOR）｜ **交付物**：`dashboard-release-monitor-v5.4.html`（由 v5.3.html 重命名；后随 v5.5.0 重命名为 `dashboard-release-monitor-v5.5.html`）
