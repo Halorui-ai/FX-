@@ -289,8 +289,14 @@ body.perf-lite .feedItem,body.perf-lite .feedItem--new,body.perf-lite .feedItem-
 body.perf-lite .lg-tint,body.perf-lite .lg-edge{display:none!important}
 
 /* ========== 模块化卡片布局（v4） ========== */
-#layoutSelect{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);color:var(--txt);
-  border-radius:10px;padding:6px 10px;font-size:13px;max-width:200px}
+/* 视图 / 主题 选择器统一样式（液态玻璃风，与顶栏按钮协调） */
+#layoutSelect, #themeSelect{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);color:var(--txt);
+  border-radius:10px;padding:6px 10px;font-size:13px;max-width:200px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:border-color .18s, background .18s}
+#layoutSelect:hover, #themeSelect:hover{border-color:var(--accent);background:rgba(255,255,255,0.9)}
+#layoutSelect:focus, #themeSelect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,113,227,0.15)}
+#layoutSelect option, #themeSelect option{background:#fff;color:var(--txt)}
 
 #cardGrid{position:relative;min-height:200px}
 .cardSlot{isolation:isolate;display:flex;flex-direction:column;box-sizing:border-box;
@@ -1764,23 +1770,31 @@ const VIEW_REGISTRY = [
 ];
 
 // —— 探测并加载外部主题（file:// 兼容：动态 link/script 标签 onload/onerror）——
+// 重要：探测阶段只判断文件是否存在，不实际应用主题——
+// 探测用的 link/script 带 data-probe 标记，探测完成后立即移除，
+// 避免"探测即生效"导致外部主题无法切回默认（此前 bug：Material3 一进页面就生效）。
 function probeThemes(done) {
   const list = [{ id: "默认", css: null, js: null }];   // 内置主题始终可选
   const registry = THEME_REGISTRY;
   if (!registry.length) { themeState.list = list; done(); return; }
   let remaining = registry.length;
-  const finishOne = () => { if (--remaining <= 0) { themeState.list = list; done(); } };
+  const finishOne = () => { if (--remaining <= 0) {
+    // 探测完成：移除全部探测资源（防止探测 CSS/JS 实际生效）
+    document.querySelectorAll("link[data-probe], script[data-probe]").forEach(el => el.remove());
+    themeState.list = list; done();
+  } };
   registry.forEach(t => {
     const link = document.createElement("link");
-    link.rel = "stylesheet"; link.href = t.css;
+    link.rel = "stylesheet"; link.href = t.css; link.dataset.probe = "1";
     let cssOk = false;
     const check = () => {
       if (cssOk && !list.some(x => x.id === t.id)) {
         list.push({ id: t.id, css: t.css, js: t.js });
         if (t.js) {
+          // 仅探测 js 是否存在（不执行其逻辑），完成后移除
           const s = document.createElement("script");
-          s.src = t.js;
-          s.onload = () => { };   // js 本身会注册图表配色
+          s.src = t.js; s.dataset.probe = "1";
+          s.onload = () => { };
           s.onerror = () => { };
           document.head.appendChild(s);
         }
@@ -1797,8 +1811,8 @@ function probeThemes(done) {
 function applyTheme(id, save) {
   const t = themeState.list.find(x => x.id === id) || themeState.list[0];
   if (!t) return;
-  // 清理旧外部主题资源
-  document.querySelectorAll("link[data-theme], script[data-theme]").forEach(el => el.remove());
+  // 清理旧外部主题资源（含探测残留）
+  document.querySelectorAll("link[data-theme], script[data-theme], link[data-probe], script[data-probe]").forEach(el => el.remove());
   if (t.css) {
     const link = document.createElement("link");
     link.rel = "stylesheet"; link.href = t.css; link.dataset.theme = "1";
