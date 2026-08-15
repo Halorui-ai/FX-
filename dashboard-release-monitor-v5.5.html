@@ -426,6 +426,7 @@ body.perf-lite .cardSlot:hover{transform:none!important}
   </div>
   <div class="tb-actions">
     <span class="tb-view">视图<select id="layoutSelect" title="切换预设/自定义视图"></select></span>
+    <span class="tb-view">主题<select id="themeSelect" title="切换外观主题（默认主题内置；外部主题需 style/ 文件夹）"></select></span>
     <button id="btnPerf" title="切换渲染性能模式（高画质 / 流畅）">⚙️ 性能模式</button>
     <button id="btnLive" class="hidden">⏸ 暂停刷新</button>
     <button id="btnReupload" class="hidden">📂 重新上传</button>
@@ -438,6 +439,7 @@ body.perf-lite .cardSlot:hover{transform:none!important}
     <span class="tb-edithint">🎯 编辑模式 · 拖 ⠿ 移动 · 拖边缘缩放 · ✕ 移除</span>
     <button id="btnAddCard" title="从卡片库添加卡片">➕ 添加卡片</button>
     <button id="btnLayoutSave" title="将当前布局另存为命名视图">💾 保存布局</button>
+    <button id="btnViewExport" title="将当前布局导出为视图插件文件（放入 views/ 目录即可分享给同事）">📤 导出视图文件</button>
     <button id="btnLayoutReset" title="恢复当前预设视图">↺ 重置</button>
   </div>
 </div>
@@ -1583,6 +1585,8 @@ const BUILTIN_LAYOUTS = {
 };
 let layoutState = { active: "默认视图", custom: {} };
 let workingLayout = BUILTIN_LAYOUTS["默认视图"].map(it => ({ ...it }));
+let externalViews = {};                             // 外部视图插件 id → layout 数组（插件系统使用，需先声明）
+let themeState = { list: [{ id: "默认", css: null, js: null }], active: "默认" };   // 可用主题 + 当前主题
 let grid = null;   // gridstack 实例
 let editMode = false;   // 布局编辑模式（平常关闭，避免误触拖拽/缩放/删除）
 
@@ -1602,7 +1606,8 @@ function setEditMode(on) {
 
 function isNewFormat(lay) { return Array.isArray(lay) && lay.length && lay[0] && typeof lay[0] === "object" && lay[0].id; }
 function getLayoutByName(name) {
-  let lay = (layoutState.custom && layoutState.custom[name]) || BUILTIN_LAYOUTS[name] || null;
+  // 查找顺序：自定义视图 → 外部视图插件 → 内置预设
+  let lay = (layoutState.custom && layoutState.custom[name]) || externalViews[name] || BUILTIN_LAYOUTS[name] || null;
   if (lay && !isNewFormat(lay)) lay = null;   // v4 旧格式（字符串数组）不兼容 → 回退默认
   return lay ? lay.map(it => ({ ...it })) : null;
 }
@@ -1737,13 +1742,159 @@ function renderCardLib() {
 }
 function refreshLibState() { if ($("cardLibOverlay").classList.contains("open")) renderCardLib(); }
 
+// =====================================================================
+// ★★★ 主题 / 视图 插件系统（v5.4）★★★
+// 主题：主文件内置「默认」液态玻璃主题；外部主题放 style/theme-<id>.css(.js)
+// 视图：主文件内置 5 个预设视图；外部视图放 views/<id>.js（VIEW_PLUGIN 格式）
+// 发现机制：file:// 下 JS 无法枚举目录，故启动时对「注册表」中的候选逐个
+//   动态创建 <link>/<script> 探测（onload=存在可选，onerror=缺失置灰）。
+// 新增外部主题/视图：把文件放入对应目录，并在下方注册表中登记一行即可。
+// =====================================================================
+
+// —— 外部主题注册表（id → 文件路径；css 必填，js 可选用于图表配色）——
+const THEME_REGISTRY = [
+  { id: "Material3", css: "./style/theme-material3.css", js: "./style/theme-material3-charts.js" },
+  // ↑ 模板：新增主题在此追加一行（id 即下拉显示名；js 为图表配色脚本，可省略）
+];
+
+// —— 外部视图注册表（id → js 文件路径）——
+const VIEW_REGISTRY = [
+  { id: "示例管理层视图", file: "./views/示例管理层视图.js" },
+  // ↑ 模板：新增视图在此追加一行（文件内定义 window.VIEW_PLUGIN）
+];
+
+// —— 探测并加载外部主题（file:// 兼容：动态 link/script 标签 onload/onerror）——
+function probeThemes(done) {
+  const list = [{ id: "默认", css: null, js: null }];   // 内置主题始终可选
+  const registry = THEME_REGISTRY;
+  if (!registry.length) { themeState.list = list; done(); return; }
+  let remaining = registry.length;
+  const finishOne = () => { if (--remaining <= 0) { themeState.list = list; done(); } };
+  registry.forEach(t => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.href = t.css;
+    let cssOk = false;
+    const check = () => {
+      if (cssOk && !list.some(x => x.id === t.id)) {
+        list.push({ id: t.id, css: t.css, js: t.js });
+        if (t.js) {
+          const s = document.createElement("script");
+          s.src = t.js;
+          s.onload = () => { };   // js 本身会注册图表配色
+          s.onerror = () => { };
+          document.head.appendChild(s);
+        }
+      }
+      finishOne();
+    };
+    link.onload = () => { cssOk = true; check(); };
+    link.onerror = () => check();
+    document.head.appendChild(link);
+  });
+}
+
+// —— 应用主题：移除旧主题 link/script，加载新主题 ——
+function applyTheme(id, save) {
+  const t = themeState.list.find(x => x.id === id) || themeState.list[0];
+  if (!t) return;
+  // 清理旧外部主题资源
+  document.querySelectorAll("link[data-theme], script[data-theme]").forEach(el => el.remove());
+  if (t.css) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.href = t.css; link.dataset.theme = "1";
+    document.head.appendChild(link);
+  }
+  if (t.js) {
+    const s = document.createElement("script");
+    s.src = t.js; s.dataset.theme = "1";
+    document.head.appendChild(s);
+  }
+  themeState.active = t.id;
+  if (save) { try { localStorage.setItem("dashTheme", t.id); } catch (e) { } }
+  renderThemeSelect();
+}
+
+// —— 主题下拉渲染（外部主题缺失时该项不出现；仅默认 → 显示"默认"）——
+function renderThemeSelect() {
+  const sel = $("themeSelect");
+  if (!sel) return;
+  sel.innerHTML = themeState.list.map(t =>
+    '<option value="' + t.id + '"' + (t.id === themeState.active ? " selected" : "") + '>' + t.id + '</option>'
+  ).join("");
+  sel.title = themeState.list.length > 1
+    ? "切换外观主题（外部主题来自 style/ 文件夹）"
+    : "当前仅内置默认主题（未检测到 style/ 外部主题）";
+}
+$("themeSelect").onchange = () => applyTheme($("themeSelect").value, true);
+
+// —— 加载外部视图插件（views/*.js，定义 window.VIEW_PLUGIN）——
+function loadViewPlugins(done) {
+  const registry = VIEW_REGISTRY;
+  if (!registry.length) { done(); return; }
+  let remaining = registry.length;
+  const finishOne = () => { if (--remaining <= 0) done(); };
+  registry.forEach(v => {
+    const s = document.createElement("script");
+    s.src = v.file;
+    s.onload = () => {
+      // 每个插件文件独立执行，读取后立即清空，避免互相覆盖
+      const p = window.VIEW_PLUGIN;
+      window.VIEW_PLUGIN = null;
+      if (p && p.id && Array.isArray(p.layout) && p.layout.length) {
+        externalViews[p.id] = p.layout;
+      }
+      finishOne();
+    };
+    s.onerror = () => finishOne();
+    document.head.appendChild(s);
+  });
+}
+
+// —— 导出当前布局为视图插件文件（供分享/备份到 views/ 目录）——
+function saveViewPlugin(name) {
+  syncLayoutFromGrid();
+  const id = (name || "myview").replace(/[^\w\u4e00-\u9fa5]/g, "_");
+  const plugin = {
+    id: id,
+    name: name || id,
+    layout: workingLayout.map(it => ({ ...it }))
+  };
+  const js = "window.VIEW_PLUGIN = " + JSON.stringify(plugin, null, 2) + ";\n";
+  const blob = new Blob([js], { type: "text/javascript;charset=utf-8" });
+  saveAs(blob, id + ".js");
+  toast("已导出视图插件「" + (name || id) + ".js」，放入 views/ 目录即可被看板识别 ✅");
+}
+
+// —— 启动：探测主题 + 加载视图插件，然后恢复上次选择 ——
+(function initPlugins() {
+  probeThemes(() => {
+    let saved = null;
+    try { saved = localStorage.getItem("dashTheme"); } catch (e) { }
+    // 恢复上次主题（外部主题文件存在才恢复）
+    const target = themeState.list.find(t => t.id === saved && t.css) ? saved : themeState.list[0].id;
+    applyTheme(target, false);
+  });
+  loadViewPlugins(() => {
+    // 外部视图加载完成后：若上次激活的是外部视图且存在，则应用它（loadLayoutState 在插件加载前已跑）
+    const active = layoutState.active;
+    if (externalViews[active]) {
+      workingLayout = externalViews[active].map(it => ({ ...it }));
+    }
+    renderLayoutSelect();
+  });
+})();
+
 // ---------- 布局工具栏 ----------
 function renderLayoutSelect() {
   const sel = $("layoutSelect");
-  const names = [...Object.keys(BUILTIN_LAYOUTS), ...Object.keys(layoutState.custom)];
+  const names = [...Object.keys(BUILTIN_LAYOUTS), ...Object.keys(externalViews), ...Object.keys(layoutState.custom)];
   sel.innerHTML = names.map(n =>
-    '<option value="' + n + '"' + (n === layoutState.active ? " selected" : "") + '>' + n + (layoutState.custom[n] ? " ★" : "") + '</option>'
+    '<option value="' + n + '"' + (n === layoutState.active ? " selected" : "") + '>' + n +
+    (externalViews[n] ? " 📦" : layoutState.custom[n] ? " ★" : "") + '</option>'
   ).join("");
+  sel.title = Object.keys(externalViews).length
+    ? "切换预设 / 外部视图（📦，来自 views/ 文件夹）/ 自定义视图（★）"
+    : "切换预设 / 自定义视图";
 }
 $("layoutSelect").onchange = () => {
   const name = $("layoutSelect").value;
@@ -1759,9 +1910,14 @@ $("btnLayoutSave").onclick = () => {
   saveLayoutState(); renderLayoutSelect();
   toast("已保存视图「" + name.trim() + "」✅");
 };
+$("btnViewExport").onclick = () => {
+  const name = prompt("请输入视图插件名称（将生成 <名称>.js 文件）：", (layoutState.active || "我的视图") + "");
+  if (!name || !name.trim()) return;
+  saveViewPlugin(name.trim());
+};
 $("btnLayoutReset").onclick = () => {
-  const base = BUILTIN_LAYOUTS[layoutState.active] ? layoutState.active : "默认视图";
-  workingLayout = BUILTIN_LAYOUTS[base].map(it => ({ ...it }));
+  const base = (BUILTIN_LAYOUTS[layoutState.active] || externalViews[layoutState.active]) ? layoutState.active : "默认视图";
+  workingLayout = (BUILTIN_LAYOUTS[base] || externalViews[base] || BUILTIN_LAYOUTS["默认视图"]).map(it => ({ ...it }));
   layoutState.active = base;
   renderDashboard(); refreshLibState();
   toast("已重置为「" + base + "」");

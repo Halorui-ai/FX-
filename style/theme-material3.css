@@ -1,0 +1,549 @@
+/* ==========================================================================
+   Material Design 3 主题覆盖文件
+   适用：dashboard-release-monitor-v4.html
+   用法：在 <head> 中、现有 <style> 之后添加：
+   <link rel="stylesheet" href="./theme-material3.css">
+   ========================================================================== */
+
+/* ========== 1. CSS 变量覆盖：液态玻璃 → Material Design 3 ========== */
+:root{
+  --bg:#ffffff;
+  --line:#ebebeb;
+  --txt:#0e1115;
+  --txt2:#7f8d9f;
+  --accent:#4285f4;
+  --accent2:#3367d6;
+  --ok:#34a853;
+  --bad:#ea4335;
+  --warn:#fbbc05;
+  --purple:#5856d6;
+  --cyan:#4285f4;
+  /* Material 3 新增变量 */
+  --m3-surface:#ffffff;
+  --m3-surface-variant:#f9f9fa;
+  --m3-sidebar:#f0f6ff;
+  --m3-sidebar-active:#dbeafe;
+  --m3-sidebar-active-fg:#003e8f;
+  --m3-radius:8px;
+  --m3-radius-lg:12px;
+  --m3-elev-1:0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
+  --m3-elev-2:0 2px 6px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --m3-elev-3:0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --m3-elev-4:0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+  --m3-elev-5:0 16px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
+  --m3-font:"Google Sans","Product Sans","Roboto",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+
+/* ========== 2. 全局背景 & 字体 ========== */
+html{background:var(--bg)!important}
+body{
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+  font-family:var(--m3-font)!important;
+  -webkit-font-smoothing:antialiased;
+}
+h1{font-size:22px!important;font-weight:500!important;letter-spacing:0!important}
+.sub{color:var(--txt2)!important}
+
+/* 隐藏液态玻璃动态背景画布 */
+#bg-source{display:none!important}
+
+/* 隐藏玻璃折射层 */
+.lg-tint,.lg-edge{display:none!important}
+
+/* ========== 3. 按钮系统 → Material 3 Buttons ========== */
+button{
+  border-radius:var(--m3-radius)!important;
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface)!important;
+  color:var(--accent)!important;
+  font-family:var(--m3-font)!important;
+  font-weight:500!important;
+  font-size:13px!important;
+  padding:8px 18px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:box-shadow .2s ease, background .2s ease!important;
+}
+button:hover{
+  background:rgba(66,133,244,0.08)!important;
+  border-color:var(--accent)!important;
+  color:var(--accent)!important;
+  box-shadow:none!important;
+}
+button:active{
+  background:rgba(66,133,244,0.12)!important;
+  box-shadow:none!important;
+}
+button.primary{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:500!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+button.primary:hover{
+  background:var(--accent2)!important;
+  color:#fff!important;
+  box-shadow:var(--m3-elev-2)!important;
+  filter:none!important;
+}
+button.primary:active{
+  box-shadow:var(--m3-elev-1)!important;
+}
+
+/* ========== 4. 顶栏 → Material 3 App Bar ========== */
+#topbar{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+  padding:16px 20px!important;
+}
+#fileMeta b{color:var(--accent)!important}
+
+/* LIVE 徽标 → Material 风格 */
+#liveBadge{
+  border:1px solid rgba(52,168,83,0.3)!important;
+  border-radius:var(--m3-radius)!important;
+  background:rgba(52,168,83,0.08)!important;
+  color:#137333!important;
+  font-weight:500!important;
+}
+.liveDot{background:var(--ok)!important}
+#liveBadge.paused{
+  border-color:rgba(251,188,5,0.4)!important;
+  background:rgba(251,188,5,0.10)!important;
+  color:#795600!important;
+}
+
+/* ========== 5. 实时流入动态栏 ========== */
+#liveFeed{
+  background:var(--m3-surface-variant)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+#liveFeed .feedLabel{
+  color:#137333!important;
+  border-right-color:var(--line)!important;
+}
+.feedItem{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius)!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+.feedItem b{color:var(--txt)!important}
+.feedItem .t,.feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 → Material Chips */
+.st-ok{background:rgba(52,168,83,0.10)!important;color:#137333!important;border:1px solid rgba(52,168,83,0.3)!important}
+.st-bad{background:rgba(234,67,53,0.08)!important;color:#c5221f!important;border:1px solid rgba(234,67,53,0.3)!important}
+.st-warn{background:rgba(251,188,5,0.12)!important;color:#795600!important;border:1px solid rgba(251,188,5,0.35)!important}
+.st-sp{background:rgba(88,86,214,0.10)!important;color:#3c3b9e!important;border:1px solid rgba(88,86,214,0.3)!important}
+
+/* ========== 6. 上传区 ========== */
+#dropzone{
+  border:2px dashed #d2d2d7!important;
+  border-radius:var(--m3-radius-lg)!important;
+  background:var(--m3-surface-variant)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+#dropzone.over{border-color:var(--accent)!important;background:rgba(66,133,244,0.06)!important}
+#dropzone p{color:var(--txt2)!important}
+#dropzone p b{color:var(--txt)!important}
+
+/* ========== 7. 错误面板 ========== */
+#errPanel{
+  border:1px solid rgba(234,67,53,0.3)!important;
+  background:rgba(234,67,53,0.06)!important;
+  border-radius:var(--m3-radius-lg)!important;
+}
+#errPanel h3{color:var(--bad)!important}
+
+/* ========== 8. KPI 卡片 → Material 3 Card ========== */
+.kpi{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+  padding:16px!important;
+}
+.kpi::before{
+  border-radius:var(--m3-radius-lg) 0 0 var(--m3-radius-lg)!important;
+  width:3px!important;
+}
+.kpi .label{color:var(--txt2)!important;font-size:12px!important}
+.kpi .value{
+  font-size:28px!important;
+  font-weight:500!important;
+  font-family:var(--m3-font)!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+.kpi .kpiSub{color:var(--txt2)!important}
+.kpi .kpiSub b{color:var(--accent)!important}
+.kpi:hover{
+  transform:translateY(-2px)!important;
+  background:var(--m3-surface)!important;
+  box-shadow:var(--m3-elev-2)!important;
+}
+
+/* ========== 9. 图表卡片 → Material 3 Card ========== */
+.chartCard{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+  padding:14px!important;
+}
+.chartCard h3{
+  font-size:14px!important;
+  font-weight:500!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:10px!important;
+}
+.chartCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--m3-surface)!important;
+  box-shadow:var(--m3-elev-2)!important;
+}
+
+/* ========== 10. 专项分析卡片 ========== */
+.analyzeCard{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+  padding:14px!important;
+}
+.analyzeCard h3{
+  font-size:14px!important;
+  font-weight:500!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+  padding-left:10px!important;
+}
+.analyzeCard .ac-count{
+  font-size:24px!important;
+  font-weight:500!important;
+  font-family:var(--m3-font)!important;
+}
+.analyzeCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--m3-surface)!important;
+  box-shadow:var(--m3-elev-2)!important;
+}
+.analyzeCard .ac-more{color:var(--accent)!important;font-weight:500!important}
+.ac-tag{
+  border-radius:var(--m3-radius)!important;
+  font-weight:500!important;
+}
+
+/* ========== 11. 明细表 → Material Data Table ========== */
+#detailCard{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+#detailCard h3{
+  font-size:14px!important;
+  font-weight:500!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:10px!important;
+}
+.tabulator{
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius)!important;
+}
+.tabulator .tabulator-header{
+  background:var(--m3-surface-variant)!important;
+  border-bottom:1px solid var(--line)!important;
+}
+.tabulator .tabulator-header .tabulator-col{
+  border-right:1px solid var(--line)!important;
+  font-weight:500!important;
+}
+.tabulator .tabulator-row{
+  border-bottom:1px solid var(--line)!important;
+}
+.tabulator .tabulator-row.tabulator-row-even{
+  background:rgba(0,0,0,0.015)!important;
+}
+.tabulator .tabulator-row:hover{
+  background:rgba(66,133,244,0.06)!important;
+}
+.tabulator .tabulator-page{
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius)!important;
+  background:var(--m3-surface)!important;
+  font-weight:500!important;
+}
+.tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  border-color:var(--accent)!important;
+}
+.tabulator .tabulator-page:hover{
+  background:rgba(66,133,244,0.10)!important;
+}
+.tabulator-popup-container{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  box-shadow:var(--m3-elev-3)!important;
+  border-radius:var(--m3-radius)!important;
+}
+.footerNote{color:var(--txt2)!important}
+
+/* ========== 12. 二级详情面板 → Material 3 Dialog/Drawer ========== */
+#detailOverlay{
+  background:rgba(0,0,0,0.32)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#detailPanel{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-5)!important;
+}
+#detailPanelHead{
+  border-bottom:1px solid var(--line)!important;
+  padding:20px 24px 16px!important;
+}
+#detailPanelTitle{
+  font-size:18px!important;
+  font-weight:500!important;
+}
+#detailPanelTitle::before{
+  background:var(--accent)!important;
+}
+#btnDetailClose{
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+  box-shadow:none!important;
+}
+#btnDetailClose:hover{
+  background:rgba(234,67,53,0.08)!important;
+  border-color:rgba(234,67,53,0.3)!important;
+  color:var(--bad)!important;
+}
+.detailChip{
+  background:var(--m3-surface-variant)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+.detailChip .dc-label{color:var(--txt2)!important}
+.detailChip .dc-value{
+  font-weight:500!important;
+  font-family:var(--m3-font)!important;
+}
+#detailChartBox{
+  background:var(--m3-surface-variant)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius)!important;
+}
+
+/* 多维度切换器 → Material Chips */
+.dimBtn{
+  border-radius:var(--m3-radius)!important;
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface)!important;
+  color:var(--txt2)!important;
+  font-weight:500!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+.dimBtn:hover{
+  color:var(--accent)!important;
+  border-color:var(--accent)!important;
+  background:rgba(66,133,244,0.08)!important;
+}
+.dimBtn.active{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:500!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+
+/* 分类筛选芯片 */
+.catFilter{
+  border-radius:var(--m3-radius)!important;
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface)!important;
+  color:var(--txt2)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+.catFilter:hover{
+  color:var(--txt)!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--m3-surface-variant)!important;
+}
+.catFilter.active{
+  color:var(--txt)!important;
+  font-weight:500!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--m3-surface-variant)!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+#detailTableBox h4{
+  font-size:13px!important;
+  font-weight:500!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 13. 布局工具栏 ========== */
+#layoutToolbar{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+}
+#layoutToolbar .lt-label{color:var(--txt2)!important}
+#layoutSelect{
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface)!important;
+  color:var(--txt)!important;
+  border-radius:var(--m3-radius)!important;
+  font-family:var(--m3-font)!important;
+  padding:7px 12px!important;
+}
+
+/* ========== 14. 模块化卡片 → Material 3 Card Slots ========== */
+.cardSlot{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-1)!important;
+  transition:box-shadow .2s ease, transform .2s ease!important;
+}
+.cardSlot:hover{
+  background:var(--m3-surface)!important;
+  box-shadow:var(--m3-elev-2)!important;
+}
+.cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:2px!important;
+}
+.cardTitle{
+  font-size:13px!important;
+  font-weight:500!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+}
+.cardRemove{
+  border-radius:50%!important;
+  border:none!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.cardRemove:hover{
+  background:rgba(234,67,53,0.08)!important;
+  color:var(--bad)!important;
+}
+.cardBody .kpiValue{
+  font-weight:500!important;
+  font-family:var(--m3-font)!important;
+  color:var(--txt)!important;
+}
+.cardBody .kpiSub b{color:var(--accent)!important}
+.cardBody .ac-count{
+  font-weight:500!important;
+  font-family:var(--m3-font)!important;
+}
+
+/* ========== 15. 加载遮罩 ========== */
+#loadingOverlay{
+  background:rgba(255,255,255,0.75)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.loadingCard{
+  background:var(--m3-surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--m3-radius-lg)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--m3-elev-4)!important;
+}
+.spinner{
+  border-color:rgba(66,133,244,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+#loadingText{color:var(--txt)!important}
+.progressTrack{background:var(--m3-surface-variant)!important;border-radius:var(--m3-radius)!important}
+#progressBar{background:var(--accent)!important;border-radius:var(--m3-radius)!important}
+
+/* ========== 16. 性能模式标签 ========== */
+#perfTag{
+  border:1px solid var(--line)!important;
+  background:var(--m3-surface-variant)!important;
+  color:var(--txt2)!important;
+  border-radius:var(--m3-radius)!important;
+}
+#perfTag.lite b{color:var(--warn)!important}
+#perfTag.full b{color:var(--ok)!important}
+
+/* ========== 17. 低性能模式适配 ========== */
+body.perf-lite{
+  background:var(--bg)!important;
+}
+body.perf-lite #topbar,
+body.perf-lite #liveFeed,
+body.perf-lite #dropzone,
+body.perf-lite .kpi,
+body.perf-lite .chartCard,
+body.perf-lite .analyzeCard,
+body.perf-lite #detailCard,
+body.perf-lite .loadingCard,
+body.perf-lite #detailPanel,
+body.perf-lite #loadingOverlay,
+body.perf-lite .cardSlot,
+body.perf-lite #layoutToolbar,
+body.perf-lite .detailChip,
+body.perf-lite .dimBtn,
+body.perf-lite .catFilter{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:var(--m3-surface)!important;
+}
+body.perf-lite #detailOverlay{background:rgba(0,0,0,0.32)!important}
+body.perf-lite #loadingOverlay{background:rgba(255,255,255,0.75)!important}
+
+/* ========== 18. 滚动条美化（Material 风格） ========== */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d2d2d7;border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#b0b0b5}
