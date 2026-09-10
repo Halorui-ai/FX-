@@ -1,0 +1,675 @@
+/* ==========================================================================
+   主题 6：Fluent 微软 (fluent)
+   适用：dashboard-release-monitor-v5.5.html（data-theme + data-mode 属性系统）
+   用法：在 <head> 中、现有 <style> 之后添加：
+   <link rel="stylesheet" href="./style/theme-fluent.css">
+   ========================================================================== */
+
+/* ========== 1. CSS 变量：Light 模式 ========== */
+[data-theme="fluent"][data-mode="light"]{
+  --bg:#f3f3f3;
+  --bg2:#fafafa;
+  --bg3:#ebebeb;
+  --surface:rgba(255,255,255,0.65);
+  --surface2:rgba(248,248,248,0.50);
+  --surface-h:rgba(255,255,255,0.80);
+  --border-theme:rgba(0,0,0,0.08);
+  --border-theme2:rgba(0,0,0,0.04);
+  --line:rgba(0,0,0,0.08);
+  --txt:#242424;
+  --txt2:rgba(36,36,36,0.55);
+  --accent:#0078d4;
+  --accent2:#106ebe;
+  --ok:#107c10;
+  --bad:#d13438;
+  --warn:#ffaa44;
+  --purple:#5c2d91;
+  --cyan:#008575;
+  --glass-blur:20px;
+  --glass-sat:180%;
+  --card-r:8px;
+  --card-sh:0 2px 6px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+  --card-sh-h:0 4px 10px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.10);
+  --card-bd:1px solid rgba(0,0,0,0.06);
+  --btn-r:6px;
+}
+
+/* ========== 2. CSS 变量：Dark 模式 ========== */
+[data-theme="fluent"][data-mode="dark"]{
+  --bg:#1b1b1b;
+  --bg2:#242424;
+  --bg3:#1b1b1b;
+  --surface:rgba(255,255,255,0.05);
+  --surface2:rgba(255,255,255,0.03);
+  --surface-h:rgba(255,255,255,0.08);
+  --border-theme:rgba(255,255,255,0.07);
+  --border-theme2:rgba(255,255,255,0.04);
+  --line:rgba(255,255,255,0.08);
+  --txt:#ffffff;
+  --txt2:rgba(255,255,255,0.55);
+  --accent:#4cc2ff;
+  --accent2:#0078d4;
+  --ok:#6ccb5f;
+  --bad:#ff99a4;
+  --warn:#ffd335;
+  --purple:#c29bff;
+  --cyan:#4fe0cc;
+  --glass-blur:20px;
+  --glass-sat:160%;
+  --card-r:8px;
+  --card-sh:0 2px 6px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.12);
+  --card-sh-h:0 4px 10px rgba(0,0,0,0.10), 0 12px 32px rgba(0,0,0,0.18);
+  --card-bd:1px solid rgba(255,255,255,0.05);
+  --btn-r:6px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="fluent"]{
+  font-family:"Segoe UI","Segoe UI Web","Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="fluent"] html,
+[data-theme="fluent"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="fluent"] h1{font-weight:600!important;letter-spacing:0!important}
+[data-theme="fluent"] .sub{color:var(--txt2)!important}
+
+/* ========== 4. 玻璃折射层（Acrylic 风格，Fluent 蓝色调） ========== */
+[data-theme="fluent"][data-mode="light"] .lg-tint{
+  background:linear-gradient(135deg, rgba(0,120,212,0.06) 0%, rgba(0,120,212,0.02) 45%, rgba(0,120,212,0.04) 100%)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .lg-tint{
+  background:linear-gradient(135deg, rgba(76,194,255,0.08) 0%, rgba(76,194,255,0.02) 45%, rgba(76,194,255,0.05) 100%)!important;
+}
+[data-theme="fluent"][data-mode="light"] .lg-edge{
+  border:1px solid rgba(0,120,212,0.10)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.03)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .lg-edge{
+  border:1px solid rgba(76,194,255,0.12)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.10)!important;
+}
+
+/* ========== 5. KPI 卡片 ========== */
+[data-theme="fluent"] .kpi{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="fluent"] .kpi::before,
+[data-theme="fluent"] .cardSlot::before{
+  border-radius:var(--card-r) 0 0 var(--card-r)!important;
+}
+[data-theme="fluent"] .kpi .label,
+[data-theme="fluent"] .cardBody .kpiLabel{color:var(--txt2)!important}
+[data-theme="fluent"] .kpi .value,
+[data-theme="fluent"] .cardBody .kpiValue{
+  font-weight:600!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="fluent"] .kpi .kpiSub,
+[data-theme="fluent"] .cardBody .kpiSub{color:var(--txt2)!important;font-variant-numeric:tabular-nums!important}
+[data-theme="fluent"] .kpi .kpiSub b,
+[data-theme="fluent"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="fluent"] .kpi:hover,
+[data-theme="fluent"] .cardSlot:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 6. 图表卡片 ========== */
+[data-theme="fluent"] .chartCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="fluent"] .chartCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="fluent"] .chartCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 7. 专项分析卡片 ========== */
+[data-theme="fluent"] .analyzeCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="fluent"] .analyzeCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+}
+[data-theme="fluent"] .analyzeCard .ac-count{
+  font-weight:600!important;
+  color:var(--ac,var(--warn))!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="fluent"] .analyzeCard .ac-desc{color:var(--txt2)!important}
+[data-theme="fluent"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:600!important}
+[data-theme="fluent"] .analyzeCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="fluent"] .ac-tag{border-radius:4px!important;font-weight:600!important}
+
+/* ========== 8. 明细表卡片 ========== */
+[data-theme="fluent"] #detailCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="fluent"] #detailCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 9. Tabulator 表格 ========== */
+[data-theme="fluent"] .tabulator{
+  border:1px solid var(--line)!important;
+  border-radius:var(--card-r)!important;
+  overflow:hidden!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-header{
+  background:var(--surface2)!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-header .tabulator-col{
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-row{
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-row.tabulator-row-even{
+  background:var(--surface2)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-row:hover{
+  background:rgba(0,120,212,0.06)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .tabulator .tabulator-row:hover{
+  background:rgba(76,194,255,0.08)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="fluent"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--btn-r)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  border-color:var(--accent)!important;
+}
+[data-theme="fluent"] .tabulator .tabulator-page:hover{
+  background:rgba(0,120,212,0.10)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .tabulator .tabulator-page:hover{
+  background:rgba(76,194,255,0.12)!important;
+}
+[data-theme="fluent"] .tabulator-popup-container{
+  background:var(--surface-h)!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--card-r)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="fluent"] .footerNote{color:var(--txt2)!important}
+
+/* ========== 10. 顶栏 ========== */
+[data-theme="fluent"] #topbar{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="fluent"] #fileMeta b{color:var(--accent)!important;font-weight:600!important}
+
+/* LIVE 徽标 */
+[data-theme="fluent"] #liveBadge{
+  border:1px solid rgba(16,124,16,0.25)!important;
+  border-radius:999px!important;
+  background:rgba(16,124,16,0.08)!important;
+  color:#107c10!important;
+  font-weight:600!important;
+}
+[data-theme="fluent"][data-mode="dark"] #liveBadge{
+  color:#6ccb5f!important;
+  background:rgba(108,203,95,0.10)!important;
+  border-color:rgba(108,203,95,0.25)!important;
+}
+[data-theme="fluent"] .liveDot{background:var(--ok)!important}
+[data-theme="fluent"] #liveBadge.paused{
+  border-color:rgba(255,170,68,0.30)!important;
+  background:rgba(255,170,68,0.10)!important;
+  color:#9a6a00!important;
+}
+[data-theme="fluent"][data-mode="dark"] #liveBadge.paused{
+  color:#ffd335!important;
+  background:rgba(255,211,53,0.10)!important;
+}
+
+/* ========== 11. 实时流入动态栏 ========== */
+[data-theme="fluent"] #liveFeed{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="fluent"] #liveFeed .feedLabel{
+  color:#107c10!important;
+  border-right-color:var(--line)!important;
+  font-weight:600!important;
+}
+[data-theme="fluent"][data-mode="dark"] #liveFeed .feedLabel{color:#6ccb5f!important}
+[data-theme="fluent"] .feedItem{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:var(--card-r)!important;
+}
+[data-theme="fluent"] .feedItem b{color:var(--txt)!important;font-weight:600!important}
+[data-theme="fluent"] .feedItem .t,
+[data-theme="fluent"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="fluent"] .st-ok{background:rgba(16,124,16,0.10)!important;color:#107c10!important;border:1px solid rgba(16,124,16,0.25)!important}
+[data-theme="fluent"] .st-bad{background:rgba(209,52,56,0.10)!important;color:#d13438!important;border:1px solid rgba(209,52,56,0.25)!important}
+[data-theme="fluent"] .st-warn{background:rgba(255,170,68,0.12)!important;color:#9a6a00!important;border:1px solid rgba(255,170,68,0.30)!important}
+[data-theme="fluent"] .st-sp{background:rgba(92,45,145,0.10)!important;color:#5c2d91!important;border:1px solid rgba(92,45,145,0.25)!important}
+[data-theme="fluent"][data-mode="dark"] .st-ok{background:rgba(108,203,95,0.12)!important;color:#6ccb5f!important;border-color:rgba(108,203,95,0.25)!important}
+[data-theme="fluent"][data-mode="dark"] .st-bad{background:rgba(255,153,164,0.12)!important;color:#ff99a4!important;border-color:rgba(255,153,164,0.25)!important}
+[data-theme="fluent"][data-mode="dark"] .st-warn{background:rgba(255,211,53,0.12)!important;color:#ffd335!important;border-color:rgba(255,211,53,0.25)!important}
+[data-theme="fluent"][data-mode="dark"] .st-sp{background:rgba(194,155,255,0.12)!important;color:#c29bff!important;border-color:rgba(194,155,255,0.25)!important}
+
+/* ========== 12. 上传区 ========== */
+[data-theme="fluent"] #dropzone{
+  border:2px dashed var(--border-theme)!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:all .2s ease!important;
+}
+[data-theme="fluent"] #dropzone.over{
+  border-color:var(--accent)!important;
+  background:rgba(0,120,212,0.06)!important;
+}
+[data-theme="fluent"][data-mode="dark"] #dropzone.over{
+  background:rgba(76,194,255,0.08)!important;
+}
+[data-theme="fluent"] #dropzone p{color:var(--txt2)!important}
+[data-theme="fluent"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 13. 错误面板 ========== */
+[data-theme="fluent"] #errPanel{
+  border:1px solid rgba(209,52,56,0.25)!important;
+  background:rgba(209,52,56,0.05)!important;
+  border-radius:var(--card-r)!important;
+}
+[data-theme="fluent"] #errPanel h3{color:var(--bad)!important;font-weight:600!important}
+[data-theme="fluent"][data-mode="dark"] #errPanel{
+  border-color:rgba(255,153,164,0.30)!important;
+  background:rgba(255,153,164,0.06)!important;
+}
+
+/* ========== 14. 按钮（Fluent 风格） ========== */
+[data-theme="fluent"] button{
+  border-radius:var(--btn-r)!important;
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt)!important;
+  font-weight:600!important;
+  font-size:13px!important;
+  padding:7px 16px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  transition:all .15s ease!important;
+}
+[data-theme="fluent"] button:hover{
+  background:var(--surface-h)!important;
+  border-color:var(--accent)!important;
+  color:var(--txt)!important;
+}
+[data-theme="fluent"] button:active{transform:scale(0.98)!important}
+[data-theme="fluent"] button.primary{
+  background:#0078d4!important;
+  border-color:#0078d4!important;
+  color:#fff!important;
+  font-weight:600!important;
+}
+[data-theme="fluent"] button.primary:hover{
+  background:#106ebe!important;
+  color:#fff!important;
+  box-shadow:0 2px 8px rgba(0,120,212,0.30)!important;
+}
+[data-theme="fluent"][data-mode="dark"] button.primary{
+  background:rgba(76,194,255,0.15)!important;
+  border-color:rgba(76,194,255,0.40)!important;
+  color:#4cc2ff!important;
+}
+[data-theme="fluent"][data-mode="dark"] button.primary:hover{
+  background:rgba(76,194,255,0.22)!important;
+  color:#4cc2ff!important;
+  box-shadow:0 2px 8px rgba(76,194,255,0.20)!important;
+}
+
+/* ========== 15. 二级详情面板 ========== */
+[data-theme="fluent"] #detailOverlay{
+  background:rgba(0,0,0,0.20)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="fluent"][data-mode="dark"] #detailOverlay{
+  background:rgba(0,0,0,0.50)!important;
+}
+[data-theme="fluent"] #detailPanel{
+  background:var(--surface-h)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.14)!important;
+}
+[data-theme="fluent"][data-mode="dark"] #detailPanel{
+  box-shadow:0 24px 80px rgba(0,0,0,0.50)!important;
+}
+[data-theme="fluent"] #detailPanelHead{border-bottom:1px solid var(--border-theme2)!important}
+[data-theme="fluent"] #detailPanelTitle{color:var(--txt)!important;font-weight:600!important}
+[data-theme="fluent"] #detailPanelTitle::before{background:var(--accent)!important}
+[data-theme="fluent"] #btnDetailClose{
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+}
+[data-theme="fluent"] #btnDetailClose:hover{
+  background:rgba(209,52,56,0.10)!important;
+  border-color:rgba(209,52,56,0.30)!important;
+  color:var(--bad)!important;
+}
+[data-theme="fluent"] .detailChip{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="fluent"] .detailChip .dc-label{color:var(--txt2)!important}
+[data-theme="fluent"] .detailChip .dc-value{
+  font-weight:600!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="fluent"] #detailChartBox{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:var(--card-r)!important;
+}
+
+/* 多维度切换器 */
+[data-theme="fluent"] .dimBtn{
+  border-radius:var(--btn-r)!important;
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  font-weight:600!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+  transition:all .15s ease!important;
+}
+[data-theme="fluent"] .dimBtn:hover{
+  color:var(--accent)!important;
+  border-color:var(--accent)!important;
+  background:rgba(0,120,212,0.06)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .dimBtn:hover{background:rgba(76,194,255,0.08)!important}
+[data-theme="fluent"] .dimBtn.active{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:0 2px 8px rgba(0,120,212,0.25)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .dimBtn.active{
+  background:rgba(76,194,255,0.18)!important;
+  border-color:rgba(76,194,255,0.40)!important;
+  color:#4cc2ff!important;
+  box-shadow:0 2px 8px rgba(76,194,255,0.20)!important;
+}
+
+/* 分类筛选芯片 */
+[data-theme="fluent"] .catFilter{
+  border-radius:var(--btn-r)!important;
+  border:1px solid var(--border-theme2)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+  transition:all .15s ease!important;
+}
+[data-theme="fluent"] .catFilter:hover{
+  color:var(--txt)!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="fluent"] .catFilter.active{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="fluent"] #detailTableBox h4{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 16. 模块化卡片 ========== */
+[data-theme="fluent"] .cardSlot{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:background .2s ease, box-shadow .2s ease!important;
+}
+[data-theme="fluent"] .cardSlot:hover{
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="fluent"] .cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:3px!important;
+}
+[data-theme="fluent"] .cardTitle{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="fluent"] .cardRemove{
+  border:none!important;
+  background:transparent!important;
+  border-radius:var(--btn-r)!important;
+}
+[data-theme="fluent"] .cardRemove:hover{
+  background:rgba(209,52,56,0.12)!important;
+  color:var(--bad)!important;
+}
+[data-theme="fluent"] .cardBody .kpiValue{
+  font-weight:600!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="fluent"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="fluent"] .cardBody .ac-count{
+  font-weight:600!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="fluent"] .cardBody .ac-desc{color:var(--txt2)!important}
+
+/* ========== 17. 加载遮罩 ========== */
+[data-theme="fluent"] #loadingOverlay{
+  background:rgba(243,243,243,0.65)!important;
+  backdrop-filter:blur(12px) saturate(160%)!important;
+  -webkit-backdrop-filter:blur(12px) saturate(160%)!important;
+}
+[data-theme="fluent"][data-mode="dark"] #loadingOverlay{
+  background:rgba(27,27,27,0.70)!important;
+}
+[data-theme="fluent"] .loadingCard{
+  background:var(--surface-h)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:0 12px 48px rgba(0,0,0,0.12)!important;
+}
+[data-theme="fluent"][data-mode="dark"] .loadingCard{
+  box-shadow:0 12px 48px rgba(0,0,0,0.50)!important;
+}
+[data-theme="fluent"] .spinner{
+  border-color:rgba(0,120,212,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+[data-theme="fluent"] #loadingText{color:var(--txt)!important;font-weight:600!important}
+[data-theme="fluent"] .progressTrack{background:rgba(0,120,212,0.10)!important;border-radius:3px!important}
+[data-theme="fluent"][data-mode="dark"] .progressTrack{background:rgba(76,194,255,0.12)!important}
+[data-theme="fluent"] #progressBar{background:linear-gradient(90deg,var(--accent),var(--cyan))!important;border-radius:3px!important}
+
+/* ========== 18. 性能模式标签 ========== */
+[data-theme="fluent"] #perfTag{
+  border:1px solid var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  border-radius:999px!important;
+  font-weight:600!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="fluent"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="fluent"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 19. 主题/布局选择器 ========== */
+[data-theme="fluent"] #themeSelect,
+[data-theme="fluent"] #layoutSelect{
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt)!important;
+  border-radius:var(--btn-r)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="fluent"] #themeSelect:hover,
+[data-theme="fluent"] #layoutSelect:hover{
+  border-color:var(--accent)!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="fluent"] #themeSelect:focus,
+[data-theme="fluent"] #layoutSelect:focus{
+  outline:none!important;
+  border-color:var(--accent)!important;
+  box-shadow:0 0 0 2px rgba(0,120,212,0.20)!important;
+}
+[data-theme="fluent"][data-mode="dark"] #themeSelect:focus,
+[data-theme="fluent"][data-mode="dark"] #layoutSelect:focus{
+  box-shadow:0 0 0 2px rgba(76,194,255,0.25)!important;
+}
+[data-theme="fluent"] #themeSelect option,
+[data-theme="fluent"] #layoutSelect option{background:#fff;color:var(--txt)}
+[data-theme="fluent"][data-mode="dark"] #themeSelect option,
+[data-theme="fluent"][data-mode="dark"] #layoutSelect option{background:#242424;color:var(--txt)}
+
+/* ========== 20. 低性能模式适配 ========== */
+[data-theme="fluent"] body.perf-lite{background:var(--bg)!important}
+[data-theme="fluent"] body.perf-lite #topbar,
+[data-theme="fluent"] body.perf-lite #liveFeed,
+[data-theme="fluent"] body.perf-lite #dropzone,
+[data-theme="fluent"] body.perf-lite .kpi,
+[data-theme="fluent"] body.perf-lite .chartCard,
+[data-theme="fluent"] body.perf-lite .analyzeCard,
+[data-theme="fluent"] body.perf-lite #detailCard,
+[data-theme="fluent"] body.perf-lite .loadingCard,
+[data-theme="fluent"] body.perf-lite button,
+[data-theme="fluent"] body.perf-lite #detailPanel,
+[data-theme="fluent"] body.perf-lite #detailOverlay,
+[data-theme="fluent"] body.perf-lite #loadingOverlay,
+[data-theme="fluent"] body.perf-lite .cardSlot,
+[data-theme="fluent"] body.perf-lite .detailChip,
+[data-theme="fluent"] body.perf-lite .dimBtn,
+[data-theme="fluent"] body.perf-lite .catFilter,
+[data-theme="fluent"] body.perf-lite #themeSelect,
+[data-theme="fluent"] body.perf-lite #layoutSelect{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="fluent"][data-mode="light"] body.perf-lite .kpi,
+[data-theme="fluent"][data-mode="light"] body.perf-lite .chartCard,
+[data-theme="fluent"][data-mode="light"] body.perf-lite .analyzeCard,
+[data-theme="fluent"][data-mode="light"] body.perf-lite #detailCard,
+[data-theme="fluent"][data-mode="light"] body.perf-lite .cardSlot{
+  background:rgba(255,255,255,0.88)!important;
+}
+[data-theme="fluent"][data-mode="dark"] body.perf-lite .kpi,
+[data-theme="fluent"][data-mode="dark"] body.perf-lite .chartCard,
+[data-theme="fluent"][data-mode="dark"] body.perf-lite .analyzeCard,
+[data-theme="fluent"][data-mode="dark"] body.perf-lite #detailCard,
+[data-theme="fluent"][data-mode="dark"] body.perf-lite .cardSlot{
+  background:rgba(36,36,36,0.92)!important;
+}
+[data-theme="fluent"] body.perf-lite .lg-tint,
+[data-theme="fluent"] body.perf-lite .lg-edge{display:none!important}
+
+/* ========== 21. 滚动条（Fluent 风格） ========== */
+[data-theme="fluent"][data-mode="light"] ::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="fluent"][data-mode="light"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="fluent"][data-mode="light"] ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.22);border-radius:5px;border:2px solid transparent;background-clip:padding-box}
+[data-theme="fluent"][data-mode="light"] ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.36);border:2px solid transparent;background-clip:padding-box}
+[data-theme="fluent"][data-mode="dark"] ::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="fluent"][data-mode="dark"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="fluent"][data-mode="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.22);border-radius:5px;border:2px solid transparent;background-clip:padding-box}
+[data-theme="fluent"][data-mode="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.36);border:2px solid transparent;background-clip:padding-box}
+
+/* ========== 22. 深色模式数字可读性修复 ========== */
+[data-theme="fluent"][data-mode="dark"] .kpi .value,
+[data-theme="fluent"][data-mode="dark"] .cardBody .kpiValue{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+[data-theme="fluent"][data-mode="dark"] .analyzeCard .ac-count{
+  color:var(--ac,#ffffff)!important;
+  opacity:1!important;
+}
+[data-theme="fluent"][data-mode="dark"] .detailChip .dc-value{
+  color:#ffffff!important;
+  opacity:1!important;
+}

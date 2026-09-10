@@ -1,0 +1,330 @@
+/* ==========================================================================
+   Aurora 极光玻璃主题覆盖文件
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="aurora" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-aurora.css">
+   特点：紫青极光渐变背景、强玻璃模糊、渐变文字、悬浮发光
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="aurora"][data-mode="light"]{
+  --bg:#eceef6;
+  --bg2:#f2f3fa;
+  --bg3:#e2e5f0;
+  --surface:rgba(255,255,255,0.55);
+  --surface2:rgba(255,255,255,0.40);
+  --surface-h:rgba(255,255,255,0.70);
+  --border-theme:rgba(139,92,246,0.18);
+  --border-theme2:rgba(139,92,246,0.08);
+  --line:rgba(22,18,31,0.10);
+  --txt:#16121f;
+  --txt2:rgba(22,18,31,0.55);
+  --accent:#7c5cff;
+  --accent2:#9d7bff;
+  --ok:#10b981;
+  --bad:#f43f5e;
+  --warn:#f59e0b;
+  --purple:#8b5cf6;
+  --cyan:#22d3ee;
+  --glass-blur:18px;
+  --glass-sat:170%;
+  --card-r:14px;
+  --card-sh:0 8px 32px rgba(76,29,149,0.08), inset 0 1px 0 rgba(255,255,255,0.50);
+  --card-sh-h:0 12px 40px rgba(139,92,246,0.18), inset 0 1px 0 rgba(255,255,255,0.60);
+  --card-bd:1px solid rgba(139,92,246,0.18);
+  --btn-r:9px;
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="aurora"][data-mode="dark"]{
+  --bg:#08080d;
+  --bg2:#0e0e16;
+  --bg3:#08080d;
+  --surface:rgba(255,255,255,0.045);
+  --surface2:rgba(255,255,255,0.03);
+  --surface-h:rgba(255,255,255,0.075);
+  --border-theme:rgba(255,255,255,0.10);
+  --border-theme2:rgba(255,255,255,0.05);
+  --line:rgba(255,255,255,0.10);
+  --txt:#eceaf4;
+  --txt2:rgba(236,234,244,0.55);
+  --accent:#a78bfa;
+  --accent2:#c4b5fd;
+  --ok:#34d399;
+  --bad:#fb7185;
+  --warn:#fbbf24;
+  --purple:#a78bfa;
+  --cyan:#67e8f9;
+  --glass-blur:20px;
+  --glass-sat:160%;
+  --card-r:14px;
+  --card-sh:0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.07);
+  --card-sh-h:0 12px 40px rgba(167,139,250,0.30), inset 0 1px 0 rgba(255,255,255,0.10);
+  --card-bd:1px solid rgba(255,255,255,0.10);
+  --btn-r:9px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="aurora"] html,
+[data-theme="aurora"]{
+  background:var(--bg)!important;
+}
+[data-theme="aurora"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  position:relative;
+}
+/* 极光渐变光晕（作为玻璃模糊的折射底景） */
+[data-theme="aurora"] body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(60vw 60vw at 12% 8%, rgba(167,139,250,0.28), transparent 60%),
+    radial-gradient(55vw 55vw at 88% 18%, rgba(103,232,249,0.22), transparent 60%),
+    radial-gradient(60vw 60vw at 70% 92%, rgba(236,72,153,0.18), transparent 60%),
+    transparent;
+}
+[data-theme="aurora"] h1{font-weight:700!important;letter-spacing:-0.3px!important}
+[data-theme="aurora"] .sub{color:var(--txt2)!important;font-size:12px!important}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，极光风格使用 auroraBg 背景模式） */
+[data-theme="aurora"] .lg-tint,
+[data-theme="aurora"] .lg-edge{display:none!important}
+
+/* ========== 4. 卡片 → 极光玻璃 ========== */
+[data-theme="aurora"] .kpi,
+[data-theme="aurora"] .chartCard,
+[data-theme="aurora"] .analyzeCard,
+[data-theme="aurora"] #detailCard,
+[data-theme="aurora"] .cardSlot{
+  border-radius:14px!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease!important;
+}
+[data-theme="aurora"] .kpi:hover,
+[data-theme="aurora"] .chartCard:hover,
+[data-theme="aurora"] .analyzeCard:hover,
+[data-theme="aurora"] #detailCard:hover,
+[data-theme="aurora"] .cardSlot:hover{
+  transform:translateY(-2px)!important;
+  border-color:rgba(167,139,250,0.50)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* KPI 左侧高亮条 → 青紫渐变发光 */
+[data-theme="aurora"] .kpi::before,
+[data-theme="aurora"] .cardSlot::before{
+  background:linear-gradient(180deg,#67e8f9,#a78bfa)!important;
+  box-shadow:0 0 12px rgba(139,92,246,0.55)!important;
+}
+[data-theme="aurora"] .kpi .label,
+[data-theme="aurora"] .cardBody .kpiLabel{color:var(--txt2)!important;font-size:12px!important;letter-spacing:0!important}
+/* KPI 数值 → 青紫渐变文字 */
+[data-theme="aurora"] .kpi .value,
+[data-theme="aurora"] .cardBody .kpiValue{
+  background:linear-gradient(135deg,#67e8f9 0%,#a78bfa 100%)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  color:transparent!important;
+  font-weight:700!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="aurora"] .kpi .kpiSub,
+[data-theme="aurora"] .cardBody .kpiSub{color:var(--txt2)!important}
+[data-theme="aurora"] .kpi .kpiSub b,
+[data-theme="aurora"] .cardBody .kpiSub b{color:var(--accent)!important}
+
+/* 图表标题前缀 → 渐变小圆点 */
+[data-theme="aurora"] .chartCard h3,
+[data-theme="aurora"] .analyzeCard h3,
+[data-theme="aurora"] #detailCard h3,
+[data-theme="aurora"] .cardTitle{
+  color:var(--txt)!important;
+  border-left:none!important;
+  padding-left:0!important;
+}
+[data-theme="aurora"] .chartCard h3::before{
+  content:""!important;
+  display:inline-block!important;
+  width:8px!important;height:8px!important;
+  margin-right:8px!important;
+  vertical-align:middle!important;
+  border-radius:50%!important;
+  background:linear-gradient(135deg,#67e8f9,#a78bfa)!important;
+  box-shadow:0 0 10px rgba(139,92,246,0.70)!important;
+}
+[data-theme="aurora"] .analyzeCard .ac-count{font-weight:700!important;color:var(--ac,var(--warn))!important}
+[data-theme="aurora"] .analyzeCard .ac-more{color:var(--accent)!important}
+
+/* ========== 5. 按钮系统 → 玻璃按钮 ========== */
+[data-theme="aurora"] button,
+[data-theme="aurora"] .dimBtn,
+[data-theme="aurora"] .catFilter{
+  border-radius:9px!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  color:var(--txt)!important;
+  font-size:13px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:0 4px 14px rgba(139,92,246,0.10)!important;
+  transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease!important;
+}
+[data-theme="aurora"] button:hover,
+[data-theme="aurora"] .dimBtn:hover,
+[data-theme="aurora"] .catFilter:hover{
+  transform:translateY(-1px)!important;
+  border-color:rgba(167,139,250,0.50)!important;
+  box-shadow:0 6px 20px rgba(139,92,246,0.22)!important;
+}
+[data-theme="aurora"] button.primary{
+  background:linear-gradient(135deg,#8b5cf6,#6366f1)!important;
+  border:none!important;
+  color:#fff!important;
+  box-shadow:0 6px 20px rgba(139,92,246,0.40)!important;
+}
+[data-theme="aurora"] .dimBtn.active,
+[data-theme="aurora"] .catFilter.active{
+  background:linear-gradient(135deg,rgba(139,92,246,0.22),rgba(99,102,241,0.22))!important;
+  border-color:rgba(167,139,250,0.60)!important;
+  color:var(--accent)!important;
+}
+
+/* ========== 6. 顶栏 / 实时栏 / 上传区 → 玻璃面板 ========== */
+[data-theme="aurora"] #topbar{
+  border-radius:18px!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="aurora"] #fileMeta b{color:var(--accent)!important}
+[data-theme="aurora"] #liveBadge{
+  border:1px solid var(--border-theme)!important;border-radius:999px!important;background:var(--surface)!important;color:var(--ok)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+}
+[data-theme="aurora"] .liveDot{background:var(--ok)!important}
+[data-theme="aurora"] #liveFeed{
+  border-radius:14px!important;background:var(--surface)!important;border:1px solid var(--border-theme)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;box-shadow:var(--card-sh)!important;
+}
+[data-theme="aurora"] #liveFeed .feedLabel{color:var(--ok)!important;border-right:1px solid var(--line)!important}
+[data-theme="aurora"] .feedItem{
+  background:var(--surface2)!important;border:1px solid var(--border-theme2)!important;border-radius:10px!important;
+  backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="aurora"] .feedItem b{color:var(--txt)!important}
+[data-theme="aurora"] .feedItem .t,
+[data-theme="aurora"] .feedItem .route{color:var(--accent)!important}
+
+[data-theme="aurora"] .stBadge{border-radius:999px!important;font-weight:600!important}
+[data-theme="aurora"] .st-ok{background:rgba(16,185,129,0.14)!important;color:var(--ok)!important;border:1px solid rgba(16,185,129,0.30)!important}
+[data-theme="aurora"] .st-bad{background:rgba(244,63,94,0.14)!important;color:var(--bad)!important;border:1px solid rgba(244,63,94,0.30)!important}
+[data-theme="aurora"] .st-warn{background:rgba(245,158,11,0.14)!important;color:var(--warn)!important;border:1px solid rgba(245,158,11,0.30)!important}
+[data-theme="aurora"] .st-sp{background:rgba(139,92,246,0.14)!important;color:var(--purple)!important;border:1px solid rgba(139,92,246,0.30)!important}
+
+[data-theme="aurora"] #dropzone{
+  border-radius:14px!important;background:var(--surface)!important;border:1px solid var(--border-theme)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;box-shadow:var(--card-sh)!important;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease!important;
+}
+[data-theme="aurora"] #dropzone.over{border-color:rgba(167,139,250,0.60)!important;box-shadow:var(--card-sh-h)!important}
+[data-theme="aurora"] #dropzone p{color:var(--txt2)!important}
+[data-theme="aurora"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 7. 明细表 ========== */
+[data-theme="aurora"] .tabulator{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:12px!important;overflow:hidden!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+}
+[data-theme="aurora"] .tabulator .tabulator-header{background:rgba(139,92,246,0.06)!important;color:var(--txt)!important;border-bottom:1px solid var(--border-theme)!important}
+[data-theme="aurora"] .tabulator .tabulator-row{background:transparent!important;color:var(--txt)!important;border-bottom:1px solid var(--line)!important}
+[data-theme="aurora"] .tabulator .tabulator-row:hover{background:rgba(167,139,250,0.10)!important}
+[data-theme="aurora"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="aurora"] .tabulator .tabulator-page{background:var(--surface)!important;border:1px solid var(--border-theme)!important;color:var(--txt)!important;border-radius:9px!important}
+
+/* ========== 8. 二级详情面板 ========== */
+[data-theme="aurora"] #detailOverlay{background:rgba(8,8,13,0.45)!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important}
+[data-theme="aurora"][data-mode="light"] #detailOverlay{background:rgba(236,238,246,0.5)!important}
+[data-theme="aurora"] #detailPanel{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:20px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="aurora"] #detailPanelTitle::before{background:linear-gradient(180deg,#67e8f9,#a78bfa)!important;border-radius:3px!important;box-shadow:0 0 8px rgba(139,92,246,0.55)!important}
+[data-theme="aurora"] .detailChip{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:12px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+}
+[data-theme="aurora"] .detailChip .dc-label{color:var(--txt2)!important;font-size:11px!important}
+[data-theme="aurora"] .detailChip .dc-value{font-weight:700!important;color:var(--txt)!important}
+
+/* ========== 9. 模块化卡片 / 选择器 ========== */
+[data-theme="aurora"] .cardBody .kpiValue{font-weight:700!important;color:var(--txt)!important}
+[data-theme="aurora"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="aurora"] .cardRemove{border:1px solid var(--border-theme)!important;background:var(--surface)!important;border-radius:8px!important;backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important}
+[data-theme="aurora"] .cardRemove:hover{color:var(--bad)!important;border-color:var(--bad)!important}
+
+[data-theme="aurora"] #themeSelect,
+[data-theme="aurora"] #layoutSelect{
+  border-radius:9px!important;background:var(--surface)!important;border:1px solid var(--border-theme)!important;color:var(--txt)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+}
+
+/* ========== 10. 加载遮罩 / 性能标签 ========== */
+[data-theme="aurora"] #loadingOverlay{backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+[data-theme="aurora"][data-mode="dark"] #loadingOverlay{background:rgba(8,8,13,0.55)!important}
+[data-theme="aurora"][data-mode="light"] #loadingOverlay{background:rgba(236,238,246,0.6)!important}
+[data-theme="aurora"] .loadingCard{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:14px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="aurora"] .spinner{border-color:rgba(167,139,250,0.20)!important;border-top-color:var(--accent)!important}
+[data-theme="aurora"] #loadingText{color:var(--txt)!important}
+[data-theme="aurora"] #progressBar{background:linear-gradient(90deg,#67e8f9,#a78bfa)!important}
+[data-theme="aurora"] #perfTag{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:999px!important;color:var(--txt2)!important;
+  backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="aurora"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="aurora"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 11. 滚动条 ========== */
+[data-theme="aurora"]::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="aurora"]::-webkit-scrollbar-track{background:transparent}
+[data-theme="aurora"]::-webkit-scrollbar-thumb{background:rgba(167,139,250,0.35);border-radius:6px}
+[data-theme="aurora"]::-webkit-scrollbar-thumb:hover{background:rgba(167,139,250,0.55)}
+
+/* ========== 12. 深色模式数字可读性修复 ========== */
+[data-theme="aurora"][data-mode="dark"] .kpi .value,
+[data-theme="aurora"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="aurora"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="aurora"][data-mode="dark"] .detailChip .dc-value{
+  color:var(--txt)!important;
+  opacity:1!important;
+}
+/* Aurora KPI 数值保留青紫渐变文字（已足够亮），仅确保不透明 */
+[data-theme="aurora"][data-mode="dark"] .kpi .value,
+[data-theme="aurora"][data-mode="dark"] .cardBody .kpiValue{
+  -webkit-text-fill-color:transparent!important;
+  background:linear-gradient(135deg,#67e8f9 0%,#a78bfa 100%)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  opacity:1!important;
+}
+[data-theme="aurora"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="aurora"][data-mode="dark"] .analyzeCard .ac-count{
+  color:#c4b5fd!important;
+}

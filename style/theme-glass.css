@@ -1,0 +1,667 @@
+/* ==========================================================================
+   主题 4：Apple 液态玻璃 (glass)
+   适用：dashboard-release-monitor-v5.5.html（data-theme + data-mode 属性系统）
+   用法：在 <head> 中、现有 <style> 之后添加：
+   <link rel="stylesheet" href="./style/theme-glass.css">
+   ========================================================================== */
+
+/* ========== 1. CSS 变量：Light 模式 ========== */
+[data-theme="glass"][data-mode="light"]{
+  --bg:#eef1f6;
+  --bg2:#f5f7fc;
+  --bg3:#e5ebf5;
+  --surface:rgba(255,255,255,0.55);
+  --surface2:rgba(255,255,255,0.38);
+  --surface-h:rgba(255,255,255,0.72);
+  --border-theme:rgba(255,255,255,0.50);
+  --border-theme2:rgba(255,255,255,0.30);
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f;
+  --txt2:rgba(0,0,0,0.50);
+  --accent:#0071e3;
+  --accent2:#2997ff;
+  --ok:#34c759;
+  --bad:#ff3b30;
+  --warn:#ff9f0a;
+  --purple:#5e5ce6;
+  --cyan:#00b8d4;
+  --glass-blur:12px;
+  --glass-sat:160%;
+  --card-r:14px;
+  --card-sh:0 0 30px rgba(0,113,227,0.08), inset 0 1px 0 rgba(255,255,255,0.25);
+  --card-sh-h:0 0 40px rgba(0,113,227,0.14), inset 0 1px 0 rgba(255,255,255,0.35);
+  --card-bd:1px solid rgba(255,255,255,0.18);
+  --btn-r:10px;
+}
+
+/* ========== 2. CSS 变量：Dark 模式 ========== */
+[data-theme="glass"][data-mode="dark"]{
+  --bg:#0d1117;
+  --bg2:#161b22;
+  --bg3:#0d1117;
+  --surface:rgba(255,255,255,0.06);
+  --surface2:rgba(255,255,255,0.04);
+  --surface-h:rgba(255,255,255,0.10);
+  --border-theme:rgba(255,255,255,0.12);
+  --border-theme2:rgba(255,255,255,0.06);
+  --line:rgba(255,255,255,0.10);
+  --txt:#e6edf3;
+  --txt2:rgba(255,255,255,0.55);
+  --accent:#58a6ff;
+  --accent2:#79c0ff;
+  --ok:#3fb950;
+  --bad:#f85149;
+  --warn:#d29922;
+  --purple:#bc8cff;
+  --cyan:#39d2e0;
+  --glass-blur:12px;
+  --glass-sat:140%;
+  --card-r:14px;
+  --card-sh:0 0 30px rgba(88,166,255,0.10), inset 0 1px 0 rgba(255,255,255,0.08);
+  --card-sh-h:0 0 40px rgba(88,166,255,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
+  --card-bd:1px solid rgba(255,255,255,0.18);
+  --btn-r:10px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="glass"]{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="glass"] html,
+[data-theme="glass"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="glass"] h1{font-weight:600!important;letter-spacing:-0.02em!important}
+[data-theme="glass"] .sub{color:var(--txt2)!important;letter-spacing:-0.01em!important}
+
+/* ========== 4. 玻璃折射层（保留，蓝色微光/边框） ========== */
+[data-theme="glass"][data-mode="light"] .lg-tint{
+  background:linear-gradient(135deg, rgba(0,113,227,0.10) 0%, rgba(41,151,255,0.03) 45%, rgba(0,113,227,0.06) 100%)!important;
+}
+[data-theme="glass"][data-mode="dark"] .lg-tint{
+  background:linear-gradient(135deg, rgba(88,166,255,0.12) 0%, rgba(121,192,255,0.03) 45%, rgba(88,166,255,0.08) 100%)!important;
+}
+[data-theme="glass"][data-mode="light"] .lg-edge{
+  border:1px solid rgba(0,113,227,0.18)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,113,227,0.06)!important;
+}
+[data-theme="glass"][data-mode="dark"] .lg-edge{
+  border:1px solid rgba(88,166,255,0.20)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(88,166,255,0.08)!important;
+}
+
+/* ========== 5. KPI 卡片 ========== */
+[data-theme="glass"] .kpi{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .25s cubic-bezier(0.25,0.1,0.25,1), box-shadow .25s ease, background .25s ease!important;
+}
+[data-theme="glass"] .kpi::before,
+[data-theme="glass"] .cardSlot::before{
+  border-radius:var(--card-r) 0 0 var(--card-r)!important;
+}
+[data-theme="glass"] .kpi .label,
+[data-theme="glass"] .cardBody .kpiLabel{color:var(--txt2)!important}
+[data-theme="glass"] .kpi .value,
+[data-theme="glass"] .cardBody .kpiValue{
+  font-weight:700!important;
+  color:var(--txt)!important;
+  letter-spacing:-0.02em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="glass"] .kpi .kpiSub,
+[data-theme="glass"] .cardBody .kpiSub{color:var(--txt2)!important;font-variant-numeric:tabular-nums!important}
+[data-theme="glass"] .kpi .kpiSub b,
+[data-theme="glass"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="glass"] .kpi:hover,
+[data-theme="glass"] .cardSlot:hover{
+  transform:translateY(-3px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 6. 图表卡片 ========== */
+[data-theme="glass"] .chartCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .25s cubic-bezier(0.25,0.1,0.25,1), box-shadow .25s ease, background .25s ease!important;
+}
+[data-theme="glass"] .chartCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="glass"] .chartCard:hover{
+  transform:translateY(-3px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 7. 专项分析卡片 ========== */
+[data-theme="glass"] .analyzeCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .25s cubic-bezier(0.25,0.1,0.25,1), box-shadow .25s ease, background .25s ease!important;
+}
+[data-theme="glass"] .analyzeCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+}
+[data-theme="glass"] .analyzeCard .ac-count{
+  font-weight:700!important;
+  color:var(--ac,var(--warn))!important;
+  letter-spacing:-0.02em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="glass"] .analyzeCard .ac-desc{color:var(--txt2)!important}
+[data-theme="glass"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:600!important}
+[data-theme="glass"] .analyzeCard:hover{
+  transform:translateY(-3px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="glass"] .ac-tag{border-radius:8px!important;font-weight:600!important}
+
+/* ========== 8. 明细表卡片 ========== */
+[data-theme="glass"] #detailCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="glass"] #detailCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 9. Tabulator 表格 ========== */
+[data-theme="glass"] .tabulator{
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  overflow:hidden!important;
+}
+[data-theme="glass"] .tabulator .tabulator-header{
+  background:var(--surface2)!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-header .tabulator-col{
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-row{
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-row.tabulator-row-even{
+  background:var(--surface2)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-row:hover{
+  background:rgba(0,113,227,0.06)!important;
+}
+[data-theme="glass"][data-mode="dark"] .tabulator .tabulator-row:hover{
+  background:rgba(88,166,255,0.08)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="glass"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:8px!important;
+}
+[data-theme="glass"] .tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  border-color:var(--accent)!important;
+}
+[data-theme="glass"] .tabulator .tabulator-page:hover{
+  background:rgba(0,113,227,0.10)!important;
+}
+[data-theme="glass"][data-mode="dark"] .tabulator .tabulator-page:hover{
+  background:rgba(88,166,255,0.12)!important;
+}
+[data-theme="glass"] .tabulator-popup-container{
+  background:var(--surface-h)!important;
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="glass"] .footerNote{color:var(--txt2)!important}
+
+/* ========== 10. 顶栏 ========== */
+[data-theme="glass"] #topbar{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="glass"] #fileMeta b{color:var(--accent)!important;font-weight:600!important}
+
+/* LIVE 徽标 */
+[data-theme="glass"] #liveBadge{
+  border:1px solid rgba(52,199,89,0.30)!important;
+  border-radius:999px!important;
+  background:rgba(52,199,89,0.10)!important;
+  color:#248a3d!important;
+  font-weight:500!important;
+}
+[data-theme="glass"][data-mode="dark"] #liveBadge{
+  color:#3fb950!important;
+  background:rgba(63,185,80,0.12)!important;
+  border-color:rgba(63,185,80,0.30)!important;
+}
+[data-theme="glass"] .liveDot{background:var(--ok)!important}
+[data-theme="glass"] #liveBadge.paused{
+  border-color:rgba(255,159,10,0.35)!important;
+  background:rgba(255,159,10,0.10)!important;
+  color:#c97000!important;
+}
+[data-theme="glass"][data-mode="dark"] #liveBadge.paused{
+  color:#d29922!important;
+  background:rgba(210,153,34,0.12)!important;
+}
+
+/* ========== 11. 实时流入动态栏 ========== */
+[data-theme="glass"] #liveFeed{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="glass"] #liveFeed .feedLabel{
+  color:#1a7f37!important;
+  border-right-color:var(--line)!important;
+  font-weight:600!important;
+}
+[data-theme="glass"][data-mode="dark"] #liveFeed .feedLabel{color:#3fb950!important}
+[data-theme="glass"] .feedItem{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:10px!important;
+}
+[data-theme="glass"] .feedItem b{color:var(--txt)!important;font-weight:600!important}
+[data-theme="glass"] .feedItem .t,
+[data-theme="glass"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="glass"] .st-ok{background:rgba(52,199,89,0.12)!important;color:#248a3d!important;border:1px solid rgba(52,199,89,0.30)!important}
+[data-theme="glass"] .st-bad{background:rgba(255,59,48,0.10)!important;color:#c9352f!important;border:1px solid rgba(255,59,48,0.30)!important}
+[data-theme="glass"] .st-warn{background:rgba(255,159,10,0.12)!important;color:#c97000!important;border:1px solid rgba(255,159,10,0.30)!important}
+[data-theme="glass"] .st-sp{background:rgba(94,92,230,0.10)!important;color:#4240c8!important;border:1px solid rgba(94,92,230,0.30)!important}
+[data-theme="glass"][data-mode="dark"] .st-ok{background:rgba(63,185,80,0.14)!important;color:#3fb950!important;border-color:rgba(63,185,80,0.30)!important}
+[data-theme="glass"][data-mode="dark"] .st-bad{background:rgba(248,81,73,0.14)!important;color:#f85149!important;border-color:rgba(248,81,73,0.30)!important}
+[data-theme="glass"][data-mode="dark"] .st-warn{background:rgba(210,153,34,0.14)!important;color:#d29922!important;border-color:rgba(210,153,34,0.30)!important}
+[data-theme="glass"][data-mode="dark"] .st-sp{background:rgba(188,140,255,0.14)!important;color:#bc8cff!important;border-color:rgba(188,140,255,0.30)!important}
+
+/* ========== 12. 上传区 ========== */
+[data-theme="glass"] #dropzone{
+  border:2px dashed var(--border-theme)!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:all .25s cubic-bezier(0.25,0.1,0.25,1)!important;
+}
+[data-theme="glass"] #dropzone.over{
+  border-color:var(--accent)!important;
+  background:rgba(0,113,227,0.06)!important;
+}
+[data-theme="glass"][data-mode="dark"] #dropzone.over{
+  background:rgba(88,166,255,0.08)!important;
+}
+[data-theme="glass"] #dropzone p{color:var(--txt2)!important}
+[data-theme="glass"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 13. 错误面板 ========== */
+[data-theme="glass"] #errPanel{
+  border:1px solid rgba(255,59,48,0.25)!important;
+  background:rgba(255,59,48,0.05)!important;
+  border-radius:var(--card-r)!important;
+}
+[data-theme="glass"] #errPanel h3{color:var(--bad)!important;font-weight:600!important}
+[data-theme="glass"][data-mode="dark"] #errPanel{
+  border-color:rgba(248,81,73,0.30)!important;
+  background:rgba(248,81,73,0.06)!important;
+}
+
+/* ========== 14. 按钮 ========== */
+[data-theme="glass"] button{
+  border-radius:var(--btn-r)!important;
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt)!important;
+  font-weight:500!important;
+  font-size:13px!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  transition:all .25s cubic-bezier(0.25,0.1,0.25,1)!important;
+}
+[data-theme="glass"] button:hover{
+  background:var(--surface-h)!important;
+  border-color:var(--accent)!important;
+  color:var(--txt)!important;
+}
+[data-theme="glass"] button:active{transform:scale(0.97)!important}
+[data-theme="glass"] button.primary{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+}
+[data-theme="glass"] button.primary:hover{
+  background:var(--accent2)!important;
+  color:#fff!important;
+  box-shadow:0 4px 14px rgba(0,113,227,0.30)!important;
+}
+[data-theme="glass"][data-mode="dark"] button.primary:hover{
+  box-shadow:0 4px 14px rgba(88,166,255,0.30)!important;
+}
+
+/* ========== 15. 二级详情面板 ========== */
+[data-theme="glass"] #detailOverlay{
+  background:rgba(0,0,0,0.20)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="glass"][data-mode="dark"] #detailOverlay{
+  background:rgba(0,0,0,0.50)!important;
+}
+[data-theme="glass"] #detailPanel{
+  background:var(--surface-h)!important;
+  border:var(--card-bd)!important;
+  border-radius:20px!important;
+  backdrop-filter:blur(20px) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(20px) saturate(var(--glass-sat))!important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.25)!important;
+}
+[data-theme="glass"][data-mode="dark"] #detailPanel{
+  box-shadow:0 24px 80px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+}
+[data-theme="glass"] #detailPanelHead{border-bottom:1px solid var(--border-theme2)!important}
+[data-theme="glass"] #detailPanelTitle{color:var(--txt)!important;font-weight:600!important}
+[data-theme="glass"] #detailPanelTitle::before{background:var(--accent)!important}
+[data-theme="glass"] #btnDetailClose{
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+}
+[data-theme="glass"] #btnDetailClose:hover{
+  background:rgba(255,59,48,0.10)!important;
+  border-color:rgba(255,59,48,0.30)!important;
+  color:var(--bad)!important;
+}
+[data-theme="glass"] .detailChip{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:12px!important;
+  backdrop-filter:blur(6px)!important;
+  -webkit-backdrop-filter:blur(6px)!important;
+}
+[data-theme="glass"] .detailChip .dc-label{color:var(--txt2)!important}
+[data-theme="glass"] .detailChip .dc-value{
+  font-weight:700!important;
+  color:var(--txt)!important;
+  letter-spacing:-0.02em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="glass"] #detailChartBox{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:12px!important;
+}
+
+/* 多维度切换器 */
+[data-theme="glass"] .dimBtn{
+  border-radius:999px!important;
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  font-weight:500!important;
+  backdrop-filter:blur(6px)!important;
+  -webkit-backdrop-filter:blur(6px)!important;
+  transition:all .25s cubic-bezier(0.25,0.1,0.25,1)!important;
+}
+[data-theme="glass"] .dimBtn:hover{
+  color:var(--accent)!important;
+  border-color:var(--accent)!important;
+  background:rgba(0,113,227,0.06)!important;
+}
+[data-theme="glass"][data-mode="dark"] .dimBtn:hover{background:rgba(88,166,255,0.08)!important}
+[data-theme="glass"] .dimBtn.active{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:0 4px 14px rgba(0,113,227,0.25)!important;
+}
+[data-theme="glass"][data-mode="dark"] .dimBtn.active{box-shadow:0 4px 14px rgba(88,166,255,0.25)!important}
+
+/* 分类筛选芯片 */
+[data-theme="glass"] .catFilter{
+  border-radius:999px!important;
+  border:1px solid var(--border-theme2)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  backdrop-filter:blur(6px)!important;
+  -webkit-backdrop-filter:blur(6px)!important;
+  transition:all .2s ease!important;
+}
+[data-theme="glass"] .catFilter:hover{
+  color:var(--txt)!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="glass"] .catFilter.active{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  border-color:var(--cc,var(--accent))!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="glass"] #detailTableBox h4{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 16. 模块化卡片 ========== */
+[data-theme="glass"] .cardSlot{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  box-shadow:var(--card-sh)!important;
+  transition:background .25s ease, box-shadow .25s ease!important;
+}
+[data-theme="glass"] .cardSlot:hover{
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="glass"] .cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:3px!important;
+}
+[data-theme="glass"] .cardTitle{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="glass"] .cardRemove{
+  border:none!important;
+  background:transparent!important;
+  border-radius:6px!important;
+}
+[data-theme="glass"] .cardRemove:hover{
+  background:rgba(255,59,48,0.12)!important;
+  color:var(--bad)!important;
+}
+[data-theme="glass"] .cardBody .kpiValue{
+  font-weight:700!important;
+  color:var(--txt)!important;
+  letter-spacing:-0.02em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="glass"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="glass"] .cardBody .ac-count{
+  font-weight:700!important;
+  letter-spacing:-0.02em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="glass"] .cardBody .ac-desc{color:var(--txt2)!important}
+
+/* ========== 17. 加载遮罩 ========== */
+[data-theme="glass"] #loadingOverlay{
+  background:rgba(238,241,246,0.60)!important;
+  backdrop-filter:blur(12px) saturate(160%)!important;
+  -webkit-backdrop-filter:blur(12px) saturate(160%)!important;
+}
+[data-theme="glass"][data-mode="dark"] #loadingOverlay{
+  background:rgba(13,17,23,0.65)!important;
+}
+[data-theme="glass"] .loadingCard{
+  background:var(--surface-h)!important;
+  border:var(--card-bd)!important;
+  border-radius:20px!important;
+  backdrop-filter:blur(20px) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(20px) saturate(var(--glass-sat))!important;
+  box-shadow:0 12px 48px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.25)!important;
+}
+[data-theme="glass"][data-mode="dark"] .loadingCard{
+  box-shadow:0 12px 48px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.08)!important;
+}
+[data-theme="glass"] .spinner{
+  border-color:rgba(0,113,227,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+[data-theme="glass"] #loadingText{color:var(--txt)!important;font-weight:500!important}
+[data-theme="glass"] .progressTrack{background:rgba(0,113,227,0.10)!important;border-radius:999px!important}
+[data-theme="glass"][data-mode="dark"] .progressTrack{background:rgba(88,166,255,0.12)!important}
+[data-theme="glass"] #progressBar{background:linear-gradient(90deg,var(--accent),var(--cyan))!important;border-radius:999px!important}
+
+/* ========== 18. 性能模式标签 ========== */
+[data-theme="glass"] #perfTag{
+  border:1px solid var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--txt2)!important;
+  border-radius:999px!important;
+  font-weight:500!important;
+  backdrop-filter:blur(6px)!important;
+  -webkit-backdrop-filter:blur(6px)!important;
+}
+[data-theme="glass"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="glass"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 19. 主题/布局选择器 ========== */
+[data-theme="glass"] #themeSelect,
+[data-theme="glass"] #layoutSelect{
+  border:1px solid var(--border-theme)!important;
+  background:var(--surface)!important;
+  color:var(--txt)!important;
+  border-radius:var(--btn-r)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="glass"] #themeSelect:hover,
+[data-theme="glass"] #layoutSelect:hover{
+  border-color:var(--accent)!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="glass"] #themeSelect:focus,
+[data-theme="glass"] #layoutSelect:focus{
+  outline:none!important;
+  border-color:var(--accent)!important;
+  box-shadow:0 0 0 2px rgba(0,113,227,0.15)!important;
+}
+[data-theme="glass"][data-mode="dark"] #themeSelect:focus,
+[data-theme="glass"][data-mode="dark"] #layoutSelect:focus{
+  box-shadow:0 0 0 2px rgba(88,166,255,0.18)!important;
+}
+[data-theme="glass"] #themeSelect option,
+[data-theme="glass"] #layoutSelect option{background:#fff;color:var(--txt)}
+[data-theme="glass"][data-mode="dark"] #themeSelect option,
+[data-theme="glass"][data-mode="dark"] #layoutSelect option{background:#161b22;color:var(--txt)}
+
+/* ========== 20. 低性能模式适配 ========== */
+[data-theme="glass"] body.perf-lite{background:var(--bg)!important}
+[data-theme="glass"] body.perf-lite #topbar,
+[data-theme="glass"] body.perf-lite #liveFeed,
+[data-theme="glass"] body.perf-lite #dropzone,
+[data-theme="glass"] body.perf-lite .kpi,
+[data-theme="glass"] body.perf-lite .chartCard,
+[data-theme="glass"] body.perf-lite .analyzeCard,
+[data-theme="glass"] body.perf-lite #detailCard,
+[data-theme="glass"] body.perf-lite .loadingCard,
+[data-theme="glass"] body.perf-lite button,
+[data-theme="glass"] body.perf-lite #detailPanel,
+[data-theme="glass"] body.perf-lite #detailOverlay,
+[data-theme="glass"] body.perf-lite #loadingOverlay,
+[data-theme="glass"] body.perf-lite .cardSlot,
+[data-theme="glass"] body.perf-lite .detailChip,
+[data-theme="glass"] body.perf-lite .dimBtn,
+[data-theme="glass"] body.perf-lite .catFilter,
+[data-theme="glass"] body.perf-lite #themeSelect,
+[data-theme="glass"] body.perf-lite #layoutSelect{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="glass"][data-mode="light"] body.perf-lite .kpi,
+[data-theme="glass"][data-mode="light"] body.perf-lite .chartCard,
+[data-theme="glass"][data-mode="light"] body.perf-lite .analyzeCard,
+[data-theme="glass"][data-mode="light"] body.perf-lite #detailCard,
+[data-theme="glass"][data-mode="light"] body.perf-lite .cardSlot{
+  background:rgba(255,255,255,0.85)!important;
+}
+[data-theme="glass"][data-mode="dark"] body.perf-lite .kpi,
+[data-theme="glass"][data-mode="dark"] body.perf-lite .chartCard,
+[data-theme="glass"][data-mode="dark"] body.perf-lite .analyzeCard,
+[data-theme="glass"][data-mode="dark"] body.perf-lite #detailCard,
+[data-theme="glass"][data-mode="dark"] body.perf-lite .cardSlot{
+  background:rgba(22,27,34,0.92)!important;
+}
+[data-theme="glass"] body.perf-lite .lg-tint,
+[data-theme="glass"] body.perf-lite .lg-edge{display:none!important}
+
+/* ========== 21. 滚动条（Apple 风格） ========== */
+[data-theme="glass"][data-mode="light"] ::-webkit-scrollbar{width:8px;height:8px}
+[data-theme="glass"][data-mode="light"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="glass"][data-mode="light"] ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.18);border-radius:4px}
+[data-theme="glass"][data-mode="light"] ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.30)}
+[data-theme="glass"][data-mode="dark"] ::-webkit-scrollbar{width:8px;height:8px}
+[data-theme="glass"][data-mode="dark"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="glass"][data-mode="dark"] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18);border-radius:4px}
+[data-theme="glass"][data-mode="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.30)}
+
+/* ========== 22. 深色模式数字可读性修复 ========== */
+[data-theme="glass"][data-mode="dark"] .kpi .value,
+[data-theme="glass"][data-mode="dark"] .cardBody .kpiValue{
+  color:#f0f6fc!important;
+  opacity:1!important;
+}
+[data-theme="glass"][data-mode="dark"] .analyzeCard .ac-count{
+  color:var(--ac,#f0f6fc)!important;
+  opacity:1!important;
+}
+[data-theme="glass"][data-mode="dark"] .detailChip .dc-value{
+  color:#f0f6fc!important;
+  opacity:1!important;
+}

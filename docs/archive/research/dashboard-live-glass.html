@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>物品放行数据看板（实时动态版）</title>
-<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
-<link rel="stylesheet" href="./lib/toastify.css">
+<link rel="stylesheet" href="../../../lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="../../../lib/toastify.css">
 <style>
 /* ========== 全局样式（暗色大屏风） ========== */
 :root{
@@ -99,35 +99,18 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 #errPanel h3{color:var(--bad);margin-bottom:8px;font-size:15px}
 #errPanel li{color:#c0392b;margin-left:20px;line-height:1.8}
 
-/* ========== 液态玻璃真实折射（背景采样 + 边缘位移 + 色散） ========== */
-#bg-source{position:fixed; inset:0; z-index:-1; pointer-events:none;}
-/* ★ 关键：lg-* 玻璃层强制 absolute + 各自 z-index，避开下方"内容上浮"规则的误伤 */
-.lg-canvas,.lg-tint,.lg-edge{position:absolute !important;}
-.lg-canvas{inset:0; z-index:0 !important; pointer-events:none; border-radius:inherit;}
-.lg-tint  {inset:0; z-index:1 !important; pointer-events:none; border-radius:inherit;
-  background:linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.03) 50%, rgba(0,0,0,.05) 100%);}
-.lg-edge  {inset:0; z-index:2 !important; pointer-events:none; border-radius:inherit;
-  border:1px solid rgba(255,255,255,.6);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), inset 0 -1px 0 rgba(0,0,0,.12);}
-/* 卡片里的"内容元素"上浮到玻璃层之上：排除 lg-* 三层 */
-.kpi>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge),
-.chartCard>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge),
-#detailCard>*:not(.lg-canvas):not(.lg-tint):not(.lg-edge){
-  position:relative; z-index:3;
-}
-
 /* ========== KPI 卡片 ========== */
 #kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
-.kpi{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:16px;position:relative;overflow:hidden;isolation:isolate;
+.kpi{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:16px;position:relative;overflow:hidden;
   backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
-.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent);z-index:4}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
 .kpi .label{color:var(--txt2);font-size:12px;margin-bottom:8px}
 .kpi .value{font-size:28px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--txt)}
 #kpiRate{padding:0;display:flex;align-items:center;justify-content:center;min-height:110px}
 
 /* ========== 图表区 ========== */
 #charts{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:14px}
-.chartCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;isolation:isolate;
+.chartCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;
   backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
 .chartCard h3{font-size:14px;color:var(--txt);margin-bottom:6px;padding-left:8px;border-left:3px solid var(--accent)}
 .chart{width:100%;height:300px}
@@ -137,7 +120,7 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 @media(max-width:1100px){.span4,.span6,.span8{grid-column:span 12}}
 
 /* ========== 明细表 ========== */
-#detailCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;isolation:isolate;
+#detailCard{background:rgba(255,255,255,0.55);border:1px solid var(--glass-border);border-radius:16px;padding:12px;
   backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);box-shadow:var(--shadow)}
 #detailCard h3{font-size:14px;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent)}
 #detailTable{font-size:12px}
@@ -156,9 +139,6 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 </style>
 </head>
 <body>
-
-<!-- 折射背景源：全屏画布，供玻璃卡采样背景做真实折射 -->
-<canvas id="bg-source"></canvas>
 
 <!-- ========== 顶栏 ========== -->
 <div id="topbar">
@@ -231,17 +211,17 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 <div class="footerNote">本页面所有计算均在本地完成 · 模板版本 v1.2-live（实时动态栏版）</div>
 
 <!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
-<script src="./lib/echarts.min.js"></script>
-<script src="./lib/echarts-liquidfill.min.js"></script>
-<script src="./lib/xlsx.full.min.js"></script>
-<script src="./lib/papaparse.min.js"></script>
-<script src="./lib/dayjs.min.js"></script>
-<script src="./lib/lodash.min.js"></script>
-<script src="./lib/countUp.umd.js"></script>
-<script src="./lib/tabulator.min.js"></script>
-<script src="./lib/toastify.js"></script>
-<script src="./lib/html2canvas.min.js"></script>
-<script src="./lib/FileSaver.min.js"></script>
+<script src="../../../lib/echarts.min.js"></script>
+<script src="../../../lib/echarts-liquidfill.min.js"></script>
+<script src="../../../lib/xlsx.full.min.js"></script>
+<script src="../../../lib/papaparse.min.js"></script>
+<script src="../../../lib/dayjs.min.js"></script>
+<script src="../../../lib/lodash.min.js"></script>
+<script src="../../../lib/countUp.umd.js"></script>
+<script src="../../../lib/tabulator.min.js"></script>
+<script src="../../../lib/toastify.js"></script>
+<script src="../../../lib/html2canvas.min.js"></script>
+<script src="../../../lib/FileSaver.min.js"></script>
 
 <script>
 /* =====================================================================
@@ -612,15 +592,6 @@ function renderAll() {
   $("liveBadge").classList.toggle("hidden", !demoMode);
   $("liveFeed").classList.toggle("hidden", !demoMode);
   setTimeout(() => Object.values(CH).forEach(c => c.resize()), 50);
-  // 玻璃卡真实折射：等布局+ECharts 稳定后再采样；rAF 内重试 2 次，规避 grid stretch 未稳定时的尺寸竞态
-  setTimeout(() => scheduleRefraction(), 90);
-
-function scheduleRefraction(attempt = 0) {
-  requestAnimationFrame(() => {
-    applyRefraction();
-    if (attempt < 1) setTimeout(() => scheduleRefraction(attempt + 1), 180);
-  });
-}
   toast(`已加载 ${S.total} 行数据 ✅`);
 }
 
@@ -808,96 +779,7 @@ $("btnDemo").onclick = () => {
 };
 
 // ---------- 窗口自适应 ----------
-// ========== 液态玻璃真实折射（集成自 liquid-glass 技术：背景采样 + 边缘位移 + 色散） ==========
-const RDPR = Math.min(window.devicePixelRatio || 1, 2);
-const bgSrc = document.getElementById('bg-source');
-const bgCtxR = bgSrc.getContext('2d', { willReadFrequently: true });
-function renderBgSource() {
-  const W = window.innerWidth, H = window.innerHeight;
-  bgSrc.width = W * RDPR; bgSrc.height = H * RDPR;
-  bgSrc.style.width = W + 'px'; bgSrc.style.height = H + 'px';
-  bgCtxR.setTransform(RDPR, 0, 0, RDPR, 0, 0);
-  const g = bgCtxR.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#f6f7fb'); g.addColorStop(1, '#e7ecf5');
-  bgCtxR.fillStyle = g; bgCtxR.fillRect(0, 0, W, H);
-  const rg1 = bgCtxR.createRadialGradient(W*0.12, -H*0.08, 0, W*0.12, -H*0.08, 1200);
-  rg1.addColorStop(0, 'rgba(0,113,227,0.10)'); rg1.addColorStop(1, 'transparent');
-  bgCtxR.fillStyle = rg1; bgCtxR.fillRect(0, 0, W, H);
-  const rg2 = bgCtxR.createRadialGradient(W, 0, 0, W, 0, 1000);
-  rg2.addColorStop(0, 'rgba(52,199,89,0.08)'); rg2.addColorStop(1, 'transparent');
-  bgCtxR.fillStyle = rg2; bgCtxR.fillRect(0, 0, W, H);
-  // 极淡网格：为边缘折射提供可弯曲的纹理（商务浅色下不突兀）
-  bgCtxR.strokeStyle = 'rgba(0,0,0,0.04)'; bgCtxR.lineWidth = 1;
-  for (let x = 0; x < W; x += 40){ bgCtxR.beginPath(); bgCtxR.moveTo(x,0); bgCtxR.lineTo(x,H); bgCtxR.stroke(); }
-  for (let y = 0; y < H; y += 40){ bgCtxR.beginPath(); bgCtxR.moveTo(0,y); bgCtxR.lineTo(W,y); bgCtxR.stroke(); }
-}
-renderBgSource();
-
-function computeRefraction(buffer, p) {
-  const input = new Uint8ClampedArray(buffer);
-  const output = new Uint8ClampedArray(input.length);
-  const { Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd, Hd } = p;
-  const cx = Wp/2, cy = Hp/2;
-  const L = pad, R = pad + Wd, Tp = pad, B = pad + Hd;
-  for (let y = 0; y < Hp; y++) {
-    for (let x = 0; x < Wp; x++) {
-      const dx = Math.min(x - L, R - x), dy = Math.min(y - Tp, B - y);
-      const d = Math.min(dx, dy);
-      let rX=x,gX=x,bX=x,rY=y,gY=y,bY=y;
-      if (d >= 0 && d < edgeZone) {
-        const t = 1 - d/edgeZone, strength = Math.pow(t,1.6)*maxStrength;
-        const dist = Math.hypot(x-cx, y-cy) || 1, nx=(x-cx)/dist, ny=(y-cy)/dist;
-        rX = x + nx*strength; gX = x + nx*strength*(1-chroma); bX = x + nx*strength*(1-chroma*2);
-        rY = y + ny*strength; gY = y + ny*strength*(1-chroma); bY = y + ny*strength*(1-chroma*2);
-        rX = Math.max(0, Math.min(Wp-1, rX))|0; gX = Math.max(0, Math.min(Wp-1, gX))|0; bX = Math.max(0, Math.min(Wp-1, bX))|0;
-        rY = Math.max(0, Math.min(Hp-1, rY))|0; gY = Math.max(0, Math.min(Hp-1, gY))|0; bY = Math.max(0, Math.min(Hp-1, bY))|0;
-      }
-      const rIdx=(rY*Wp+rX)*4, gIdx=(gY*Wp+gX)*4, bIdx=(bY*Wp+bX)*4, dst=(y*Wp+x)*4;
-      output[dst]=input[rIdx]; output[dst+1]=input[gIdx+1]; output[dst+2]=input[bIdx+2]; output[dst+3]=255;
-    }
-  }
-  return output;
-}
-
-function applyRefractionTo(card) {
-  const edgeZone = 20 * RDPR, maxStrength = 14 * RDPR, chroma = 0.16;
-  let cv = card.querySelector(':scope > .lg-canvas');
-  if (!cv) {
-    cv = document.createElement('canvas'); cv.className = 'lg-canvas';
-    const tint = document.createElement('div'); tint.className = 'lg-tint';
-    const edge = document.createElement('div'); edge.className = 'lg-edge';
-    card.insertBefore(edge, card.firstChild);
-    card.insertBefore(tint, card.firstChild);
-    card.insertBefore(cv, card.firstChild);
-  }
-  const rect = card.getBoundingClientRect();
-  const W = rect.width, H = rect.height;
-  if (W < 4 || H < 4) return;
-  const padCss = 22, pad = Math.round(padCss * RDPR);
-  const Wp = Math.round((W + padCss*2) * RDPR), Hp = Math.round((H + padCss*2) * RDPR);
-  cv.width = Wp; cv.height = Hp;
-  cv.style.width = (W+padCss*2)+'px'; cv.style.height = (H+padCss*2)+'px';
-  cv.style.left = (-padCss)+'px'; cv.style.top = (-padCss)+'px';
-  const ctx = cv.getContext('2d', { willReadFrequently: true });
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.drawImage(bgSrc, Math.round((rect.left - padCss)*RDPR), Math.round((rect.top - padCss)*RDPR), Wp, Hp, 0, 0, Wp, Hp);
-  const img = ctx.getImageData(0,0,Wp,Hp);
-  const out = computeRefraction(img.data.buffer, { Wp, Hp, edgeZone, maxStrength, chroma, pad, Wd: Math.round(W*RDPR), Hd: Math.round(H*RDPR) });
-  ctx.putImageData(new ImageData(out, Wp, Hp), 0, 0);
-}
-
-function applyRefraction() {
-  document.querySelectorAll('.kpi, .chartCard, #detailCard').forEach(applyRefractionTo);
-}
-
-// ---------- 窗口自适应 + 折射重绘（rAF 节流，避免 12+ 卡同步阻塞主线程） ----------
-let _refractionRaf = 0, _bgRaf = 0;
-window.addEventListener("resize", () => {
-  if (_bgRaf) cancelAnimationFrame(_bgRaf);
-  _bgRaf = requestAnimationFrame(() => { renderBgSource(); Object.values(CH).forEach(c => c.resize()); });
-  if (_refractionRaf) cancelAnimationFrame(_refractionRaf);
-  _refractionRaf = requestAnimationFrame(applyRefraction);
-});
+window.addEventListener("resize", () => Object.values(CH).forEach(c => c.resize()));
 </script>
 </body>
 </html>

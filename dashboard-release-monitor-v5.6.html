@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物品放行监控数据看板 v5.6（主题/视图插件化）</title>
+
+<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="./lib/toastify.css">
+<link rel="stylesheet" href="./lib/gridstack.min.css">
+<style>
+/* ========== 全局样式（液态玻璃风） ========== */
+:root{
+  --bg:#eef1f6;
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
+  --accent:#0071e3; --accent2:#2997ff;
+  --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a; --purple:#5e5ce6; --cyan:#00b8d4;
+}
+/* 默认主题深色模式变量（外部主题各自定义深色变量，此处仅默认主题用） */
+[data-mode="dark"]{
+  --bg:#0d1117;
+  --line:rgba(255,255,255,0.10);
+  --txt:#e6edf3; --txt2:rgba(255,255,255,0.55);
+  --accent:#58a6ff; --accent2:#79c0ff;
+  --ok:#3fb950; --bad:#f85149; --warn:#d29922; --purple:#bc8cff; --cyan:#39d2e0;
+}
+[data-mode="dark"] html{background:var(--bg)}
+[data-mode="dark"] body{background:none;color:var(--txt)}
+[data-mode="dark"] button{background:rgba(255,255,255,0.06);border-color:var(--line);color:var(--txt)}
+[data-mode="dark"] button:hover{background:rgba(255,255,255,0.12);border-color:var(--accent);color:var(--accent)}
+[data-mode="dark"] #topbar{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);box-shadow:0 4px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.05)}
+[data-mode="dark"] #dropzone{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.12)}
+[data-mode="dark"] #dropzone p{color:var(--txt2)}
+[data-mode="dark"] #dropzone p b{color:var(--txt)}
+[data-mode="dark"] .loadingCard{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.10)}
+[data-mode="dark"] #layoutSelect,[data-mode="dark"] #themeSelect{background:rgba(255,255,255,0.06);color:var(--txt);border-color:var(--line)}
+[data-mode="dark"] #layoutSelect option,[data-mode="dark"] #themeSelect option{background:#161b22;color:var(--txt)}
+[data-mode="dark"] .tabulator{background:transparent}
+[data-mode="dark"] .tabulator .tabulator-header{background:rgba(255,255,255,0.04);color:var(--txt2)}
+[data-mode="dark"] .tabulator .tabulator-row{color:var(--txt)}
+[data-mode="dark"] .tabulator .tabulator-row.tabulator-row-even{background:rgba(255,255,255,0.02)}
+[data-mode="dark"] .tabulator .tabulator-row:hover{background:rgba(88,166,255,0.08)}
+[data-mode="dark"] .tabulator .tabulator-page{background:rgba(255,255,255,0.06);color:var(--txt);border-color:var(--line)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{background:none;color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  font-size:14px;-webkit-font-smoothing:antialiased}
+body{padding:18px 22px;min-height:100vh}
+h1{font-size:23px;letter-spacing:-0.3px;font-weight:600}
+.sub{color:var(--txt2);font-size:12px;margin-top:4px}
+button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--txt);border-radius:980px;padding:7px 14px;font-size:13px;transition:.18s;white-space:nowrap}
+button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,255,255,0.85)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button.primary:hover{filter:brightness(1.06);color:#fff}
+.hidden{display:none!important}
+
+/* ========== 顶栏（纵向左对齐：标题 / 元信息 / 按钮排 / 编辑栏） ========== */
+#topbar{display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+  padding:16px 18px;border:1px solid rgba(255,255,255,0.40);border-radius:16px;
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(6px) saturate(140%);
+  -webkit-backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);margin-bottom:16px}
+.tb-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%}
+.tb-view{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
+.tb-editbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;
+  padding:10px 12px;border-radius:12px;background:rgba(0,113,227,0.06);border:1px dashed rgba(0,113,227,0.40)}
+.tb-edithint{font-size:12px;color:var(--accent);font-weight:600}
+.metaRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#fileMeta{color:var(--txt2);font-size:12px}
+#fileMeta b{color:var(--accent);font-weight:600}
+
+/* ========== LIVE 徽标 ========== */
+#liveBadge{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;
+  border:1px solid rgba(52,199,89,0.4);border-radius:20px;background:rgba(52,199,89,0.12);color:#1a7f37;font-size:12px}
+.liveDot{width:8px;height:8px;border-radius:50%;background:#34c759;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,199,89,.5)}70%{box-shadow:0 0 0 8px rgba(52,199,89,0)}100%{box-shadow:0 0 0 0 rgba(52,199,89,0)}}
+#liveBadge.paused .liveDot{background:var(--warn);animation:none}
+#liveBadge.paused{border-color:rgba(255,159,10,0.45);background:rgba(255,159,10,0.14);color:#9a6200}
+
+/* ========== 实时流入动态栏 ========== */
+#liveFeed{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(6px) saturate(140%);-webkit-backdrop-filter:blur(6px) saturate(140%);
+  border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:10px 14px;margin-bottom:16px;overflow:hidden;min-height:46px}
+#liveFeed .feedLabel{flex:none;display:flex;align-items:center;gap:8px;color:#1a7f37;font-size:12px;
+  font-weight:600;border-right:1px solid var(--line);padding-right:12px;white-space:nowrap}
+#feedItems{display:flex;gap:8px;overflow:hidden;flex:1;align-items:center}
+#feedItems .empty{color:var(--txt2);font-size:12px}
+.feedItem{flex:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.35);
+  border-radius:10px;padding:6px 10px;font-size:12px;color:var(--txt2);white-space:nowrap;animation:slideIn .45s ease}
+.feedItem b{color:var(--txt);font-weight:600}
+.feedItem .t{color:var(--accent);font-family:"Segoe UI",monospace}
+.feedItem .route{color:var(--accent)}
+.stBadge{padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.st-ok{background:rgba(52,199,89,0.14);color:#1a7f37;border:1px solid rgba(52,199,89,0.4)}
+.st-bad{background:rgba(255,59,48,0.12);color:#c0392b;border:1px solid rgba(255,59,48,0.4)}
+.st-warn{background:rgba(255,159,10,0.16);color:#9a6200;border:1px solid rgba(255,159,10,0.45)}
+.st-sp{background:rgba(94,92,230,0.14);color:#4240c8;border:1px solid rgba(94,92,230,0.4)}
+.st-ev{background:rgba(0,113,227,0.12);color:#0a5fb8;border:1px solid rgba(0,113,227,0.4)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.feedItem--new{animation:slideIn .45s ease, flashNew 1s ease}
+@keyframes flashNew{0%{box-shadow:0 0 0 0 rgba(0,113,227,.45)}35%{box-shadow:0 0 0 3px rgba(0,113,227,.30)}100%{box-shadow:0 0 0 12px rgba(0,113,227,0)}}
+.feedItem--out{animation:slideOut .4s ease forwards;pointer-events:none}
+@keyframes slideOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(28px)}}
+
+/* ========== 上传区 ========== */
+#dropzone{border:2px dashed rgba(0,0,0,0.14);border-radius:20px;padding:60px 20px;text-align:center;
+  background:rgba(255,255,255,0.06);backdrop-filter:blur(6px) saturate(140%);-webkit-backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);transition:.2s;margin-bottom:16px}
+#dropzone.over{border-color:var(--accent);background:rgba(0,113,227,0.08)}
+#dropzone .big{font-size:40px;margin-bottom:12px}
+#dropzone p{color:var(--txt2);line-height:1.9}
+#dropzone .btns{margin-top:18px;display:flex;gap:10px;justify-content:center}
+
+/* ========== 错误面板 ========== */
+#errPanel{border:1px solid rgba(255,59,48,0.45);background:rgba(255,59,48,0.08);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+#errPanel h3{color:var(--bad);margin-bottom:8px;font-size:15px}
+#errPanel li{color:#c0392b;margin-left:20px;line-height:1.8}
+
+/* ========== 动态背景画布 + 玻璃层 ========== */
+#bg-source{position:fixed; left:0; top:0; z-index:-1; pointer-events:none;}
+.lg-tint,.lg-edge{position:absolute !important;}
+.lg-tint  {inset:0; z-index:1 !important; pointer-events:none; border-radius:inherit;
+  background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 45%, rgba(255,255,255,.06) 100%);}
+.lg-edge  {inset:0; z-index:2 !important; pointer-events:none; border-radius:inherit;
+  border:1px solid rgba(255,255,255,.50);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(0,0,0,.05);}
+.kpi>*:not(.lg-tint):not(.lg-edge),
+.chartCard>*:not(.lg-tint):not(.lg-edge),
+.analyzeCard>*:not(.lg-tint):not(.lg-edge),
+#detailCard>*:not(.lg-tint):not(.lg-edge){position:relative; z-index:3;}
+
+/* ========== KPI 卡片 ========== */
+#kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:16px;position:relative;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);cursor:pointer}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kc,var(--accent));z-index:4;border-radius:16px 0 0 16px}
+.kpi .label{color:var(--txt2);font-size:12px;margin-bottom:8px}
+.kpi .value{font-size:28px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--txt)}
+.kpi .kpiSub{font-size:12px;color:var(--txt2);margin-top:3px;font-family:"Segoe UI",monospace}
+.kpi .kpiSub b{color:var(--cyan);font-weight:600}
+.kpi .clickHint{font-size:11px;color:var(--txt2);opacity:.55;margin-top:6px;transition:opacity .2s}
+.kpi:hover .clickHint{opacity:1}
+
+/* ========== 图表区 ========== */
+#charts,#charts2{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:14px}
+.chartCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35)}
+.chartCard h3{font-size:14px;color:var(--txt);margin-bottom:6px;padding-left:8px;border-left:3px solid var(--accent)}
+.chart{width:100%;height:300px}
+.chartCard,.kpi{transition:transform .22s ease, box-shadow .22s ease, background .22s ease}
+.chartCard:hover,.kpi:hover{transform:translateY(-3px);background:rgba(255,255,255,0.10);
+  box-shadow:0 12px 36px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,0.45)}
+.span4{grid-column:span 4}.span6{grid-column:span 6}.span8{grid-column:span 8}.span12{grid-column:span 12}
+@media(max-width:1100px){.span4,.span6,.span8{grid-column:span 12}}
+
+/* ========== 专项分析表卡片（在途超时 / 超时未接收） ========== */
+#analysis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:900px){#analysis{grid-template-columns:1fr}}
+.analyzeCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:14px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);cursor:pointer;
+  transition:transform .22s ease, box-shadow .22s ease, background .22s ease}
+.analyzeCard:hover{transform:translateY(-3px);background:rgba(255,255,255,0.10);
+  box-shadow:0 12px 36px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,0.45)}
+.analyzeCard .ac-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.analyzeCard h3{font-size:14px;color:var(--txt);padding-left:8px;border-left:3px solid var(--ac,var(--warn))}
+.analyzeCard .ac-count{font-size:24px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--ac,var(--warn))}
+.analyzeCard .ac-desc{font-size:12px;color:var(--txt2);margin-bottom:10px;line-height:1.6}
+.analyzeCard .ac-preview{font-size:12px}
+.analyzeCard .ac-more{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:12px;color:var(--accent);font-weight:600}
+.analyzeCard .ac-empty{color:var(--txt2);font-size:12px;padding:14px 0;text-align:center}
+.ac-tag{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:600;margin-right:4px}
+
+/* ========== 明细表 ========== */
+#detailCard{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;isolation:isolate;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35)}
+#detailCard h3{font-size:14px;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent)}
+#detailTable{font-size:12px}
+.tabulator{background:transparent;border:1px solid var(--line);color:var(--txt);font-size:12px;border-radius:12px;overflow:hidden}
+.tabulator .tabulator-header{background:rgba(0,0,0,0.03)!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-header .tabulator-col{background:transparent!important;border-right:1px solid var(--line)!important}
+.tabulator .tabulator-row{background:transparent!important;border-bottom:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-row.tabulator-row-even{background:rgba(0,0,0,0.02)!important}
+.tabulator .tabulator-row:hover{background:rgba(0,113,227,0.06)!important}
+.tabulator .tabulator-cell{border-right:1px solid var(--line)!important;color:var(--txt)!important}
+.tabulator .tabulator-footer{background:transparent!important;color:var(--txt)!important}
+.tabulator .tabulator-page{color:var(--txt)!important;background:rgba(255,255,255,0.6)!important;border:1px solid var(--line)!important}
+.tabulator .tabulator-page.active{background:var(--accent)!important;color:#fff!important}
+.tabulator .tabulator-page:hover{background:rgba(0,113,227,0.1)!important}
+.tabulator .tabulator-tableholder{background:transparent!important}
+.tabulator .tabulator-tableholder .tabulator-table{background:transparent!important;color:var(--txt)!important}
+.tabulator .tabulator-header .tabulator-header-filter input{background:rgba(255,255,255,0.7)!important;border:1px solid var(--line)!important;color:var(--txt)!important;border-radius:6px;padding:2px 6px}
+.tabulator .tabulator-header .tabulator-col .tabulator-col-content .tabulator-col-title .tabulator-title-editor{background:rgba(255,255,255,0.7)!important;color:var(--txt)!important;border:1px solid var(--line)!important}
+.tabulator .tabulator-footer .tabulator-page-counter,.tabulator .tabulator-footer .tabulator-paginator label{color:var(--txt2)!important}
+.tabulator .tabulator-tableholder .tabulator-placeholder .tabulator-placeholder-contents{color:var(--txt2)!important}
+.tabulator-popup-container{background:rgba(255,255,255,0.95)!important;border:1px solid var(--line)!important;box-shadow:0 8px 30px rgba(0,0,0,0.12)!important;border-radius:10px!important}
+.tabulator-edit-list .tabulator-edit-list-item{color:var(--txt)!important}
+.tabulator-edit-list .tabulator-edit-list-item.active{background:rgba(0,113,227,0.1)!important;color:var(--accent)!important}
+.tabulator .tabulator-alert{background:rgba(255,255,255,0.4)!important}
+.tabulator-row.tabulator-group{background:rgba(0,0,0,0.04)!important;color:var(--txt)!important;border-color:var(--line)!important}
+.footerNote{color:var(--txt2);font-size:12px;text-align:center;margin:18px 0 6px}
+
+/* ========== 二级详情面板（液态玻璃） ========== */
+#detailOverlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.10);backdrop-filter:blur(10px) saturate(120%);-webkit-backdrop-filter:blur(10px) saturate(120%);
+  opacity:0;pointer-events:none;transition:opacity .3s ease}
+#detailOverlay.open{opacity:1;pointer-events:auto}
+#detailPanel{width:min(95vw,1180px);max-height:90vh;display:flex;flex-direction:column;
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.45);border-radius:20px;
+  backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
+  box-shadow:0 24px 80px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.45);
+  transform:translateY(28px) scale(0.97);transition:transform .35s cubic-bezier(.16,1,.3,1)}
+#detailOverlay.open #detailPanel{transform:none}
+#detailPanelHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.30);flex:none}
+#detailPanelTitle{font-size:17px;font-weight:600;display:flex;align-items:center;gap:10px}
+#detailPanelTitle::before{content:"";width:4px;height:20px;background:var(--accent);border-radius:2px;flex:none}
+#btnDetailClose{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.40);
+  background:rgba(255,255,255,0.10);color:var(--txt2);font-size:13px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:.2s;padding:0;line-height:1}
+#btnDetailClose:hover{background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);color:var(--bad)}
+#detailPanelBody{padding:18px 22px;overflow-y:auto;flex:1}
+.detailChips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.detailChip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.35);border-radius:12px;
+  padding:10px 16px;min-width:110px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.detailChip .dc-label{font-size:11px;color:var(--txt2);margin-bottom:4px}
+.detailChip .dc-value{font-size:20px;font-weight:700;font-family:"Segoe UI",monospace}
+#detailChartBox{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.25);border-radius:14px;padding:12px;margin-bottom:16px}
+#detailChart{width:100%;height:280px}
+/* —— 多维度切换器（放行单总览二级页） —— */
+#detailDims{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.dimBtn{cursor:pointer;border:1px solid rgba(255,255,255,0.40);background:rgba(255,255,255,0.08);
+  color:var(--txt2);border-radius:980px;padding:7px 18px;font-size:13px;transition:.2s;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.dimBtn:hover{color:var(--accent);border-color:var(--accent);background:rgba(0,113,227,0.08)}
+.dimBtn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(0,113,227,0.30)}
+/* —— 分类筛选芯片（点击过滤下方明细） —— */
+#detailCatFilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.catFilter{cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;font-size:12px;
+  border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);color:var(--txt2);transition:.18s;user-select:none}
+.catFilter::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cc,var(--accent));flex:none;opacity:.55;transition:.18s}
+.catFilter:hover{color:var(--txt);border-color:var(--cc,var(--accent));background:rgba(255,255,255,0.12)}
+.catFilter.active{color:var(--txt);font-weight:600;border-color:var(--cc,var(--accent));background:rgba(255,255,255,0.16);
+  box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+.catFilter.active::before{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb,var(--cc) 25%,transparent)}
+.catFilter b{font-family:"Segoe UI",monospace;color:var(--txt)}
+#detailTableBox h4{font-size:13px;color:var(--txt);margin-bottom:8px;padding-left:8px;border-left:3px solid var(--accent)}
+/* 二级明细表：表头两行完整显示 + 列宽按内容分配，超宽时容器横向滚动（不再挤压） */
+#detailTable2 .tabulator-col-title{white-space:normal;line-height:1.35;padding:2px 0}
+#detailTable2 .tabulator-tableholder{overflow:auto}
+#detailTable2 .tabulator-col .tabulator-col-content{min-height:34px}
+@media(max-width:768px){#detailPanel{width:98vw;max-height:94vh;border-radius:14px}#detailPanelBody{padding:12px 14px}}
+
+/* ========== 文件解析加载遮罩（液态玻璃风） ========== */
+#loadingOverlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  background:rgba(238,241,246,0.55);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity .28s ease}
+#loadingOverlay.show{opacity:1;pointer-events:auto}
+.loadingCard{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.50);border-radius:20px;
+  padding:30px 46px;text-align:center;
+  box-shadow:0 12px 48px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.45)}
+.spinner{width:44px;height:44px;margin:0 auto 16px;border-radius:50%;
+  border:3px solid rgba(0,113,227,0.15);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingText{font-size:14px;color:var(--txt);margin-bottom:14px}
+.progressTrack{width:230px;height:6px;border-radius:3px;background:rgba(0,0,0,0.08);overflow:hidden}
+#progressBar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .3s ease}
+
+/* ========== 性能模式指示与切换 ========== */
+#perfTag{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:20px;font-size:11px;
+  border:1px solid var(--line);background:rgba(255,255,255,0.5);color:var(--txt2)}
+#perfTag b{font-weight:600}
+#perfTag.lite b{color:var(--warn)}
+#perfTag.full b{color:var(--ok)}
+
+/* ========== 低性能模式（老电脑 / 小内存）降级：去毛玻璃 + 纯色卡片 + 静态背景 + 关高开销动画 ========== */
+body.perf-lite #bg-source{display:none}
+body.perf-lite{background:linear-gradient(160deg,#f5f7fc 0%,#edf1f9 50%,#e5ebf5 100%);background-attachment:fixed}
+body.perf-lite #topbar,
+body.perf-lite #liveFeed,
+body.perf-lite #dropzone,
+body.perf-lite .kpi,
+body.perf-lite .chartCard,
+body.perf-lite .analyzeCard,
+body.perf-lite #detailCard,
+body.perf-lite .loadingCard,
+body.perf-lite button,
+body.perf-lite #detailPanel,
+body.perf-lite #detailOverlay,
+body.perf-lite #loadingOverlay,
+body.perf-lite .detailChip,
+body.perf-lite .dimBtn,
+body.perf-lite .catFilter{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.perf-lite .kpi,
+body.perf-lite .chartCard,
+body.perf-lite .analyzeCard,
+body.perf-lite #detailCard{background:rgba(255,255,255,0.82)!important}
+body.perf-lite #topbar,body.perf-lite #liveFeed,body.perf-lite #dropzone{background:rgba(255,255,255,0.86)!important}
+body.perf-lite #detailPanel{background:rgba(248,250,253,0.98)!important}
+body.perf-lite #detailOverlay{background:rgba(0,0,0,0.30)!important}
+body.perf-lite #loadingOverlay{background:rgba(238,241,246,0.92)!important}
+/* 关闭卡片 hover 位移与过渡（减少重排重绘） */
+body.perf-lite .chartCard,body.perf-lite .kpi,body.perf-lite .analyzeCard{transition:none!important}
+body.perf-lite .chartCard:hover,body.perf-lite .kpi:hover,body.perf-lite .analyzeCard:hover{transform:none!important;box-shadow:0 4px 24px rgba(0,0,0,0.04)!important}
+/* 关闭动态栏流入动画 */
+body.perf-lite .feedItem,body.perf-lite .feedItem--new,body.perf-lite .feedItem--out{animation:none!important}
+/* 低性能模式下不注入玻璃折射层 */
+body.perf-lite .lg-tint,body.perf-lite .lg-edge{display:none!important}
+
+/* ========== 模块化卡片布局（v4） ========== */
+/* 视图 / 主题 选择器统一样式（液态玻璃风，与顶栏按钮协调） */
+#layoutSelect, #themeSelect{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.7);color:var(--txt);
+  border-radius:10px;padding:6px 10px;font-size:13px;max-width:200px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:border-color .18s, background .18s}
+#layoutSelect:hover, #themeSelect:hover{border-color:var(--accent);background:rgba(255,255,255,0.9)}
+#layoutSelect:focus, #themeSelect:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,113,227,0.15)}
+#layoutSelect option, #themeSelect option{background:#fff;color:var(--txt)}
+
+#cardGrid{position:relative;min-height:200px}
+.cardSlot{isolation:isolate;display:flex;flex-direction:column;box-sizing:border-box;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;
+  backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition:background .22s ease}
+.cardSlot:hover{background:rgba(255,255,255,0.10)}
+
+.cardHead{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex:none}
+.cardTitle{font-size:13px;font-weight:600;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding-left:7px;border-left:3px solid var(--accent)}
+/* 编辑布局模式：整条卡片头部为拖动区（点击不松手即可拖动） */
+body.editing .cardHead{cursor:grab;user-select:none;border-radius:8px;transition:background .15s}
+body.editing .cardHead::before{content:"⠿";color:var(--accent);font-size:13px;line-height:1;opacity:.75}
+body.editing .cardHead:hover{background:rgba(0,113,227,0.07)}
+body.editing .cardHead:active{cursor:grabbing;background:rgba(0,113,227,0.12)}
+.cardRemove{cursor:pointer;border:none;background:transparent;color:var(--txt2);font-size:13px;width:22px;height:22px;
+  border-radius:6px;align-items:center;justify-content:center;transition:.15s;padding:0;line-height:1;display:none}
+.cardRemove:hover{background:rgba(255,59,48,0.12);color:var(--bad)}
+body.editing .cardRemove{display:flex}
+.cardBody{flex:1;min-height:0}
+.cardBody .chart{width:100%;height:100%}
+/* KPI 卡片内容 */
+.cardBody .kpiLabel{color:var(--txt2);font-size:12px;margin-bottom:6px}
+.cardBody .kpiValue{font-size:26px;font-weight:700;font-family:"Segoe UI",monospace;color:var(--txt)}
+.cardBody .kpiSub{font-size:12px;color:var(--txt2);margin-top:3px;font-family:"Segoe UI",monospace}
+.cardBody .kpiSub b{color:var(--cyan);font-weight:600}
+.cardBody .clickHint{font-size:11px;color:var(--txt2);opacity:.55;margin-top:6px}
+.cardSlot.clickable .cardBody{cursor:pointer}
+/* 分析卡内容 */
+.cardBody .ac-count{font-size:22px;font-weight:700;font-family:"Segoe UI",monospace}
+.cardBody .ac-desc{font-size:12px;color:var(--txt2);margin:6px 0 8px;line-height:1.6}
+.cardBody .ac-empty{color:var(--txt2);font-size:12px;padding:10px 0;text-align:center}
+
+/* ========== 卡片库抽屉 ========== */
+#cardLibOverlay{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.10);
+  opacity:0;pointer-events:none;transition:opacity .25s ease}
+#cardLibOverlay.open{opacity:1;pointer-events:auto}
+#cardLibPanel{position:absolute;top:0;right:0;bottom:0;width:min(92vw,380px);display:flex;flex-direction:column;
+  background:rgba(248,250,253,0.97);border-left:1px solid rgba(255,255,255,0.5);
+  box-shadow:-12px 0 48px rgba(0,0,0,0.12);transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+#cardLibOverlay.open #cardLibPanel{transform:none}
+#cardLibHead{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--line);flex:none}
+#cardLibHead h3{font-size:15px;font-weight:600}
+#btnLibClose{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.6);color:var(--txt2);
+  width:28px;height:28px;border-radius:8px;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0}
+#btnLibClose:hover{color:var(--bad);border-color:rgba(255,59,48,0.4)}
+#cardLibBody{flex:1;overflow-y:auto;padding:14px 16px}
+.libCat{font-size:11px;font-weight:600;color:var(--txt2);margin:12px 0 6px;letter-spacing:.5px}
+.libCat:first-child{margin-top:0}
+.libItem{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:6px;border-radius:10px;
+  border:1px solid var(--line);background:rgba(255,255,255,0.7);cursor:pointer;transition:.15s}
+.libItem:hover{border-color:var(--accent);background:rgba(0,113,227,0.05)}
+.libItem .li-icon{font-size:16px;flex:none}
+.libItem .li-title{flex:1;font-size:13px;color:var(--txt)}
+.libItem .li-add{font-size:12px;color:var(--accent);font-weight:600;flex:none}
+.libItem.added{opacity:.45;cursor:default}
+.libItem.added .li-add{color:var(--txt2)}
+.libItem.added:hover{border-color:var(--line);background:rgba(255,255,255,0.7)}
+
+/* ========== gridstack 布局引擎样式覆盖 ========== */
+#cardGrid.grid-stack{min-height:200px}
+.grid-stack-item{transition:left .3s,top .3s,width .3s,height .3s}
+/* 拖拽占位符 */
+.grid-stack-placeholder{background:rgba(0,113,227,0.08)!important;border:2px dashed rgba(0,113,227,0.35)!important;border-radius:14px!important}
+/* 缩放手柄（液态玻璃风） */
+.grid-stack-item>.ui-resizable-ne{cursor:ne-resize}
+.grid-stack-item>.ui-resizable-nw{cursor:nw-resize}
+.grid-stack-item>.ui-resizable-se{cursor:se-resize}
+.grid-stack-item>.ui-resizable-sw{cursor:sw-resize}
+.grid-stack-item>.ui-resizable-n,.grid-stack-item>.ui-resizable-s,.grid-stack-item>.ui-resizable-e,.grid-stack-item>.ui-resizable-w{cursor:default}
+.grid-stack-item>.ui-resizable-handle{transition:opacity .2s}
+.grid-stack-item:not(:hover)>.ui-resizable-handle{opacity:0}
+.grid-stack-item:hover>.ui-resizable-handle{opacity:1}
+/* 清除 gridstack 默认灰色箭头底图与旋转，改为液态玻璃风圆角手柄 */
+.grid-stack-item>.ui-resizable-ne,.grid-stack-item>.ui-resizable-nw,
+.grid-stack-item>.ui-resizable-se,.grid-stack-item>.ui-resizable-sw{
+  background-image:none;transform:none;
+  width:18px;height:18px;
+  background:rgba(255,255,255,0.55);
+  border:1px solid rgba(0,113,227,0.25);
+  border-radius:7px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+/* 手柄内角标：与整体 UI 一致的单线圆角箭头（accent 蓝） */
+.grid-stack-item>.ui-resizable-se::after{content:"";position:absolute;right:4px;bottom:4px;width:9px;height:9px;
+  border-right:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 3px 0}
+.grid-stack-item>.ui-resizable-nw::after{content:"";position:absolute;left:4px;top:4px;width:9px;height:9px;
+  border-left:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:3px 0 0 0}
+.grid-stack-item>.ui-resizable-ne::after{content:"";position:absolute;right:4px;top:4px;width:9px;height:9px;
+  border-right:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:0 3px 0 0}
+.grid-stack-item>.ui-resizable-sw::after{content:"";position:absolute;left:4px;bottom:4px;width:9px;height:9px;
+  border-left:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 0 3px}
+/* 手柄 hover 高亮 */
+.grid-stack-item>.ui-resizable-handle:hover{background:rgba(0,113,227,0.14)!important;border-color:rgba(0,113,227,0.55)!important}
+.grid-stack-item>.ui-resizable-handle:hover::after{border-color:rgba(0,113,227,0.95)!important}
+/* 拖拽中的卡片提升层级 + 阴影增强 */
+.grid-stack-item.ui-draggable-dragging{z-index:100;box-shadow:0 16px 48px rgba(0,0,0,0.15)}
+.grid-stack-item.ui-draggable-dragging .cardSlot{box-shadow:0 16px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.45)}
+/* 低性能模式：gridstack 降级 */
+body.perf-lite .grid-stack-item{transition:none!important}
+body.perf-lite .grid-stack-item>.ui-resizable-handle{opacity:1}
+body.perf-lite .grid-stack-item>.ui-resizable-ne,
+body.perf-lite .grid-stack-item>.ui-resizable-nw,
+body.perf-lite .grid-stack-item>.ui-resizable-se,
+body.perf-lite .grid-stack-item>.ui-resizable-sw{
+  background:rgba(0,0,0,0.06);border-color:rgba(0,0,0,0.18);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.perf-lite .grid-stack-item>.ui-resizable-ne::after,
+body.perf-lite .grid-stack-item>.ui-resizable-nw::after,
+body.perf-lite .grid-stack-item>.ui-resizable-se::after,
+body.perf-lite .grid-stack-item>.ui-resizable-sw::after{border-color:rgba(0,0,0,0.45)}
+
+/* 低性能模式：卡片槽降级 */
+body.perf-lite .cardSlot{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(255,255,255,0.82)!important;transition:none!important}
+body.perf-lite .cardSlot:hover{transform:none!important}
+</style>
+</head>
+<body>
+
+<!-- 液态玻璃动态背景画布（漂浮几何 + 流动光晕） -->
+<canvas id="bg-source"></canvas>
+
+<!-- ========== 顶栏（标题 / 元信息 / 按钮排 / 编辑栏，纵向左对齐） ========== -->
+<div id="topbar">
+  <h1>🚪 物品放行监控数据看板</h1>
+  <div class="sub">内网离线版 · 数据仅在本地浏览器处理，不会外传 · 支持上传「物品放行监控.xlsx」实时分析</div>
+  <div class="metaRow">
+    <span id="fileMeta"></span>
+    <span id="liveBadge" class="hidden"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b id="liveTime">--:--:--</b></span>
+    <span id="perfTag" title="当前渲染模式"></span>
+  </div>
+  <div class="tb-actions">
+    <span class="tb-view">视图<select id="layoutSelect" title="切换预设/自定义视图"></select></span>
+    <span class="tb-view">主题<select id="themeSelect" title="切换外观主题（默认主题内置；外部主题需 style/ 文件夹）"></select></span>
+    <button id="btnDark" title="切换深色 / 浅色模式">☀️ 浅色</button>
+    <button id="btnPerf" title="切换渲染性能模式（高画质 / 流畅）">⚙️ 性能模式</button>
+    <button id="btnLive" class="hidden">⏸ 暂停刷新</button>
+    <button id="btnReupload" class="hidden">📂 重新上传</button>
+    <button id="btnExportExcel" class="hidden" title="导出分析结果 Excel（多 Sheet）">📊 导出 Excel</button>
+    <button id="btnToCsv" class="hidden" title="将当前数据转存为 CSV（10 万行约 1 秒），下次加载该 CSV 解析快约 35 倍，推荐大文件使用">📄 转存 CSV</button>
+    <button id="btnShot" class="hidden" title="导出看板截图 PNG">🖼️ 导出截图</button>
+    <button id="btnEditMode" class="primary" title="进入编辑模式：拖拽 / 缩放 / 增删卡片">🎨 编辑布局</button>
+  </div>
+  <div class="tb-editbar hidden" id="editBar">
+    <span class="tb-edithint">🎯 编辑模式 · 拖 ⠿ 移动 · 拖边缘缩放 · ✕ 移除</span>
+    <button id="btnAddCard" title="从卡片库添加卡片">➕ 添加卡片</button>
+    <button id="btnLayoutSave" title="将当前布局另存为命名视图">💾 保存布局</button>
+    <button id="btnViewExport" title="将当前布局导出为视图插件文件（放入 views/ 目录即可分享给同事）">📤 导出视图文件</button>
+    <button id="btnLayoutReset" title="恢复当前预设视图">↺ 重置</button>
+  </div>
+</div>
+
+<!-- ========== 实时流入动态栏（仅演示模式显示） ========== -->
+<div id="liveFeed" class="hidden">
+  <div class="feedLabel"><span class="liveDot"></span>实时流入</div>
+  <div id="feedItems"><span class="empty">等待新数据…</span></div>
+</div>
+
+<!-- ========== 上传区 ========== -->
+<div id="dropzone">
+  <div class="big">📁</div>
+  <p>把「物品放行监控」导出的 <b>.xls / .xlsx / .csv</b> 文件拖到此处<br>或点击下方按钮选择文件（业务分析逻辑全部保留在页面内，可随时替换新数据）</p>
+  <div class="btns">
+    <button class="primary" id="btnPick">选择数据文件</button>
+    <button id="btnDemo">载入示例数据预览（实时演示）</button>
+  </div>
+  <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" class="hidden">
+</div>
+
+<!-- ========== 错误面板 ========== -->
+<div id="errPanel" class="hidden">
+  <h3>⚠️ 数据文件校验未通过</h3>
+  <ul id="errList"></ul>
+  <p style="color:#c0392b;margin-top:8px;font-size:12px">请检查导出的表头是否与「物品放行监控」模板一致，或联系维护人更新「字段映射」配置。</p>
+</div>
+
+<!-- ========== 文件解析加载遮罩 ========== -->
+<div id="loadingOverlay">
+  <div class="loadingCard">
+    <div class="spinner"></div>
+    <div id="loadingText">正在读取文件…</div>
+    <div class="progressTrack"><div id="progressBar"></div></div>
+  </div>
+</div>
+
+<!-- ========== 看板主体（模块化卡片） ========== -->
+<div id="dashboard" class="hidden">
+  <!-- 卡片网格（由布局引擎渲染） -->
+  <div id="cardGrid" class="grid-stack"></div>
+</div>
+
+<!-- ========== 卡片库抽屉 ========== -->
+<div id="cardLibOverlay">
+  <div id="cardLibPanel">
+    <div id="cardLibHead">
+      <h3>🧩 卡片库</h3>
+      <button id="btnLibClose" title="关闭">✕</button>
+    </div>
+    <div id="cardLibBody"></div>
+  </div>
+</div>
+
+<!-- ========== 二级详情面板（液态玻璃） ========== -->
+<div id="detailOverlay">
+  <div id="detailPanel">
+    <div id="detailPanelHead">
+      <h3 id="detailPanelTitle">数据详情</h3>
+      <button id="btnDetailClose" title="关闭（Esc）">✕</button>
+    </div>
+    <div id="detailPanelBody">
+      <div class="detailChips" id="detailChips"></div>
+      <div id="detailDims" style="display:none"></div>
+      <div id="detailChartBox"><div id="detailChart"></div></div>
+      <div id="detailCatFilters"></div>
+      <div id="detailTableBox"><h4 id="detailTableTitle">数据明细</h4><div id="detailTable2"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v5.6（主题/视图插件化）</div>
+
+<!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
+<script src="./lib/echarts.min.js"></script>
+<script src="./lib/echarts-liquidfill.min.js"></script>
+<script src="./lib/xlsx.full.min.js"></script>
+<script src="./lib/papaparse.min.js"></script>
+<script src="./lib/dayjs.min.js"></script>
+<script src="./lib/lodash.min.js"></script>
+<script src="./lib/countUp.umd.js"></script>
+<script src="./lib/tabulator.min.js"></script>
+<script src="./lib/toastify.js"></script>
+<script src="./lib/html2canvas.min.js"></script>
+<script src="./lib/FileSaver.min.js"></script>
+<script src="./lib/gridstack-all.min.js"></script>
+
+<script>
+/* =====================================================================
+ * ★★★ 业务配置区（想调整分析逻辑只改这里，全是中文配置）★★★
+ * 源数据：物品放行监控.xlsx（A~AN 共 40 列）
+ * ===================================================================== */
+const CONFIG = {
+  // —— 字段映射：左边“标准字段”，右边为导出文件中可能出现的表头别名 ——
+  字段映射: {
+    申请日期:   ["申请日期", "申請日期"],
+    放行单号:   ["放行单号", "放行單號", "单号", "单据编号"],
+    物品类型:   ["物品类型", "物品類型"],
+    申请人:     ["申请人姓名", "申請人姓名", "申请人"],
+    申请部门:   ["申请人部门", "申請人部門", "申请部门", "部门"],
+    流出门岗:   ["放行单流出门岗", "放行單流出門崗", "流出门岗"],
+    流入门岗:   ["放行单流入门岗", "放行單流入門崗", "流入门岗"],
+    实际放行门岗: ["实际放行门岗", "實際放行門崗"],
+    放行人:     ["放行人姓名", "放行人"],
+    实际放行时间: ["实际放行时间", "實際放行時間"],
+    放行状态:   ["放行状态", "放行狀態"],
+    放行超时:   ["放行超时", "放行超時"],
+    接收时间:   ["接收时间", "接收時間"],
+    接收超时:   ["接收超时", "接收超時"],
+    接收状态:   ["接收状态", "接收狀態"],
+    接收人:     ["接收人姓名", "接收人"],
+    接收人部门: ["接收人部门", "接收人部門"],
+    物品分类:   ["物品分类", "物品分類"],
+    放行物品名称: ["放行物品名称", "放行物品名稱", "物品名称"],
+    数量:       ["放行数量", "放行數量", "数量"],
+    厂区:       ["厂区", "廠區"]
+  },
+
+  // —— 必需字段：缺了这些列就无法分析 ——
+  必需字段: ["放行单号", "申请日期", "流入门岗"],
+
+  // —— 特级安保单识别：单号前六位为 WF9897 即视为特保单 ——
+  特保单号前缀: "WF9897",
+  普通单号标识: "WF7501",
+
+  // —— 超时判断：超时标记字段值等于以下之一即视为超时 ——
+  超时标记: ["1", 1, "是", "Y", "YES", "TRUE"],
+
+  TOPN: 10,
+  趋势天数阈值: 62,
+  大文件警告行数: 50000,
+  大数据量阈值: 30000,   // 超过此行数自动进入大数据模式（关闭动画 / 背景降频 / 表格渐进渲染）
+  分块大小: 5000,         // 数据标准化分块行数（分块间隙让出主线程，保持界面响应）
+
+  // —— 实时演示模式 ——
+  实时演示: { 刷新间隔毫秒: 1000, 每批最小条数: 1, 每批最大条数: 1, 动态栏保留条数: 4 }
+};
+
+/* =====================================================================
+ * ★★★ 性能自适应层（PERF）★★★
+ * 依据硬件能力（内存 / CPU 核心）+ 用户手动选择，决定渲染档位：
+ *   full  = 完整液态玻璃（动态背景 + 毛玻璃）
+ *   lite  = 老电脑友好（静态背景 + 纯色卡片 + 关高开销动画）
+ * 手动选择记忆在 localStorage.perfMode，优先级高于自动判定。
+ * ===================================================================== */
+let PERF = (() => {
+  const mem = navigator.deviceMemory || 8;          // 单位 GB，浏览器不支持时按 8 估计
+  const cores = navigator.hardwareConcurrency || 4; // 逻辑核心数
+  // 自动判定：内存 ≤4GB 或 核心 ≤2 → 判定为低性能设备
+  const auto = (mem <= 4 || cores <= 2) ? "lite" : "full";
+  let saved = null;
+  try { saved = localStorage.getItem("perfMode"); } catch (e) { }
+  const mode = (saved === "lite" || saved === "full") ? saved : auto;
+  return { mem, cores, auto, mode, manual: !!saved, lite: mode === "lite" };
+})();
+// 尽早应用降级 class，避免首帧渲染重开销毛玻璃
+document.body.classList.toggle("perf-lite", PERF.lite);
+// —— XLSX 库就绪：外部 ./lib/xlsx.full.min.js 同步加载（file:// 离线可用，无需内联/Blob）——
+let xlsxReady = Promise.resolve(true);
+function applyPerfTag() {
+  const el = $("perfTag"); if (!el) return;
+  el.className = PERF.lite ? "lite" : "full";
+  el.innerHTML = `🖥️ <b>${PERF.lite ? "流畅模式" : "高画质模式"}</b>`;
+  el.title = `当前：${PERF.lite ? "流畅（适配老电脑/小内存）" : "高画质（完整液态玻璃）"} · 检测：内存${PERF.mem}GB/${PERF.cores}核 · ${PERF.manual ? "手动选择" : "自动判定"}`;
+}
+function togglePerfMode() {
+  // 无重载切换：file:// 下 location.reload() 会触发 Chrome "Unsafe attempt to load URL" 安全警告，
+  // 改为就地重建（更新 PERF → 应用降级 class → 重建背景/图表/表格），体验连续不闪屏。
+  const next = PERF.lite ? "full" : "lite";
+  try { localStorage.setItem("perfMode", next); } catch (e) { }
+  PERF = { ...PERF, mode: next, manual: true, lite: next === "lite" };
+  document.body.classList.toggle("perf-lite", PERF.lite);
+  applyPerfTag();
+  if (PERF.lite) {
+    // 切换到流畅模式：停止背景动画
+    if (typeof bgAnimId !== "undefined" && bgAnimId) { cancelAnimationFrame(bgAnimId); bgAnimId = 0; }
+  } else {
+    // 切换到高画质模式：重建背景配色并启动动画
+    if (typeof rebuildBgForTheme === "function") rebuildBgForTheme();
+    if (typeof bgAnimId !== "undefined" && !bgAnimId) bgAnimId = requestAnimationFrame(animBg);
+    scheduleRefraction();
+  }
+  if (rows.length) { renderAll(); }        // 已有数据 → 整体重建（图表 DPR/背景档位随之切换）
+  toast(`已切换为${PERF.lite ? "流畅" : "高画质"}模式 ✅`);
+}
+
+/* =====================================================================
+ * 以下为程序逻辑，一般不需要修改
+ * ===================================================================== */
+const $ = id => document.getElementById(id);
+function toast(msg, ok = true) {
+  Toastify({ text: msg, duration: 3500, gravity: "top", position: "right",
+    style: { background: ok ? "rgba(52,199,89,0.92)" : "rgba(255,59,48,0.92)", color: "#fff", borderRadius: "12px", backdropFilter: "blur(10px)" } }).showToast();
+}
+function parseDate(v) {
+  if (v == null || v === "") return null;
+  if (v instanceof Date && !isNaN(v)) return dayjs(v);
+  if (typeof v === "number" && v > 20000 && v < 80000) return dayjs(new Date(Math.round((v - 25569) * 86400 * 1000)));
+  const d = dayjs(String(v).trim().replace(/[./年月]/g, "-").replace(/日/g, ""));
+  return d.isValid() ? d : null;
+}
+function decodeText(buf) {
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder("gbk").decode(buf); }
+}
+// 超时标记判断
+function isTimeout(v) { return CONFIG.超时标记.some(m => String(v).trim().toUpperCase() === String(m).toUpperCase()); }
+// 特保单判断：放行单号前六位为 WF9897
+function isSpecialOrder(r) {
+  return String(r.放行单号 || "").startsWith(CONFIG.特保单号前缀);
+}
+
+// ---------- 全局状态 ----------
+let rows = [];            // 标准化后的记录行
+let orders = {};          // 按放行单号聚合的订单级信息
+let _rowSeq = 0;          // 行唯一 ID 自增计数器（normalizeRow 生成 _rowId 用）
+let CH = {};              // ECharts 实例
+let counters = {};        // countUp 实例
+let detailTable = null;
+let currentFileName = "";
+let currentColOf = null;
+let liveTimer = null;
+let demoMode = false;
+let livePaused = false;
+
+// —— Worker 后台解析：默认禁用 ——
+// 原因：XLSX 库改为外部 ./lib/xlsx.full.min.js 引用后，file:// 协议下 blob Worker 无法
+// importScripts 外部文件（相对路径基于 blob URL 无效），统一走主线程分块解析（已验证可靠）。
+// 若未来在 HTTP 服务下部署且需要 Worker，可将此置为 false 并恢复 parseViaWorker 的库加载方式。
+window.__workerDisabled = true;
+
+// ---------- 文件读取入口 ----------
+$("btnPick").onclick = () => $("fileInput").click();
+$("fileInput").onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0]); };
+const dz = $("dropzone");
+["dragover", "dragenter"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("over"); }));
+dz.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+// ---------- 加载遮罩控制 ----------
+function showLoading(msg) {
+  $("loadingText").textContent = msg || "正在读取文件…";
+  $("progressBar").style.width = "0%";
+  $("loadingOverlay").classList.add("show");
+}
+function setLoadingProgress(pct, msg) {
+  $("progressBar").style.width = Math.min(100, pct) + "%";
+  if (msg) $("loadingText").textContent = msg;
+}
+function hideLoading() { $("loadingOverlay").classList.remove("show"); }
+// 让出主线程并给浏览器一次绘制机会（用于进度条真实刷新）
+const yieldUI = (ms = 0) => new Promise(r => setTimeout(r, ms));
+
+function handleFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  if (!["xls", "xlsx", "csv"].includes(ext)) { toast("仅支持 .xls / .xlsx / .csv 文件", false); return; }
+  currentFileName = file.name;
+  showLoading(`正在读取「${file.name}」…`);
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      setLoadingProgress(8, "正在读取文件内容…");
+      await yieldUI(30);  // 让遮罩与进度先完成绘制
+      let list;
+      if (ext === "csv") {
+        setLoadingProgress(12, "正在解码 CSV…");
+        await yieldUI(50);
+        const text = decodeText(e.target.result);
+        const aoa = Papa.parse(text, { skipEmptyLines: true }).data;
+        const hIdx = findHeaderRow(aoa);
+        if (hIdx < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+        const header = aoa[hIdx].map(h => String(h).trim());
+        list = await buildRowsChunked(aoa.length - hIdx - 1, i => {
+          const arr = aoa[hIdx + 1 + i], o = {};
+          for (let k = 0; k < header.length; k++) o[header[k]] = arr[k] != null ? arr[k] : "";
+          return o;
+        });
+      } else {
+        await xlsxReady;   // 确保库就绪（Worker 失败回退主线程时需要）
+        if (window.Worker && !window.__workerDisabled) {
+          try {
+            list = await parseViaWorker(e.target.result);   // 后台线程解析，主线程不冻结
+          } catch (werr) {
+            if (werr.message === "NO_HEADER") throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+            if (werr.message === "EMPTY_WORKBOOK") throw new Error("文件中没有可读取的工作表数据（所有 Sheet 均为空）");
+            console.warn("Worker 解析失败，回退主线程：", werr.message);
+            window.__workerDisabled = true;
+            setLoadingProgress(15, "正在解析工作表结构（主线程兑底，大文件可能需要几秒）…");
+            await yieldUI(60);
+            const wb = XLSX.read(e.target.result, { type: "array", cellDates: true, cellFormula: false, cellHTML: false, cellNF: false });
+            const sheet = firstNonEmptySheet(wb);
+            if (!sheet) throw new Error("文件中没有可读取的工作表数据（所有 Sheet 均为空）");
+            setLoadingProgress(22, `正在定位表头（工作表「${sheet.name}」）…`); await yieldUI(0);
+            list = await sheetToRowsChunked(sheet.ws);
+          }
+        } else {
+          setLoadingProgress(15, "正在解析工作表结构（大文件可能需要几秒）…");
+          await yieldUI(60);
+          // 提速选项：关闭公式/富文本/数字格式解析（看板仅需取值），保留 cellDates 兼容日期
+          const wb = XLSX.read(e.target.result, { type: "array", cellDates: true, cellFormula: false, cellHTML: false, cellNF: false });
+          const sheet = firstNonEmptySheet(wb);
+          if (!sheet) throw new Error("文件中没有可读取的工作表数据（所有 Sheet 均为空）");
+          setLoadingProgress(22, `正在定位表头（工作表「${sheet.name}」）…`); await yieldUI(0);
+          list = await sheetToRowsChunked(sheet.ws);
+        }
+      }
+      if (!list.length) { toast("文件中没有读到数据行", false); return; }
+      if (list.length > CONFIG.大文件警告行数) {
+        // 大文件引导：提示转存 CSV（下次加载快约 20-35 倍），并显示当前解析耗时来源
+        toast(`数据量较大（${list.length.toLocaleString()} 行），已启用大数据优化。建议点「📄 转存 CSV」保存为 CSV，下次加载快约 35 倍 ⚡`, false);
+      }
+      stopLive();
+      demoMode = false;
+      await processData(list);
+    } catch (err) {
+      console.error(err);
+      toast("文件解析失败：" + err.message, false);
+    } finally {
+      hideLoading();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------- 智能定位表头行（兼容首行为合并标题行的导出文件） ----------
+// 放行系统导出的 xls 首行常为横跨所有列的合并单元格（标题/说明），
+// 此处向下扫描（最多 20 行），找到与「字段映射」别名命中 ≥2 个的真实表头行。
+function findHeaderRow(aoa) {
+  const aliases = new Set();
+  Object.values(CONFIG.字段映射).forEach(arr => arr.forEach(a => aliases.add(a)));
+  const limit = Math.min(aoa.length, 20);
+  for (let i = 0; i < limit; i++) {
+    const row = aoa[i]; if (!row) continue;
+    let hits = 0;
+    for (const v of row) { if (v != null && aliases.has(String(v).trim()) && ++hits >= 2) return i; }
+  }
+  return -1;
+}
+
+// ---------- 分块构建行对象（每块让出主线程 + 刷新进度，避免大文件提取阶段冻结） ----------
+async function buildRowsChunked(total, makeRow) {
+  const out = [];
+  const CHUNK = 8000;
+  for (let i = 0; i < total; i++) {
+    const o = makeRow(i);
+    if (o) out.push(o);
+    if ((i + 1) % CHUNK === 0) {
+      setLoadingProgress(22 + (i + 1) / total * 33, `正在提取数据行… ${(i + 1).toLocaleString()} / ${total.toLocaleString()} 行`);
+      await yieldUI(0);
+    }
+  }
+  return out;
+}
+
+// ---------- 分块提取工作表数据：表头仅读前 20 行定位，数据逐块读取且跳过空行 ----------
+// 避免对全表调用两次 sheet_to_json（原先 findHeaderRow 一次 + 取数据一次），大文件开销减半且不冻结
+// 取第一个**有数据**的工作表：放行系统导出文件偶有空 sheet/汇总页，若首 sheet 为空则自动跳转下一 sheet
+function firstNonEmptySheet(wb) {
+  const names = wb.SheetNames || [];
+  for (let i = 0; i < names.length; i++) {
+    const ws = wb.Sheets[names[i]];
+    if (ws && ws["!ref"]) return { ws, name: names[i], index: i };
+  }
+  return null;
+}
+async function sheetToRowsChunked(ws) {
+  const rng = XLSX.utils.decode_range(ws["!ref"]);
+  // 预计算列字母地址与行地址前缀，避免提取阶段反复 encode_cell（10 万行级提速明显）
+  const colLet = [];
+  for (let c = rng.s.c; c <= rng.e.c; c++) colLet.push(XLSX.utils.encode_col(c));
+  const cellAt = (r, c) => { const cell = ws[colLet[c - rng.s.c] + r]; return cell && cell.v != null ? cell.v : ""; };
+  // 表头定位：仅读前 20 行构造小型 AOA
+  const headAoa = [], headEnd = Math.min(rng.s.r + 19, rng.e.r);
+  for (let r = rng.s.r; r <= headEnd; r++) {
+    const row = [];
+    for (let c = rng.s.c; c <= rng.e.c; c++) row.push(cellAt(r, c));
+    headAoa.push(row);
+  }
+  const hRel = findHeaderRow(headAoa);
+  if (hRel < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+  const headerRow = rng.s.r + hRel;
+  const header = [];
+  for (let c = rng.s.c; c <= rng.e.c; c++) {
+    const cell = ws[colLet[c - rng.s.c] + headerRow];
+    header.push(cell && (cell.w != null || cell.v != null) ? String(cell.w != null ? cell.w : cell.v).trim() : ("列" + c));
+  }
+  // 分块提取数据行（跳过全空行）
+  return buildRowsChunked(rng.e.r - headerRow, i => {
+    const r = headerRow + 1 + i, o = {};
+    let empty = true;
+    for (let c = rng.s.c; c <= rng.e.c; c++) {
+      const v = cellAt(r, c);
+      o[header[c - rng.s.c]] = v;
+      if (v !== "") empty = false;
+    }
+    return empty ? null : o;
+  });
+}
+
+// ---------- Web Worker 后台解析（blob Worker + importScripts 内联库；大文件解析不冻主线程） ----------
+// XLSX.read 本身同步阻塞，放到 Worker 线程执行即可避免主线程冻结与“页面无响应”弹窗。
+const PARSER_WORKER_SRC = `
+self.onmessage = function (e) {
+  var d = e.data;
+  try {
+    importScripts(d.xlsxUrl);
+    var wb = XLSX.read(d.buf, { type: 'array', cellDates: true, cellFormula: false, cellHTML: false, cellNF: false });
+    // 取第一个有数据的工作表（跳过空 sheet / 汇总页）
+    var ws = null, wsName = '', sheetIdx = -1;
+    for (var si = 0; si < wb.SheetNames.length; si++) {
+      var cand = wb.Sheets[wb.SheetNames[si]];
+      if (cand && cand['!ref']) { ws = cand; wsName = wb.SheetNames[si]; sheetIdx = si; break; }
+    }
+    if (!ws) { self.postMessage({ type: 'error', message: 'EMPTY_WORKBOOK' }); return; }
+    var rng = XLSX.utils.decode_range(ws['!ref']);
+    var aliasSet = {};
+    for (var a = 0; a < d.aliases.length; a++) aliasSet[d.aliases[a]] = 1;
+    // 预计算列字母地址，避免提取阶段反复 encode_cell（10 万行级提速明显）
+    var colLet = [];
+    for (var cl = rng.s.c; cl <= rng.e.c; cl++) colLet.push(XLSX.utils.encode_col(cl));
+    function cv(r, c) { var cell = ws[colLet[c - rng.s.c] + r]; return cell && cell.v != null ? cell.v : ''; }
+    var headerRow = -1, limit = Math.min(rng.s.r + 19, rng.e.r);
+    for (var r = rng.s.r; r <= limit && headerRow < 0; r++) {
+      var hits = 0;
+      for (var c = rng.s.c; c <= rng.e.c; c++) { var v = cv(r, c); if (v !== '' && aliasSet[String(v).trim()] && ++hits >= 2) { headerRow = r; break; } }
+    }
+    if (headerRow < 0) { self.postMessage({ type: 'error', code: 'NO_HEADER' }); return; }
+    var header = [];
+    for (var hc = rng.s.c; hc <= rng.e.c; hc++) { var hcell = ws[colLet[hc - rng.s.c] + headerRow]; header.push(hcell && (hcell.w != null || hcell.v != null) ? String(hcell.w != null ? hcell.w : hcell.v).trim() : ('列' + hc)); }
+    var total = rng.e.r - headerRow, out = [], CHUNK = 10000;
+    for (var i = 0; i < total; i++) {
+      var rr = headerRow + 1 + i, o = {}, empty = true;
+      for (var cc = rng.s.c; cc <= rng.e.c; cc++) { var vv = cv(rr, cc); o[header[cc - rng.s.c]] = vv; if (vv !== '') empty = false; }
+      if (!empty) out.push(o);
+      if ((i + 1) % CHUNK === 0) self.postMessage({ type: 'progress', done: i + 1, total: total, sheet: wsName });
+    }
+    self.postMessage({ type: 'done', rows: out, sheet: wsName });
+  } catch (err) {
+    self.postMessage({ type: 'error', message: String(err && err.message || err) });
+  }
+};
+`;
+function parseViaWorker(buf) {
+  return new Promise((resolve, reject) => {
+    let w;
+    try { w = new Worker(URL.createObjectURL(new Blob([PARSER_WORKER_SRC], { type: "text/javascript" }))); }
+    catch (e) { return reject(e); }
+    const to = setTimeout(() => { try { w.terminate(); } catch (_) { } reject(new Error("WORKER_TIMEOUT")); }, 180000);
+    w.onmessage = ev => {
+      const m = ev.data;
+      if (m.type === "progress") setLoadingProgress(22 + m.done / m.total * 33, `正在后台提取数据行（工作表「${m.sheet || ""}」）… ${m.done.toLocaleString()} / ${m.total.toLocaleString()} 行`);
+      else if (m.type === "done") { clearTimeout(to); w.terminate(); resolve(m.rows); }
+      else if (m.type === "error") {
+        clearTimeout(to); w.terminate();
+        reject(m.code === "NO_HEADER" ? new Error("NO_HEADER") : new Error(m.message || "WORKER_ERROR"));
+      }
+    };
+    w.onerror = e => { clearTimeout(to); try { w.terminate(); } catch (_) { } reject(new Error(String(e.message || "WORKER_ERROR"))); };
+    setLoadingProgress(15, "正在后台解析工作表（主线程不冻结）…");
+    const aliases = []; Object.values(CONFIG.字段映射).forEach(a => a.forEach(x => aliases.push(x)));
+    // Worker 内 importScripts 加载外部库：file:// 下不可用（当前默认禁用 Worker，见 __workerDisabled）
+    const xlsxUrl = new URL("./lib/xlsx.full.min.js", location.href).href;
+    w.postMessage({ buf: buf, xlsxUrl: xlsxUrl, aliases: aliases });
+  });
+}
+
+// ---------- 字段映射与校验 ----------
+function mapColumns(rawList) {
+  const headers = Object.keys(rawList[0]);
+  const colOf = {};
+  for (const [std, aliases] of Object.entries(CONFIG.字段映射)) {
+    colOf[std] = headers.find(h => aliases.some(a => h.trim() === a)) || null;
+  }
+  const missing = CONFIG.必需字段.filter(f => !colOf[f]);
+  return { colOf, missing, headers };
+}
+
+async function processData(rawList) {
+  const { colOf, missing } = mapColumns(rawList);
+  if (missing.length) {
+    $("errList").innerHTML = missing.map(f =>
+      `<li>缺少必需列「${f}」（可识别的表头：${CONFIG.字段映射[f].join(" / ")}）</li>`).join("");
+    $("errPanel").classList.remove("hidden");
+    $("dashboard").classList.add("hidden");
+    window.scrollTo(0, 0);
+    return;
+  }
+  $("errPanel").classList.add("hidden");
+  currentColOf = colOf;
+  // —— 分块标准化：大数据量时每处理一块让出主线程，保持界面响应并刷新进度 ——
+  const n = rawList.length, chunk = CONFIG.分块大小;
+  rows = new Array(n);
+  if (n > chunk) {
+    for (let s = 0; s < n; s += chunk) {
+      const end = Math.min(s + chunk, n);
+      for (let i = s; i < end; i++) rows[i] = normalizeRow(rawList[i]);
+      setLoadingProgress(58 + end / n * 30, `正在标准化数据… ${end.toLocaleString()} / ${n.toLocaleString()} 行`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  } else {
+    for (let i = 0; i < n; i++) rows[i] = normalizeRow(rawList[i]);
+  }
+  rawList = null;  // 释放原始数据引用，降低老机器内存占用
+  setLoadingProgress(90, "正在渲染看板…");
+  await new Promise(r => setTimeout(r, 20));
+  renderAll();
+}
+
+function normalizeRow(r) {
+  const o = {};
+  for (const [std, col] of Object.entries(currentColOf)) o[std] = col ? (r[col] ?? "") : "";
+  o.数量 = parseFloat(o.数量) || 0;
+  o._申请日期 = parseDate(o.申请日期);
+  o._放行日期 = parseDate(o.实际放行时间);
+  o._接收日期 = parseDate(o.接收时间);
+  o._特保 = isSpecialOrder(o);
+  o._放行超时 = isTimeout(o.放行超时);
+  o._接收超时 = isTimeout(o.接收超时);
+  // 已到达：实际放行门岗 == 流入门岗（且均非空）
+  o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
+  // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
+  o._接收超时未接收 = !!o.实际放行门岗 && !o._接收日期 && o._接收超时;
+  // 行唯一 ID（供明细表增量更新定位；真实文件与演示数据统一生成，演示更新时保留原 ID）
+  o._rowId = r._rowId || ("R" + (++_rowSeq));
+  return o;
+}
+
+// ---------- 订单级聚合（按放行单号） ----------
+function computeOrders() {
+  const g = _.groupBy(rows, "放行单号");
+  const map = {};
+  for (const [no, arr] of Object.entries(g)) {
+    if (!no) continue;
+    const arrived = arr.some(r => r._已到达);           // 任一记录到达流入门岗 → 整单已到达
+    const special = arr.some(r => r._特保);
+    const releaseTimeout = arr.some(r => r._放行超时);
+    const receiveTimeout = arr.some(r => r._接收超时);
+    const last = arr[arr.length - 1];
+    map[no] = {
+      单号: no, 记录数: arr.length,
+      特保: special,
+      已到达: arrived,
+      在途: !arrived,                                    // 尚未到达流入门岗 → 在途
+      放行超时: releaseTimeout,
+      接收超时: receiveTimeout,
+      超时: releaseTimeout || receiveTimeout,           // ★ 广义超时 = 放行超时 ∪ 接收超时
+      在途超时: !arrived && releaseTimeout,             // ★ 在途超时流入门岗未放行
+      超时未接收: arr.some(r => r._接收超时未接收),      // 任一记录超时未接收 → 整单超时未接收
+      放行异常: arr.some(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")),
+      已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
+      申请部门: arr[0].申请部门 || "",
+      接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
+      流入门岗: arr[0].流入门岗 || "",
+      流出门岗: last.流出门岗 || "",                     // 取最后一笔记录的流转方向
+      物品分类: arr.map(r => r.物品分类).find(Boolean) || "",  // 一单仅一种物品分类（多记录只是经过不同门岗）
+      _日期: arr[0]._申请日期
+    };
+  }
+  return map;
+}
+
+// ---------- 汇总计算（结果缓存：数据未变时二级页/导出直接复用，避免重复全量扫描） ----------
+let _statsCache = null;
+function invalidateStats() { _statsCache = null; }
+function computeStats() { return _statsCache || (_statsCache = _computeStatsRaw()); }
+function _computeStatsRaw() {
+  orders = computeOrders();
+  const orderList = Object.values(orders);
+  const total = rows.length;
+  const orderCount = orderList.length;
+  const specialOrders = orderList.filter(o => o.特保).length;
+  const abnormal = orderList.filter(o => o.放行异常).length;        // 订单级：任一记录异常即整单异常
+  const transitTimeoutOrders = orderList.filter(o => o.在途超时);
+  const receiveTimeoutOrders = orderList.filter(o => o.超时未接收); // 订单级超时未接收
+  const received = orderList.filter(o => o.已接收).length;          // 订单级已接收
+
+  // —— 放行结案完成率：在规定时间内到达流入门岗完成放行的单据 ——
+  const closedOrders = orderList.filter(o => o.已到达 && !o.放行超时).length;      // 结案完成（到达且未超时）
+  const arrivedTimeout = orderList.filter(o => o.已到达 && o.放行超时).length;     // 到达但超时
+  const transitTimeoutCount = transitTimeoutOrders.length;                          // 在途超时
+  const scopedOrders = closedOrders + arrivedTimeout + transitTimeoutCount;        // 纳入统计（排除在途未超时）
+  const inTransitNotTimeout = orderList.filter(o => !o.已到达 && !o.放行超时).length; // 在途未超时（不纳入统计）
+  const closeRate = scopedOrders ? closedOrders / scopedOrders : 0;
+
+  // —— 申请量时间趋势：订单级（按订单申请日期计数） ——
+  const validOrders = orderList.filter(o => o._日期);
+  let trend = [];
+  if (validOrders.length) {
+    const min = _.minBy(validOrders, o => o._日期.valueOf())._日期;
+    const max = _.maxBy(validOrders, o => o._日期.valueOf())._日期;
+    const fmt = max.diff(min, "day") <= CONFIG.趋势天数阈值 ? "YYYY-MM-DD" : "YYYY-MM";
+    const grouped = _.countBy(validOrders, o => o._日期.format(fmt));
+    trend = Object.keys(grouped).sort().map(k => [k, grouped[k]]);
+  }
+  // —— TOP 排行：订单级 groupBy ——
+  const top = (fn, n = CONFIG.TOPN) =>
+    _(orderList).groupBy(fn).map((arr, k) => ({ name: k || "（空）", value: arr.length }))
+      .orderBy("value", "desc").take(n).value();
+
+  return {
+    total, orderCount, specialOrders, abnormal,
+    transitTimeoutOrders, receiveTimeoutOrders,
+    receiveRate: orderCount ? received / orderCount : 0,
+    received,
+    closedOrders, arrivedTimeout, scopedOrders, inTransitNotTimeout, closeRate,
+    typeDist: { 特级安保单: specialOrders, 普通单: orderCount - specialOrders },
+    trend,
+    deptTop: top(o => o.申请部门),
+    catTop: top(o => o.物品分类 || "未分类"),
+    routeTop: _(orderList).filter(o => o.流出门岗 && o.流入门岗)
+      .groupBy(o => `${o.流出门岗} → ${o.流入门岗}`)
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(CONFIG.TOPN).value(),
+    statusDist: {
+      "放行异常": abnormal,
+      "放行超时": orderList.filter(o => o.放行超时).length,
+      "接收超时": orderList.filter(o => o.接收超时).length,
+      "已接收": received
+    },
+    deptCat: (() => {
+      const matrix = {};
+      orderList.forEach(o => {
+        const d = o.申请部门 || "（空）", c = o.物品分类 || "未分类";
+        (matrix[d] = matrix[d] || {})[c] = (matrix[d][c] || 0) + 1;
+      });
+      const depts = Object.entries(matrix).map(([d, obj]) => [d, _.sum(Object.values(obj))])
+        .sort((a, b) => b[1] - a[1]).slice(0, CONFIG.TOPN).map(x => x[0]);
+      const cats = Object.entries(_(orderList).map(o => o.物品分类 || "未分类").countBy().value())
+        .sort((a, b) => b[1] - a[1]).map(x => x[0]);
+      return { depts, cats, series: cats.map(cat => ({ name: cat, data: depts.map(d => matrix[d][cat] || 0) })) };
+    })(),
+
+    // ===== v5.1 新增：GDMS 增强指标 =====
+    // 物品三分类（按订单级）：NPI物料=特保单 / 一般物料=生產物料(非A類) / 非物料類=其余
+    materialClass: (() => {
+      let npi = 0, general = 0, other = 0;
+      orderList.forEach(o => {
+        if (o.特保) { npi++; }
+        else if ((o.物品分类 || "").includes("生產物料") || (o.物品分类 || "").includes("生产物料")) general++;
+        else other++;
+      });
+      return { NPI物料: npi, 一般物料: general, 非物料類: other };
+    })(),
+    // 超时统计细分（广义超时 = 放行超时 ∪ 接收超时；接收超时含「已接收但接收时超时」与「超时未接收」两个子集）
+    timeoutAll: orderList.filter(o => o.超时).length,
+    // NPI（新产品）即特保单；特保单的物品分类仅「A级物料」与「新产品机台」两类，两者之和 = NPI超时
+    timeoutNPI: orderList.filter(o => o.特保 && o.超时).length,
+    timeoutNPIMaterial: orderList.filter(o => o.特保 && o.超时 &&
+      ((o.物品分类 || "").includes("A级物料") || (o.物品分类 || "").includes("A級物料"))).length,
+    timeoutNPIMachine: orderList.filter(o => o.特保 && o.超时 &&
+      ((o.物品分类 || "").includes("机台") || (o.物品分类 || "").includes("機台"))).length,
+    // 超时By部门（订单级）
+    timeoutByDept: _(orderList).filter(o => o.放行超时)
+      .groupBy(o => o.申请部门 || "（空）")
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(12).value(),
+    // 接收超时By接收部门（订单级，责任主体 = 接收人所在部门，即收货方部门）
+    receiveTimeoutByDept: _(orderList).filter(o => o.接收超时)
+      .groupBy(o => o.接收人部门 || "（空）")
+      .map((arr, k) => ({ name: k, value: arr.length }))
+      .orderBy("value", "desc").take(12).value(),
+    // 超时By物品类型（订单级）
+    timeoutByCat: (() => {
+      const cats = {};
+      orderList.filter(o => o.放行超时).forEach(o => {
+        const c = o.物品分类 || "未分类";
+        cats[c] = (cats[c] || 0) + 1;
+      });
+      return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    })(),
+    // 超时By时间段（基于订单的申请日期到当前/放行时间的时长）
+    timeoutByDuration: (() => {
+      const now = dayjs();
+      const buckets = { "X≤30min": 0, "30min<X≤1H": 0, "1H<X≤4H": 0, "X>4H": 0 };
+      orderList.filter(o => o.放行超时).forEach(o => {
+        if (!o._日期) return;
+        const end = o.已到达 ? now : now; // 已到达用实际时间，在途用当前时间
+        const hours = end.diff(o._日期, "hour", true);
+        const mins = hours * 60;
+        if (mins <= 30) buckets["X≤30min"]++;
+        else if (mins <= 60) buckets["30min<X≤1H"]++;
+        else if (mins <= 240) buckets["1H<X≤4H"]++;
+        else buckets["X>4H"]++;
+      });
+      return buckets;
+    })(),
+    // 超时+结案率日趋势（按天聚合）
+    timeoutTrend: (() => {
+      const valid2 = rows.filter(r => r._申请日期);
+      if (!valid2.length) return [];
+      const min = _.minBy(valid2, r => r._申请日期.valueOf())._申请日期;
+      const max = _.maxBy(valid2, r => r._申请日期.valueOf())._申请日期;
+      const fmt = "YYYY-MM-DD";
+      const byDay = _.groupBy(valid2, r => r._申请日期.format(fmt));
+      return Object.keys(byDay).sort().map(day => {
+        const dayRows = byDay[day];
+        const dayOrders = Object.values(_.groupBy(dayRows, "放行单号")).map(arr => ({
+          timeout: arr.some(r => r._放行超时) || arr.some(r => r._接收超时),
+          transitTimeout: arr.some(r => r._放行超时) && !arr.some(r => r._已到达),
+          arrived: arr.some(r => r._已到达),
+          releaseTimeout: arr.some(r => r._放行超时)
+        }));
+        const totalTimeout = dayOrders.filter(o => o.timeout).length;
+        const transitTO = dayOrders.filter(o => o.transitTimeout).length;
+        const closed = dayOrders.filter(o => o.arrived && !o.releaseTimeout).length;
+        const arrivedTO = dayOrders.filter(o => o.arrived && o.releaseTimeout).length;
+        const scoped = closed + arrivedTO + transitTO;
+        const rate = scoped ? closed / scoped : 1;
+        return { day, totalTimeout, transitTimeout: transitTO, closeRate: rate };
+      });
+    })()
+  };
+}
+
+// ---------- 图表配置 ----------
+const PALETTE = ["#0071e3", "#34c759", "#ff9f0a", "#ff3b30", "#5e5ce6", "#00b8d4", "#ff2d92", "#30b0c7", "#af52de", "#ff9500"];
+const baseAxis = {
+  axisLine: { lineStyle: { color: "rgba(0,0,0,0.14)" } },
+  axisLabel: { color: "rgba(0,0,0,0.55)" },
+  splitLine: { lineStyle: { color: "rgba(0,0,0,0.06)" } }
+};
+// —— 动画配置：丝滑缓动；大数据量时自动关闭全部动画以保证交互流畅 ——
+const SMOOTH_ANIM = {
+  animationDuration: 900, animationEasing: "cubicOut",
+  animationDurationUpdate: 700, animationEasingUpdate: "cubicInOut"
+};
+// —— 二级详情面板图表动画：面板展开完成后再播放（避免动画被面板淡入遮掉半程）——
+// sinusoidalOut：开头速度适中不冲、中段流畅、末端平缓收尾，圆环展开柔和连贯
+const DETAIL_ANIM = {
+  animationDuration: 1200, animationEasing: "sinusoidalOut",
+  animationDurationUpdate: 900, animationEasingUpdate: "sinusoidalInOut"
+};
+const LARGE_ANIM = { animation: false, animationDuration: 0, animationDurationUpdate: 0 };
+const animOpt = () => (PERF.lite || rows.length > CONFIG.大数据量阈值) ? LARGE_ANIM : SMOOTH_ANIM;
+const withAnim = opt => Object.assign({}, animOpt(), opt);
+const withDetailAnim = opt => Object.assign({}, (PERF.lite || rows.length > CONFIG.大数据量阈值) ? LARGE_ANIM : DETAIL_ANIM, opt);
+// —— ECharts 统一初始化：限制设备像素比（低性能模式强制 1x），降低高 DPR 屏显存/填充压力 ——
+const EC_DPR = Math.min(window.devicePixelRatio || 1, PERF.lite ? 1 : 1.5);
+const initEC = dom => echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
+function hbarOption(data, color) {
+  return {
+    tooltip: {},
+    grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+    xAxis: { type: "value", ...baseAxis },
+    yAxis: { type: "category", data: data.map(d => d.name).reverse(), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", width: 130, overflow: "truncate" } },
+    series: [{ type: "bar", data: data.map(d => d.value).reverse(), barWidth: "55%",
+      itemStyle: { borderRadius: [0, 5, 5, 0], color },
+      label: { show: true, position: "right", color: "#1d1d1f" } }]
+  };
+}
+function catOption(S) {
+  return {
+    tooltip: {},
+    grid: { left: 40, right: 20, top: 30, bottom: 70 },
+    xAxis: { type: "category", data: S.catTop.map(d => d.name), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", rotate: 25, width: 90, overflow: "truncate" } },
+    yAxis: { type: "value", ...baseAxis },
+    series: [{ type: "bar", data: S.catTop.map((d, i) => ({ value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } })),
+      barWidth: "50%", itemStyle: { borderRadius: [5, 5, 0, 0] },
+      label: { show: true, position: "top", color: "#1d1d1f" } }]
+  };
+}
+const optionBuilders = {
+  liquid: S => ({
+    series: [{ type: "liquidFill", radius: "85%", center: ["50%", "50%"],
+      data: [S.closeRate || 0], color: ["#34c759"],
+      backgroundStyle: { color: "rgba(255,255,255,0.08)", borderWidth: 0 },
+      outline: { borderDistance: 2, itemStyle: { borderColor: "rgba(52,199,89,0.6)", borderWidth: 2 } },
+      label: { formatter: `放行结案完成率\n${(S.closeRate * 100).toFixed(1)}%`, fontSize: 12, color: "#1d1d1f", insideColor: "#1d1d1f" } }]
+  }),
+  type: S => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+      data: [
+        { name: "特级安保单", value: S.typeDist.特级安保单, itemStyle: { color: "#5e5ce6" } },
+        { name: "普通单", value: S.typeDist.普通单, itemStyle: { color: "#0071e3" } }
+      ] }]
+  }),
+  status: S => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["42%", "68%"], center: ["50%", "46%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+      data: [
+        { name: "已接收", value: S.statusDist.已接收, itemStyle: { color: "#34c759" } },
+        { name: "放行超时", value: S.statusDist.放行超时, itemStyle: { color: "#ff9f0a" } },
+        { name: "接收超时", value: S.statusDist.接收超时, itemStyle: { color: "#ff3b30" } },
+        { name: "放行异常", value: S.statusDist.放行异常, itemStyle: { color: "#af52de" } }
+      ] }]
+  }),
+  trend: S => ({
+    tooltip: { trigger: "axis" },
+    grid: { left: 50, right: 20, top: 30, bottom: 40 },
+    xAxis: { type: "category", data: S.trend.map(t => t[0]), ...baseAxis },
+    yAxis: { type: "value", ...baseAxis },
+    dataZoom: S.trend.length > 40 ? [{ type: "inside" }] : [],
+    series: [{ type: "line", data: S.trend.map(t => t[1]), smooth: true, symbolSize: 6,
+      lineStyle: { width: 3, color: "#0071e3" }, itemStyle: { color: "#0071e3" },
+      areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: "rgba(0,113,227,.28)" }, { offset: 1, color: "rgba(0,113,227,0)" }] } } }]
+  }),
+  deptCat: S => {
+    const { depts, series } = S.deptCat;
+    return {
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: { type: "scroll", bottom: 0, textStyle: { color: baseAxis.axisLabel.color } },
+      grid: { left: 10, right: 20, top: 20, bottom: 66, containLabel: true },
+      xAxis: { type: "category", data: depts, ...baseAxis, axisLabel: { rotate: 25, width: 80, overflow: "truncate" } },
+      yAxis: { type: "value", ...baseAxis },
+      series: series.map((s, i) => ({ name: s.name, type: "bar", stack: "total", data: s.data, barWidth: "58%",
+        itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: i === series.length - 1 ? [5, 5, 0, 0] : 0 },
+        emphasis: { focus: "series" } }))
+    };
+  },
+
+  // ===== v5.2 新增：GDMS option 构造（抽离供 render/update 复用，实现增量刷新不重建） =====
+  gdmsTrend: data => ({
+    tooltip: { trigger: "axis" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    grid: { left: 50, right: 50, top: 30, bottom: 40 },
+    xAxis: { type: "category", data: data.map(d => d.day), ...baseAxis },
+    yAxis: [
+      { type: "value", name: "数量", ...baseAxis },
+      { type: "value", name: "结案率", min: 0, max: 1, axisLabel: { formatter: v => (v * 100) + "%", color: "rgba(0,0,0,0.55)" }, splitLine: { show: false } }
+    ],
+    series: [
+      { name: "总超时", type: "bar", data: data.map(d => d.totalTimeout), barWidth: "30%", itemStyle: { color: "#ff9f0a", borderRadius: [4, 4, 0, 0] } },
+      { name: "在途超时未放行", type: "bar", data: data.map(d => d.transitTimeout), barWidth: "30%", itemStyle: { color: "#ff3b30", borderRadius: [4, 4, 0, 0] } },
+      { name: "结案率", type: "line", yAxisIndex: 1, data: data.map(d => d.closeRate), smooth: true, symbolSize: 6, lineStyle: { width: 3, color: "#34c759" }, itemStyle: { color: "#34c759" } }
+    ]
+  }),
+  gdmsCatPie: data => ({
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{ type: "pie", radius: ["38%", "65%"], center: ["50%", "44%"],
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c}单 ({d}%)" },
+      data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } }))
+    }]
+  }),
+  gdmsDuration: bk => {
+    const keys = Object.keys(bk), vals = Object.values(bk);
+    const total = vals.reduce((a, b) => a + b, 0) || 1;
+    return {
+      tooltip: { trigger: "axis", formatter: p => p.map(s => s.name + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
+      grid: { left: 10, right: 30, top: 20, bottom: 10, containLabel: true },
+      xAxis: { type: "value", ...baseAxis },
+      yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
+      series: [{ type: "bar", data: vals.reverse(), barWidth: "50%",
+        itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#34c759", "#ff9f0a", "#ff3b30", "#af52de"][p.dataIndex % 4] },
+        label: { show: true, position: "right", color: "#1d1d1f", formatter: p => p.value + "单" } }]
+    };
+  }
+};
+
+// =====================================================================
+// ★★★ 模块化卡片系统（v5）：卡片注册表 + gridstack 布局引擎 + 预设/自定义视图 ★★★
+// 新增业务指标卡片 = 往 CARD_DEFS 加一个定义（render/update + w/h/min/max），即可在卡片库中选用。
+// =====================================================================
+
+// ---------- 图表/计数器生命周期 ----------
+let liveCharts = {};                       // cardId -> echarts 实例
+function cardChart(cardId, el) {
+  if (liveCharts[cardId]) { try { liveCharts[cardId].dispose(); } catch (e) { } }
+  liveCharts[cardId] = initEC(el);
+  return liveCharts[cardId];
+}
+function disposeAllCardCharts() {
+  Object.values(liveCharts).forEach(c => { try { c.dispose(); } catch (e) { } });
+  liveCharts = {};
+}
+function resizeAllCardCharts() { Object.values(liveCharts).forEach(c => { try { c.resize(); } catch (e) { } }); }
+
+// ---------- 明细表构建（复用于 table_detail 卡片） ----------
+function buildDetailTable() {
+  const cols = (_visibleCols || computeVisibleCols(rows)).map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
+  if (detailTable) { try { detailTable.destroy(); } catch (e) { } detailTable = null; }
+  const isLarge = rows.length > CONFIG.大数据量阈值;
+  detailTable = new Tabulator("#detailTable", {
+    data: rows, columns: cols, layout: "fitColumns", index: "_rowId",
+    pagination: true, paginationSize: isLarge ? 50 : 20,
+    ...(isLarge ? { progressiveLoad: "scroll", renderVertical: "virtual" } : {}),
+    movableColumns: true, placeholder: "暂无数据"
+  });
+}
+
+// ---------- 卡片注册表 CARD_DEFS（扩展接口） ----------
+const CARD_DEFS = {
+  kpi_overview: {
+    id: "kpi_overview", title: "放行单总数", icon: "📋", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "overview",
+    render(body, ctx) {
+      body.innerHTML = '<div class="kpiLabel">放行单总数</div><div class="kpiValue" id="kpiOrders">0</div>' +
+        '<div class="kpiSub">记录 <b id="kpiRecordsSub">0</b> 条</div><div class="clickHint">点击查看详情</div>';
+      counters.kpi_overview = new countUp.CountUp("kpiOrders", ctx.S.orderCount, { separator: ",", duration: 0.9 });
+      counters.kpi_records = new countUp.CountUp("kpiRecordsSub", ctx.S.total, { separator: ",", duration: 0.9 });
+      counters.kpi_overview.start(); counters.kpi_records.start();
+    },
+    update(body, ctx) {
+      if (counters.kpi_overview) counters.kpi_overview.update(ctx.S.orderCount);
+      if (counters.kpi_records) counters.kpi_records.update(ctx.S.total);
+    }
+  },
+  kpi_special: {
+    id: "kpi_special", title: "特级安保单", icon: "🛡️", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "special",
+    render(body, ctx) {
+      body.innerHTML = '<div class="kpiLabel">特级安保单</div><div class="kpiValue" id="kpiSpecial" style="color:var(--purple)">0</div><div class="clickHint">点击查看详情</div>';
+      counters.kpi_special = new countUp.CountUp("kpiSpecial", ctx.S.specialOrders, { separator: ",", duration: 0.9 });
+      counters.kpi_special.start();
+    },
+    update(body, ctx) { if (counters.kpi_special) counters.kpi_special.update(ctx.S.specialOrders); }
+  },
+  kpi_transit: {
+    id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "transitTimeout",
+    render(body, ctx) {
+      body.innerHTML = '<div class="kpiLabel">在途超时未放行</div><div class="kpiValue" id="kpiTransit" style="color:var(--warn)">0</div><div class="clickHint">点击查看详情</div>';
+      counters.kpi_transit = new countUp.CountUp("kpiTransit", ctx.S.transitTimeoutOrders.length, { separator: ",", duration: 0.9 });
+      counters.kpi_transit.start();
+    },
+    update(body, ctx) { if (counters.kpi_transit) counters.kpi_transit.update(ctx.S.transitTimeoutOrders.length); }
+  },
+  kpi_receive: {
+    id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "receiveTimeout",
+    render(body, ctx) {
+      body.innerHTML = '<div class="kpiLabel">超时未接收</div><div class="kpiValue" id="kpiReceive" style="color:var(--bad)">0</div><div class="clickHint">点击查看详情</div>';
+      counters.kpi_receive = new countUp.CountUp("kpiReceive", ctx.S.receiveTimeoutOrders.length, { separator: ",", duration: 0.9 });
+      counters.kpi_receive.start();
+    },
+    update(body, ctx) { if (counters.kpi_receive) counters.kpi_receive.update(ctx.S.receiveTimeoutOrders.length); }
+  },
+  kpi_rate: {
+    id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 4, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 4, detailKey: "rate",
+    render(body, ctx) {
+      body.innerHTML = '<div id="liquidChart" style="width:100%;height:100%"></div>';
+      cardChart("kpi_rate", body.firstChild).setOption(optionBuilders.liquid(ctx.S), true);
+    },
+    update(body, ctx) { if (liveCharts.kpi_rate) liveCharts.kpi_rate.setOption(optionBuilders.liquid(ctx.S)); }
+  },
+  chart_type: {
+    id: "chart_type", title: "单据类型分布（特保 / 普通）", icon: "🥧", cat: "分布分析", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_type", body.firstChild).setOption(optionBuilders.type(ctx.S), true); },
+    update(body, ctx) { if (liveCharts.chart_type) liveCharts.chart_type.setOption(optionBuilders.type(ctx.S)); }
+  },
+  chart_trend: {
+    id: "chart_trend", title: "申请量时间趋势", icon: "📈", cat: "趋势分析", w: 8, h: 3, minW: 4, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      if (!ctx.S.trend.length) { body.innerHTML = '<div class="ac-empty">暂无有效日期数据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>'; cardChart("chart_trend", body.firstChild).setOption(optionBuilders.trend(ctx.S), true);
+    },
+    update(body, ctx) { if (liveCharts.chart_trend && ctx.S.trend.length) liveCharts.chart_trend.setOption(optionBuilders.trend(ctx.S)); }
+  },
+  chart_dept: {
+    id: "chart_dept", title: "申请部门 TOP10", icon: "🏢", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_dept", body.firstChild).setOption(hbarOption(ctx.S.deptTop, "#0071e3"), true); },
+    update(body, ctx) { if (liveCharts.chart_dept) liveCharts.chart_dept.setOption(hbarOption(ctx.S.deptTop, "#0071e3")); }
+  },
+  chart_cat: {
+    id: "chart_cat", title: "物品分类分布", icon: "📦", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_cat", body.firstChild).setOption(catOption(ctx.S), true); },
+    update(body, ctx) { if (liveCharts.chart_cat) liveCharts.chart_cat.setOption(catOption(ctx.S)); }
+  },
+  chart_route: {
+    id: "chart_route", title: "门岗流转方向 TOP10（流出 → 流入）", icon: "🔄", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      if (!ctx.S.routeTop.length) { body.innerHTML = '<div class="ac-empty">暂无门岗流转数据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>'; cardChart("chart_route", body.firstChild).setOption(hbarOption(ctx.S.routeTop, "#00b8d4"), true);
+    },
+    update(body, ctx) { if (liveCharts.chart_route && ctx.S.routeTop.length) liveCharts.chart_route.setOption(hbarOption(ctx.S.routeTop, "#00b8d4")); }
+  },
+  chart_status: {
+    id: "chart_status", title: "放行 / 接收状态分布", icon: "📊", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_status", body.firstChild).setOption(optionBuilders.status(ctx.S), true); },
+    update(body, ctx) { if (liveCharts.chart_status) liveCharts.chart_status.setOption(optionBuilders.status(ctx.S)); }
+  },
+  chart_deptCat: {
+    id: "chart_deptCat", title: "部门 × 物品分类 交叉分布", icon: "🧮", cat: "分布分析", w: 12, h: 4, minW: 6, maxW: 12, minH: 3, maxH: 8,
+    render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_deptCat", body.firstChild).setOption(optionBuilders.deptCat(ctx.S), true); },
+    update(body, ctx) { if (liveCharts.chart_deptCat) liveCharts.chart_deptCat.setOption(optionBuilders.deptCat(ctx.S)); }
+  },
+  alert_transit: {
+    id: "alert_transit", title: "在途超时 · 流入门岗未放行", icon: "🚧", cat: "异常监控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6, detailKey: "transitTimeout",
+    render(body, ctx) { body.innerHTML = analysisTransitHTML(ctx.S); },
+    update(body, ctx) { body.innerHTML = analysisTransitHTML(ctx.S); }
+  },
+  alert_receive: {
+    id: "alert_receive", title: "超时未接收", icon: "📭", cat: "异常监控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6, detailKey: "receiveTimeout",
+    render(body, ctx) { body.innerHTML = analysisReceiveHTML(ctx.S); },
+    update(body, ctx) { body.innerHTML = analysisReceiveHTML(ctx.S); }
+  },
+  table_detail: {
+    id: "table_detail", title: "明细数据（可搜索 / 排序 / 导出）", icon: "📄", cat: "明细数据", w: 12, h: 5, minW: 6, maxW: 12, minH: 3, maxH: 10,
+    render(body, ctx) { body.innerHTML = '<div id="detailTable"></div>'; buildDetailTable(); },
+    update(body, ctx) { /* 明细表由 liveTick 的 addData 增量更新 */ }
+  },
+
+  // ===== v5.1 新增：GDMS 增强卡片 =====
+  gdms_summary: {
+    id: "gdms_summary", title: "放行汇总指标", icon: "📊", cat: "GDMS超时管控", w: 12, h: 2, minW: 6, maxW: 12, minH: 2, maxH: 3,
+    render(body, ctx) {
+      const S = ctx.S, mc = S.materialClass;
+      const items = [
+        ["放行单总数", S.orderCount, "var(--accent)"], ["NPI物料", mc.NPI物料, "var(--purple)"],
+        ["一般物料", mc.一般物料, "var(--accent2)"], ["非物料类", mc.非物料類, "var(--txt2)"],
+        ["超时总数", S.timeoutAll, "var(--bad)"], ["NPI超时", S.timeoutNPI, "var(--purple)"],
+        ["特保物料超时", S.timeoutNPIMaterial, "var(--warn)"], ["特保机台超时", S.timeoutNPIMachine, "var(--cyan)"]
+      ];
+      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:100%;align-content:center">' +
+        items.map(([l, v, c]) => '<div style="text-align:center;padding:6px 4px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.25)">' +
+          '<div style="font-size:11px;color:var(--txt2);margin-bottom:3px">' + l + '</div>' +
+          '<div style="font-size:20px;font-weight:700;font-family:Segoe UI,monospace;color:' + c + '">' + v + '</div></div>').join("") + '</div>';
+    },
+    update(body, ctx) { this.render(body, ctx); }
+  },
+  gdms_timeout_trend: {
+    id: "gdms_timeout_trend", title: "超时 + 结案率日趋势", icon: "📈", cat: "GDMS超时管控", w: 8, h: 3, minW: 4, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      const data = ctx.S.timeoutTrend;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无数据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_timeout_trend", body.firstChild).setOption(optionBuilders.gdmsTrend(data), true);
+    },
+    update(body, ctx) {
+      // 增量刷新：复用已有实例 setOption，不销毁重建（避免闪烁）
+      const ch = liveCharts.gdms_timeout_trend;
+      if (!ch) { this.render(body, ctx); return; }
+      if (!ctx.S.timeoutTrend.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsTrend(ctx.S.timeoutTrend));
+    }
+  },
+  gdms_timeout_cat: {
+    id: "gdms_timeout_cat", title: "放行超时By物品类型分析", icon: "🥧", cat: "GDMS超时管控", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      const data = ctx.S.timeoutByCat;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_timeout_cat", body.firstChild).setOption(optionBuilders.gdmsCatPie(data), true);
+    },
+    update(body, ctx) {
+      const ch = liveCharts.gdms_timeout_cat;
+      if (!ch) { this.render(body, ctx); return; }
+      if (!ctx.S.timeoutByCat.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsCatPie(ctx.S.timeoutByCat));
+    }
+  },
+  gdms_timeout_duration: {
+    id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_timeout_duration", body.firstChild).setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration), true);
+    },
+    update(body, ctx) {
+      const ch = liveCharts.gdms_timeout_duration;
+      if (!ch) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration));
+    }
+  },
+  gdms_timeout_dept: {
+    id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      const data = ctx.S.timeoutByDept;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_timeout_dept", body.firstChild).setOption(hbarOption(data, "#ff3b30"), true);
+    },
+    update(body, ctx) { if (liveCharts.gdms_timeout_dept && ctx.S.timeoutByDept.length) liveCharts.gdms_timeout_dept.setOption(hbarOption(ctx.S.timeoutByDept, "#ff3b30")); }
+  },
+  gdms_receive_dept: {
+    id: "gdms_receive_dept", title: "接收超时By接收部门分析", icon: "📥", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    render(body, ctx) {
+      const data = ctx.S.receiveTimeoutByDept;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无接收超时单据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("gdms_receive_dept", body.firstChild).setOption(hbarOption(data, "#ff9f0a"), true);
+    },
+    update(body, ctx) { if (liveCharts.gdms_receive_dept && ctx.S.receiveTimeoutByDept.length) liveCharts.gdms_receive_dept.setOption(hbarOption(ctx.S.receiveTimeoutByDept, "#ff9f0a")); }
+  },
+  gdms_unclosed: {
+    id: "gdms_unclosed", title: "超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 6, h: 4, minW: 4, maxW: 12, minH: 3, maxH: 8, detailKey: "transitTimeout",
+    render(body, ctx) {
+      const list = ctx.S.transitTimeoutOrders;
+      if (!list.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时未结案件</div>'; return; }
+      let html = '<div style="font-size:12px;overflow:auto;max-height:100%">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="border-bottom:2px solid var(--line);text-align:left">' +
+        '<th style="padding:5px 6px">#</th><th style="padding:5px 6px">放行单号</th><th style="padding:5px 6px">部门</th><th style="padding:5px 6px">门岗</th><th style="padding:5px 6px">状态</th></tr></thead><tbody>';
+      list.slice(0, 20).forEach((o, i) => {
+        html += '<tr style="border-bottom:1px solid var(--line)"><td style="padding:4px 6px;color:var(--txt2)">' + (i + 1) + '</td>' +
+          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)">' + o.单号 + '</td>' +
+          '<td style="padding:4px 6px;color:var(--txt2)">' + (o.申请部门 || "-") + '</td>' +
+          '<td style="padding:4px 6px;color:var(--txt2)">' + (o.流入门岗 || "-") + '</td>' +
+          '<td style="padding:4px 6px"><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">未结案</span></td></tr>';
+      });
+      html += '</tbody></table>';
+      if (list.length > 20) html += '<div style="color:var(--txt2);margin-top:6px;text-align:center">… 另有 ' + (list.length - 20) + ' 单，点击卡片查看完整明细</div>';
+      html += '</div>';
+      body.innerHTML = html;
+    },
+    update(body, ctx) { this.render(body, ctx); }
+  }
+};
+
+// ---------- 布局状态 + 预设 + 持久化（v5: gridstack x/y/w/h 格式） ----------
+const BUILTIN_LAYOUTS = {
+  "默认视图": [
+    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }, { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
+    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 }, { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
+    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
+    { id: "chart_type", x: 0, y: 2, w: 4, h: 3 }, { id: "chart_trend", x: 4, y: 2, w: 8, h: 3 },
+    { id: "alert_transit", x: 0, y: 5, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 5, w: 6, h: 3 },
+    { id: "chart_dept", x: 0, y: 8, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 8, w: 6, h: 3 },
+    { id: "chart_route", x: 0, y: 11, w: 6, h: 3 }, { id: "chart_status", x: 6, y: 11, w: 6, h: 3 },
+    { id: "chart_deptCat", x: 0, y: 14, w: 12, h: 4 }, { id: "table_detail", x: 0, y: 18, w: 12, h: 5 }
+  ],
+  "管理层视图": [
+    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }, { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
+    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 }, { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
+    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
+    { id: "chart_type", x: 0, y: 2, w: 4, h: 3 }, { id: "chart_trend", x: 4, y: 2, w: 8, h: 3 },
+    { id: "chart_status", x: 0, y: 5, w: 12, h: 3 }
+  ],
+  "一线视图": [
+    { id: "kpi_transit", x: 0, y: 0, w: 4, h: 2 }, { id: "kpi_receive", x: 4, y: 0, w: 4, h: 2 },
+    { id: "kpi_special", x: 8, y: 0, w: 4, h: 2 },
+    { id: "alert_transit", x: 0, y: 2, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 2, w: 6, h: 3 },
+    { id: "chart_status", x: 0, y: 5, w: 12, h: 3 }, { id: "table_detail", x: 0, y: 8, w: 12, h: 5 }
+  ],
+  "运维视图": [
+    { id: "kpi_overview", x: 0, y: 0, w: 12, h: 2 },
+    { id: "chart_dept", x: 0, y: 2, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 2, w: 6, h: 3 },
+    { id: "chart_route", x: 0, y: 5, w: 12, h: 3 }, { id: "chart_deptCat", x: 0, y: 8, w: 12, h: 4 },
+    { id: "table_detail", x: 0, y: 12, w: 12, h: 5 }
+  ],
+  "GDMS超时管控": [
+    // —— 顶部：5 张 KPI 指标卡（v5.2 起从底部上移，一眼掌握全局） ——
+    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 },
+    { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
+    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 },
+    { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
+    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
+    { id: "gdms_summary", x: 0, y: 2, w: 12, h: 2 },
+    { id: "gdms_timeout_trend", x: 0, y: 4, w: 8, h: 3 },
+    { id: "gdms_timeout_cat", x: 8, y: 4, w: 4, h: 3 },
+    { id: "gdms_timeout_dept", x: 0, y: 7, w: 6, h: 3 },
+    { id: "gdms_receive_dept", x: 6, y: 7, w: 6, h: 3 },
+    { id: "gdms_timeout_duration", x: 0, y: 10, w: 6, h: 3 },
+    { id: "gdms_unclosed", x: 6, y: 10, w: 6, h: 4 }
+  ]
+};
+let layoutState = { active: "默认视图", custom: {} };
+let workingLayout = BUILTIN_LAYOUTS["默认视图"].map(it => ({ ...it }));
+let externalViews = {};                             // 外部视图插件 id → layout 数组（插件系统使用，需先声明）
+let themeState = { list: [{ id: "默认", css: null, js: null }], active: "默认", mode: "light" };   // 可用主题 + 当前主题 + 明暗模式
+let grid = null;   // gridstack 实例
+let editMode = false;   // 布局编辑模式（平常关闭，避免误触拖拽/缩放/删除）
+
+function applyEditModeToGrid() {
+  if (!grid) return;
+  grid.enableMove(editMode);
+  grid.enableResize(editMode);
+}
+function setEditMode(on) {
+  editMode = on;
+  applyEditModeToGrid();
+  document.body.classList.toggle("editing", on);
+  $("editBar").classList.toggle("hidden", !on);
+  $("btnEditMode").innerHTML = on ? "✅ 完成编辑" : "🎨 编辑布局";
+  if (!on) syncLayoutFromGrid();   // 退出编辑时捕获最终布局
+}
+
+function isNewFormat(lay) { return Array.isArray(lay) && lay.length && lay[0] && typeof lay[0] === "object" && lay[0].id; }
+function getLayoutByName(name) {
+  // 查找顺序：自定义视图 → 外部视图插件 → 内置预设
+  let lay = (layoutState.custom && layoutState.custom[name]) || externalViews[name] || BUILTIN_LAYOUTS[name] || null;
+  if (lay && !isNewFormat(lay)) lay = null;   // v4 旧格式（字符串数组）不兼容 → 回退默认
+  return lay ? lay.map(it => ({ ...it })) : null;
+}
+function loadLayoutState() {
+  try {
+    const s = localStorage.getItem("dashLayouts");
+    if (s) { const p = JSON.parse(s); if (p && p.active) layoutState = p; }
+  } catch (e) { }
+  if (!layoutState.custom) layoutState.custom = {};
+  workingLayout = getLayoutByName(layoutState.active) || BUILTIN_LAYOUTS["默认视图"].map(it => ({ ...it }));
+}
+function saveLayoutState() { try { localStorage.setItem("dashLayouts", JSON.stringify(layoutState)); } catch (e) { } }
+loadLayoutState();   // 启动时加载一次（布局与数据无关，不随数据重载重置）
+
+// ---------- 布局引擎（gridstack：自由拖拽 + 边缘缩放 + min/max 约束） ----------
+function buildCardContent(def) {
+  const ce = document.createElement("div");
+  ce.className = "grid-stack-item-content cardSlot" + (def.detailKey ? " clickable" : "");
+  ce.dataset.card = def.id;
+  const head = document.createElement("div");
+  head.className = "cardHead";
+  head.innerHTML = '<span class="cardTitle">' + def.icon + ' ' + def.title + '</span>' +
+    '<button class="cardRemove" title="移除卡片">✕</button>';
+  const body = document.createElement("div");
+  body.className = "cardBody";
+  ce.appendChild(head);
+  ce.appendChild(body);
+  // 编辑模式下整条头部为拖动区；✕ 按钮阻止冒泡，避免误触拖动
+  head.querySelector(".cardRemove").addEventListener("mousedown", e => e.stopPropagation());
+  head.querySelector(".cardRemove").onclick = e => { e.stopPropagation(); removeCard(def.id); };
+  if (def.detailKey) body.addEventListener("click", () => { if (!editMode) openDetail(def.detailKey); });
+  const item = document.createElement("div");   // 外层 .grid-stack-item
+  item.appendChild(ce);
+  return item;
+}
+
+function renderDashboard() {
+  disposeAllCardCharts();
+  counters = {};
+  if (detailTable) { try { detailTable.destroy(); } catch (e) { } detailTable = null; }
+  const gridEl = $("cardGrid");
+  if (grid) { try { grid.destroy(false); } catch (e) { } grid = null; }
+  gridEl.innerHTML = "";
+  grid = GridStack.init({
+    column: 12, cellHeight: 95, margin: 8, float: false, animate: true,
+    draggable: { handle: ".cardHead" },   // 编辑模式下整条卡片头部为拖动区（非编辑模式 enableMove=false 自动禁用）
+    resizable: { handles: "all" }
+  }, gridEl);
+  const ctx = { S: computeStats(), rows, orders };
+  workingLayout.forEach(it => {
+    const def = CARD_DEFS[it.id]; if (!def) return;
+    const item = buildCardContent(def);
+    grid.addWidget(item, { id: it.id, x: it.x, y: it.y, w: it.w || def.w, h: it.h || def.h, minW: def.minW, maxW: def.maxW, minH: def.minH, maxH: def.maxH });
+    def.render(item.querySelector(".cardBody"), ctx);
+  });
+  grid.on("change resizestop dragstop", () => { syncLayoutFromGrid(); resizeAllCardCharts(); });
+  applyEditModeToGrid();   // 重建网格后恢复当前编辑模式状态
+  setTimeout(() => { syncLayoutFromGrid(); resizeAllCardCharts(); }, 60);
+  setTimeout(scheduleRefraction, 90);
+}
+
+function syncLayoutFromGrid() {
+  if (!grid) return;
+  // 直接从 DOM 的 gs-* 属性读取（gridstack 始终设置），避免 grid.save 在 w/h 等于 min 时省略尺寸
+  workingLayout = [...document.querySelectorAll('#cardGrid .grid-stack-item')].map(el => {
+    const c = el.querySelector('[data-card]');
+    const id = c ? c.dataset.card : null;
+    const def = id ? CARD_DEFS[id] : null;
+    return {
+      id,
+      x: parseInt(el.getAttribute('gs-x'), 10) || 0,
+      y: parseInt(el.getAttribute('gs-y'), 10) || 0,
+      w: parseInt(el.getAttribute('gs-w'), 10) || (def ? def.minW : 1),
+      h: parseInt(el.getAttribute('gs-h'), 10) || (def ? def.minH : 1)
+    };
+  }).filter(it => it.id && CARD_DEFS[it.id]);
+}
+
+function removeCard(id) {
+  const item = [...document.querySelectorAll('#cardGrid .grid-stack-item')].find(el => {
+    const c = el.querySelector('[data-card]'); return c && c.dataset.card === id;
+  });
+  if (item && grid) {
+    // 释放该卡片占用的图表 / 表格实例，避免泄漏
+    if (liveCharts[id]) { try { liveCharts[id].dispose(); } catch (e) { } delete liveCharts[id]; }
+    if (id === "table_detail" && detailTable) { try { detailTable.destroy(); } catch (e) { } detailTable = null; }
+    grid.removeWidget(item);   // 同时从网格模型与 DOM 移除（其余卡片不受影响，无闪烁）
+    syncLayoutFromGrid();
+  } else {
+    workingLayout = workingLayout.filter(x => x.id !== id);
+  }
+  refreshLibState();
+}
+function addCard(id) {
+  if (workingLayout.some(x => x.id === id)) return;
+  const def = CARD_DEFS[id]; if (!def) return;
+  if (grid) {
+    const item = buildCardContent(def);
+    // x/y 缺省 → gridstack 自动寻位；尺寸/约束取自 CARD_DEFS
+    grid.addWidget(item, { id, w: def.w, h: def.h, minW: def.minW, maxW: def.maxW, minH: def.minH, maxH: def.maxH });
+    def.render(item.querySelector(".cardBody"), { S: computeStats(), rows, orders });
+    syncLayoutFromGrid();
+    setTimeout(resizeAllCardCharts, 50);
+    setTimeout(scheduleRefraction, 60);
+  } else {
+    workingLayout.push({ id, w: def.w, h: def.h });
+  }
+  refreshLibState();
+}
+
+// ---------- 卡片库 ----------
+function openCardLib() { renderCardLib(); $("cardLibOverlay").classList.add("open"); }
+function closeCardLib() { $("cardLibOverlay").classList.remove("open"); }
+function renderCardLib() {
+  const box = $("cardLibBody");
+  const cats = {};
+  Object.values(CARD_DEFS).forEach(d => { (cats[d.cat] = cats[d.cat] || []).push(d); });
+  let html = "";
+  Object.keys(cats).forEach(cat => {
+    html += '<div class="libCat">' + cat + '</div>';
+    cats[cat].forEach(d => {
+      const added = workingLayout.some(x => x.id === d.id);
+      html += '<div class="libItem' + (added ? " added" : "") + '" data-card="' + d.id + '">' +
+        '<span class="li-icon">' + d.icon + '</span><span class="li-title">' + d.title + '</span>' +
+        '<span class="li-add">' + (added ? "已添加" : "＋ 添加") + '</span></div>';
+    });
+  });
+  box.innerHTML = html;
+  box.querySelectorAll(".libItem").forEach(el => {
+    el.onclick = () => { const id = el.dataset.card; if (!workingLayout.some(x => x.id === id)) { addCard(id); renderCardLib(); } };
+  });
+}
+function refreshLibState() { if ($("cardLibOverlay").classList.contains("open")) renderCardLib(); }
+
+// =====================================================================
+// ★★★ 主题 / 视图 插件系统（v5.4）★★★
+// 主题：主文件内置「默认」液态玻璃主题；外部主题放 style/theme-<id>.css(.js)
+// 视图：主文件内置 5 个预设视图；外部视图放 views/<id>.js（VIEW_PLUGIN 格式）
+// 发现机制：file:// 下 JS 无法枚举目录，故启动时对「注册表」中的候选逐个
+//   动态创建 <link>/<script> 探测（onload=存在可选，onerror=缺失置灰）。
+// 新增外部主题/视图：把文件放入对应目录，并在下方注册表中登记一行即可。
+// =====================================================================
+
+// —— 外部主题注册表（id → 文件路径；css 必填，js 可选用于图表配色）——
+const THEME_REGISTRY = [
+  { id: "Terminal",  theme: "terminal",  css: "./style/theme-terminal.css",  js: "./style/theme-terminal-charts.js"  },
+  { id: "Aurora",    theme: "aurora",    css: "./style/theme-aurora.css",    js: "./style/theme-aurora-charts.js"    },
+  { id: "新粗野",     theme: "brutal",    css: "./style/theme-brutal.css",    js: "./style/theme-brutal-charts.js"    },
+  { id: "液态玻璃",   theme: "glass",     css: "./style/theme-glass.css",     js: "./style/theme-glass-charts.js"     },
+  { id: "Material3", theme: "material",  css: "./style/theme-material.css",  js: "./style/theme-material-charts.js"  },
+  { id: "Fluent",    theme: "fluent",    css: "./style/theme-fluent.css",    js: "./style/theme-fluent-charts.js"    },
+  { id: "新拟态",     theme: "neumorph",  css: "./style/theme-neumorph.css",  js: "./style/theme-neumorph-charts.js"  },
+  { id: "粘土",       theme: "clay",      css: "./style/theme-clay.css",      js: "./style/theme-clay-charts.js"      },
+  { id: "瑞士极简",   theme: "swiss",     css: "./style/theme-swiss.css",     js: "./style/theme-swiss-charts.js"     },
+  // ↑ 模板：新增主题在此追加一行（id 即下拉显示名；theme 即 CSS data-theme 值；js 为图表配色脚本，可省略）
+];
+
+// —— 外部视图注册表（id → js 文件路径）——
+const VIEW_REGISTRY = [
+  { id: "示例管理层视图", file: "./views/示例管理层视图.js" },
+  // ↑ 模板：新增视图在此追加一行（文件内定义 window.VIEW_PLUGIN）
+];
+
+// —— 探测并加载外部主题（file:// 兼容：动态 link/script 标签 onload/onerror）——
+// 重要：探测阶段只判断文件是否存在，不实际应用主题——
+// 探测用的 link/script 带 data-probe 标记，探测完成后立即移除，
+// 避免"探测即生效"导致外部主题无法切回默认（此前 bug：Material3 一进页面就生效）。
+function probeThemes(done) {
+  const list = [{ id: "默认", css: null, js: null }];   // 内置主题始终可选
+  const registry = THEME_REGISTRY;
+  if (!registry.length) { themeState.list = list; done(); return; }
+  let remaining = registry.length;
+  let finished = false;
+  const finishOne = () => {
+    if (finished) return;
+    if (--remaining <= 0) {
+      finished = true;
+      clearTimeout(timer);
+      // 探测完成：移除全部探测资源（防止探测 CSS/JS 实际生效）
+      document.querySelectorAll("link[data-probe], script[data-probe]").forEach(el => el.remove());
+      themeState.list = list; done();
+    }
+  };
+  // 超时保护：5 秒内未完成则强制结束（防止 file:// 下 onload 不触发导致卡死）
+  const timer = setTimeout(() => {
+    if (finished) return;
+    finished = true;
+    document.querySelectorAll("link[data-probe], script[data-probe]").forEach(el => el.remove());
+    themeState.list = list; done();
+  }, 5000);
+  registry.forEach(t => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.href = t.css; link.dataset.probe = "1";
+    let cssOk = false;
+    const check = () => {
+      if (cssOk && !list.some(x => x.id === t.id)) {
+        list.push({ id: t.id, theme: t.theme, css: t.css, js: t.js });
+        // JS 不在探测阶段加载（appendChild 会执行代码，多主题同时执行会导致
+        // echarts.init 被多层嵌套拦截，页面卡死）。JS 在 applyTheme 时才加载。
+      }
+      finishOne();
+    };
+    link.onload = () => { cssOk = true; check(); };
+    link.onerror = () => check();
+    document.head.appendChild(link);
+  });
+}
+
+// —— 应用主题：设置 data-theme 属性 + 移除旧主题 link/script + 加载新主题 ——
+function applyTheme(id, save) {
+  const t = themeState.list.find(x => x.id === id) || themeState.list[0];
+  if (!t) return;
+  // 清理旧外部主题资源（含探测残留）
+  document.querySelectorAll("link[data-theme], script[data-theme], link[data-probe], script[data-probe]").forEach(el => el.remove());
+  // 清理旧主题的定时器和 MutationObserver（防止内存泄漏和性能问题）
+  if (window._themeCleanup) { try { window._themeCleanup(); } catch(e){} window._themeCleanup = null; }
+  // 恢复 echarts.init 原始函数（清除旧主题 JS 的拦截器，防止多层嵌套）
+  if (window._echartsOrigInit) {
+    echarts.init = window._echartsOrigInit;
+    delete window._echartsOrigInit;
+  }
+  // 设置 data-theme 属性（CSS 选择器 [data-theme="xxx"] 依赖此属性）
+  if (t.css) {
+    document.documentElement.setAttribute("data-theme", t.theme || t.id);
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.href = t.css; link.dataset.theme = "1";
+    document.head.appendChild(link);
+  } else {
+    // 默认主题：移除 data-theme 属性
+    document.documentElement.removeAttribute("data-theme");
+  }
+  // 设置 data-mode 属性（深色/浅色模式）
+  document.documentElement.setAttribute("data-mode", themeState.mode);
+  if (t.js) {
+    const s = document.createElement("script");
+    s.src = t.js; s.dataset.theme = "1";
+    document.head.appendChild(s);
+  }
+  themeState.active = t.id;
+  if (save) { try { localStorage.setItem("dashTheme", t.id); } catch (e) { } }
+  renderThemeSelect();
+  // 不在此处调用 refreshAllCharts()——新主题 JS 加载后会自行补丁已有图表
+  // 同步调用会触发旧主题的 setOption 拦截器，导致冲突卡死
+  // 重建背景配色（主题切换后背景渐变和光球颜色需要更新）
+  if (typeof rebuildBgForTheme === "function") rebuildBgForTheme();
+}
+
+// —— 切换深色 / 浅色模式 ——
+function toggleDarkMode() {
+  themeState.mode = themeState.mode === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-mode", themeState.mode);
+  try { localStorage.setItem("dashMode", themeState.mode); } catch (e) { }
+  const btn = $("btnDark");
+  if (btn) btn.textContent = themeState.mode === "dark" ? "🌙 深色" : "☀️ 浅色";
+  // 不在此处调用 refreshAllCharts()——主题 JS 的 MutationObserver 会监听 data-mode 变化并自动刷新
+  // 如果是默认主题（无 JS），CSS 变量会自动切换，无需 JS 刷新
+  // 重建背景配色（深浅色切换后背景渐变和光球颜色需要更新）
+  if (typeof rebuildBgForTheme === "function") rebuildBgForTheme();
+}
+
+// —— 刷新所有已渲染的图表（让主题配色生效）——
+function refreshAllCharts() {
+  document.querySelectorAll("[_echarts_instance_]").forEach(function(dom) {
+    var chart = echarts.getInstanceByDom(dom);
+    if (chart) {
+      var opt = chart.getOption();
+      if (opt) chart.setOption(opt, { notMerge: false, lazyUpdate: true });
+    }
+  });
+}
+
+// —— 主题下拉渲染（外部主题缺失时该项不出现；仅默认 → 显示"默认"）——
+function renderThemeSelect() {
+  const sel = $("themeSelect");
+  if (!sel) return;
+  sel.innerHTML = themeState.list.map(t =>
+    '<option value="' + t.id + '"' + (t.id === themeState.active ? " selected" : "") + '>' + t.id + '</option>'
+  ).join("");
+  sel.title = themeState.list.length > 1
+    ? "切换外观主题（外部主题来自 style/ 文件夹）"
+    : "当前仅内置默认主题（未检测到 style/ 外部主题）";
+}
+$("themeSelect").onchange = () => applyTheme($("themeSelect").value, true);
+$("btnDark").onclick = () => toggleDarkMode();
+
+// —— 加载外部视图插件（views/*.js，定义 window.VIEW_PLUGIN）——
+function loadViewPlugins(done) {
+  const registry = VIEW_REGISTRY;
+  if (!registry.length) { done(); return; }
+  let remaining = registry.length;
+  const finishOne = () => { if (--remaining <= 0) done(); };
+  registry.forEach(v => {
+    const s = document.createElement("script");
+    s.src = v.file;
+    s.onload = () => {
+      // 每个插件文件独立执行，读取后立即清空，避免互相覆盖
+      const p = window.VIEW_PLUGIN;
+      window.VIEW_PLUGIN = null;
+      if (p && p.id && Array.isArray(p.layout) && p.layout.length) {
+        externalViews[p.id] = p.layout;
+      }
+      finishOne();
+    };
+    s.onerror = () => finishOne();
+    document.head.appendChild(s);
+  });
+}
+
+// —— 导出当前布局为视图插件文件（供分享/备份到 views/ 目录）——
+function saveViewPlugin(name) {
+  syncLayoutFromGrid();
+  const id = (name || "myview").replace(/[^\w\u4e00-\u9fa5]/g, "_");
+  const plugin = {
+    id: id,
+    name: name || id,
+    layout: workingLayout.map(it => ({ ...it }))
+  };
+  const js = "window.VIEW_PLUGIN = " + JSON.stringify(plugin, null, 2) + ";\n";
+  const blob = new Blob([js], { type: "text/javascript;charset=utf-8" });
+  saveAs(blob, id + ".js");
+  toast("已导出视图插件「" + (name || id) + ".js」，放入 views/ 目录即可被看板识别 ✅");
+}
+
+// —— 启动：探测主题 + 加载视图插件，然后恢复上次选择 ——
+(function initPlugins() {
+  // 恢复深色/浅色模式
+  try {
+    const savedMode = localStorage.getItem("dashMode");
+    if (savedMode === "dark" || savedMode === "light") themeState.mode = savedMode;
+  } catch (e) { }
+  const btnDark = $("btnDark");
+  if (btnDark) btnDark.textContent = themeState.mode === "dark" ? "🌙 深色" : "☀️ 浅色";
+  // 设置初始 data-mode 属性（确保默认主题也有明暗模式）
+  document.documentElement.setAttribute("data-mode", themeState.mode);
+
+  probeThemes(() => {
+    let saved = null;
+    try { saved = localStorage.getItem("dashTheme"); } catch (e) { }
+    // 恢复上次主题（外部主题文件存在才恢复）
+    const target = themeState.list.find(t => t.id === saved && t.css) ? saved : themeState.list[0].id;
+    applyTheme(target, false);
+  });
+  loadViewPlugins(() => {
+    // 外部视图加载完成后：若上次激活的是外部视图且存在，则应用它（loadLayoutState 在插件加载前已跑）
+    const active = layoutState.active;
+    if (externalViews[active]) {
+      workingLayout = externalViews[active].map(it => ({ ...it }));
+    }
+    renderLayoutSelect();
+  });
+})();
+
+// ---------- 布局工具栏 ----------
+function renderLayoutSelect() {
+  const sel = $("layoutSelect");
+  const names = [...Object.keys(BUILTIN_LAYOUTS), ...Object.keys(externalViews), ...Object.keys(layoutState.custom)];
+  sel.innerHTML = names.map(n =>
+    '<option value="' + n + '"' + (n === layoutState.active ? " selected" : "") + '>' + n +
+    (externalViews[n] ? " 📦" : layoutState.custom[n] ? " ★" : "") + '</option>'
+  ).join("");
+  sel.title = Object.keys(externalViews).length
+    ? "切换预设 / 外部视图（📦，来自 views/ 文件夹）/ 自定义视图（★）"
+    : "切换预设 / 自定义视图";
+}
+$("layoutSelect").onchange = () => {
+  const name = $("layoutSelect").value;
+  const lay = getLayoutByName(name);
+  if (lay) { layoutState.active = name; workingLayout = lay; saveLayoutState(); renderDashboard(); refreshLibState(); }
+};
+$("btnLayoutSave").onclick = () => {
+  syncLayoutFromGrid();
+  const name = prompt("请输入视图名称：", (layoutState.active || "我的视图") + " 副本");
+  if (!name || !name.trim()) return;
+  layoutState.custom[name.trim()] = workingLayout.map(it => ({ ...it }));
+  layoutState.active = name.trim();
+  saveLayoutState(); renderLayoutSelect();
+  toast("已保存视图「" + name.trim() + "」✅");
+};
+$("btnViewExport").onclick = () => {
+  const name = prompt("请输入视图插件名称（将生成 <名称>.js 文件）：", (layoutState.active || "我的视图") + "");
+  if (!name || !name.trim()) return;
+  saveViewPlugin(name.trim());
+};
+$("btnLayoutReset").onclick = () => {
+  const base = (BUILTIN_LAYOUTS[layoutState.active] || externalViews[layoutState.active]) ? layoutState.active : "默认视图";
+  workingLayout = (BUILTIN_LAYOUTS[base] || externalViews[base] || BUILTIN_LAYOUTS["默认视图"]).map(it => ({ ...it }));
+  layoutState.active = base;
+  renderDashboard(); refreshLibState();
+  toast("已重置为「" + base + "」");
+};
+$("btnAddCard").onclick = openCardLib;
+$("btnEditMode").onclick = () => setEditMode(!editMode);
+$("btnLibClose").onclick = closeCardLib;
+$("cardLibOverlay").addEventListener("click", e => { if (e.target === $("cardLibOverlay")) closeCardLib(); });
+
+// ---------- 实时刷新（供 liveTick 调用，增量更新各卡片） ----------
+function refreshCards() {
+  const ctx = { S: computeStats(), rows, orders };
+  document.querySelectorAll("#cardGrid .cardSlot").forEach(slot => {
+    const def = CARD_DEFS[slot.dataset.card]; if (!def) return;
+    const body = slot.querySelector(".cardBody");
+    if (def.update) def.update(body, ctx); else def.render(body, ctx);
+  });
+}
+
+// ---------- 渲染入口 ----------
+function renderAll() {
+  invalidateStats();          // 数据已变，丢弃旧缓存
+  const S = computeStats();
+  updateFileMeta(S);
+  applyPerfTag();
+  _visibleCols = computeVisibleCols(rows);
+  renderLayoutSelect();
+  renderDashboard();
+  $("dropzone").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnToCsv", "btnShot"].forEach(id => $(id).classList.remove("hidden"));
+  $("btnLive").classList.toggle("hidden", !demoMode);
+  $("liveBadge").classList.toggle("hidden", !demoMode);
+  $("liveFeed").classList.toggle("hidden", !demoMode);
+  toast(`已加载 ${S.total} 条记录 / ${S.orderCount} 张放行单 ✅`);
+}
+
+function scheduleRefraction() {
+  if (PERF.lite) return;  // 低性能模式不注入玻璃折射层，减少 DOM 与合成开销
+  document.querySelectorAll('.cardSlot').forEach(card => {
+    if (!card.querySelector(':scope > .lg-tint')) {
+      const tint = document.createElement('div'); tint.className = 'lg-tint';
+      const edge = document.createElement('div'); edge.className = 'lg-edge';
+      card.insertBefore(edge, card.firstChild);
+      card.insertBefore(tint, card.firstChild);
+    }
+  });
+}
+
+function stripPrivate(o) {
+  const r = {};
+  for (const k of Object.keys(o)) if (!k.startsWith("_")) r[k] = o[k];
+  return r;
+}
+
+function updateFileMeta(S) {
+  const dates = rows.filter(r => r._申请日期).map(r => r._申请日期);
+  const range = dates.length ? `${_.min(dates).format("YYYY-MM-DD")} ~ ${_.max(dates).format("YYYY-MM-DD")}` : "无有效日期";
+  $("fileMeta").innerHTML = `文件：<b>${currentFileName}</b> ｜ 共 <b>${S.total}</b> 条记录 / <b>${S.orderCount}</b> 单 ｜ 时间范围：<b>${range}</b>`;
+}
+
+// ---------- 异常监控卡片内容生成（供 CARD_DEFS 复用） ----------
+function analysisTransitHTML(S) {
+  let preview;
+  if (!S.transitTimeoutOrders.length) {
+    preview = '<div class="ac-empty">✅ 暂无在途超时未放行单据</div>';
+  } else {
+    preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
+      `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
+      `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
+      `<b style="color:var(--txt)">${o.单号}</b></span>` +
+      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
+  }
+  return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
+    `<span style="font-size:12px;color:var(--txt2)">在途超时单数</span>` +
+    `<span class="ac-count" style="color:var(--warn)">${S.transitTimeoutOrders.length}</span></div>` +
+    `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。点击卡片查看完整明细。</div>` +
+    `<div class="ac-preview">${preview}</div>`;
+}
+function analysisReceiveHTML(S) {
+  let preview;
+  if (!S.receiveTimeoutOrders.length) {
+    preview = '<div class="ac-empty">✅ 暂无超时未接收单据</div>';
+  } else {
+    preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
+      `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
+      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
+      `<b style="color:var(--txt)">${o.单号}</b></span>` +
+      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
+  }
+  return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
+    `<span style="font-size:12px;color:var(--txt2)">超时未接收单数</span>` +
+    `<span class="ac-count" style="color:var(--bad)">${S.receiveTimeoutOrders.length}</span></div>` +
+    `<div class="ac-desc">流入门岗已放行，但接收人超过规定时间仍未接收。点击卡片查看完整明细。</div>` +
+    `<div class="ac-preview">${preview}</div>`;
+}
+
+// ---------- 二级详情面板 ----------
+let detailChartInst = null, detailTableInst = null;
+const KPI_DETAIL = {
+  overview: {
+    multi: true,
+    title: "📋 放行单总览 · 详情",
+    dimensions: [
+      { key: "type", label: "单据类型", cats: [
+          { name: "特级安保单", color: "#5e5ce6", filter: r => r._特保 },
+          { name: "普通单", color: "#0071e3", filter: r => !r._特保 } ]},
+      { key: "arrival", label: "到达状态", cats: [
+          { name: "已到达流入门岗", color: "#34c759", filter: r => { const o = orders[r.放行单号]; return o && o.已到达; } },
+          { name: "在途·流入门岗未放行", color: "#ff9f0a", filter: r => { const o = orders[r.放行单号]; return o && o.在途; } } ]},
+      { key: "timeout", label: "超时状态", cats: [
+          { name: "放行超时", color: "#ff3b30", filter: r => { const o = orders[r.放行单号]; return o && o.放行超时; } },
+          { name: "未超时", color: "#34c759", filter: r => { const o = orders[r.放行单号]; return o && !o.放行超时; } } ]}
+    ]
+  },
+  special: {
+    title: "🛡️ 特级安保单 · 详情",
+    chips(S) {
+      const sp = rows.filter(r => r._特保);
+      return [["特保单数", S.specialOrders, "var(--purple)"], ["特保记录数", sp.length, "var(--txt)"],
+        ["占全部单比", S.orderCount ? (S.specialOrders / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(Object.values(orders)).filter(o => o.特保)
+        .groupBy(o => o.物品分类 || "未分类")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 130, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#5e5ce6" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "特级安保单记录", filter(r) { return r._特保; }
+  },
+  transitTimeout: {
+    title: "🚧 在途超时 · 流入门岗未放行 · 详情",
+    chips(S) {
+      const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
+      return [["在途超时单数", S.transitTimeoutOrders.length, "var(--warn)"], ["其中特保单", sp, "var(--purple)"],
+        ["占全部单比", S.orderCount ? (S.transitTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(S.transitTimeoutOrders).groupBy(o => o.申请部门 || "（空）")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").take(12).value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff9f0a" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "在途超时单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.在途超时; }
+  },
+  receiveTimeout: {
+    title: "📭 超时未接收 · 详情",
+    chips(S) {
+      const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
+      return [["超时未接收单数", S.receiveTimeoutOrders.length, "var(--bad)"],
+        ["涉及部门", depts, "var(--txt)"],
+        ["占全部单比", S.orderCount ? (S.receiveTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
+    },
+    chart(S) {
+      const d = _(S.receiveTimeoutOrders).groupBy(o => o.申请部门 || "（空）")
+        .map((a, k) => ({ name: k, value: a.length })).orderBy("value", "desc").take(12).value();
+      return { tooltip: {}, grid: { left: 10, right: 30, top: 10, bottom: 10, containLabel: true },
+        xAxis: { type: "value", ...baseAxis },
+        yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
+        series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff3b30" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+    },
+    tableTitle: "超时未接收单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.超时未接收; }
+  },
+  rate: {
+    title: "✅ 放行结案完成率 · 详情",
+    chips(S) {
+      return [["放行结案完成率", (S.closeRate * 100).toFixed(1) + "%", "var(--ok)"],
+        ["结案完成单", S.closedOrders, "var(--ok)"],
+        ["纳入统计单", S.scopedOrders, "var(--accent)"],
+        ["在途未超时(不纳入)", S.inTransitNotTimeout, "var(--txt2)"]];
+    },
+    chart(S) {
+      return { tooltip: { trigger: "item" }, legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+        series: [{ type: "pie", radius: ["40%", "66%"], center: ["50%", "45%"],
+          animationType: "scale",   // 环形图整体缩放展开，比默认 expansion 扫出更丝滑
+          itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+          label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
+          data: [
+            { name: "结案完成(到达且未超时)", value: S.closedOrders, itemStyle: { color: "#34c759" } },
+            { name: "到达但超时", value: S.arrivedTimeout, itemStyle: { color: "#ff9f0a" } },
+            { name: "在途超时", value: S.transitTimeoutOrders.length, itemStyle: { color: "#ff3b30" } }
+          ] }] };
+    },
+    tableTitle: "纳入统计的放行记录", filter(r) { const o = orders[r.放行单号]; return o && (o.已到达 || o.放行超时); }
+  }
+};
+
+let overviewState = { dim: 0, cat: null };
+let _visibleCols = null;   // 全局可见列缓存（基于全量 rows 采样计算一次）
+
+// 采样扫描字段非空性：大数据时只看前 1000 行足以判定列是否有值，避免 O(字段×全行) 扫描
+function computeVisibleCols(list) {
+  const sample = list.length > 1000 ? list.slice(0, 1000) : list;
+  return Object.keys(CONFIG.字段映射).filter(k => sample.some(r => r[k] !== "" && r[k] != null));
+}
+
+// —— 二级页表格列：按详情类型定制列集（避免全部列挤入窄容器），超宽列自动横向滚动 ——
+// 每列定义：title/field 同字段名；minWidth 保证表头与内容可读；widthGrow 在容器富余时按权重拉伸
+const DETAIL_COL_SETS = {
+  // 总览：关注全貌，保留核心业务列
+  overview: ["放行单号", "申请日期", "申请部门", "物品分类", "放行物品名称", "放行数量",
+    "流出门岗", "流入门岗", "实际放行门岗", "实际放行时间", "放行状态", "放行超时",
+    "接收时间", "接收状态", "接收人部门"],
+  // 特保单：关注特保物品与门岗路线
+  special: ["放行单号", "申请日期", "申请部门", "物品类型", "物品分类", "放行物品名称", "放行数量",
+    "流出门岗", "流入门岗", "实际放行门岗", "实际放行时间", "放行状态", "放行超时"],
+  // 在途超时：关注门岗流转与超时标记
+  transitTimeout: ["放行单号", "申请日期", "申请部门", "流入门岗", "实际放行门岗", "实际放行时间",
+    "放行状态", "放行超时", "物品分类", "放行物品名称", "放行数量"],
+  // 超时未接收：关注接收责任主体（接收人/部门）
+  receiveTimeout: ["放行单号", "申请日期", "申请部门", "流入门岗", "实际放行门岗", "实际放行时间",
+    "接收时间", "接收超时", "接收状态", "接收人姓名", "接收人部门", "物品分类", "放行物品名称"],
+  // 结案完成率：关注流程时效
+  rate: ["放行单号", "申请日期", "申请部门", "流出门岗", "流入门岗", "实际放行门岗", "实际放行时间",
+    "放行超时", "接收时间", "接收状态", "物品分类", "放行物品名称", "放行数量"]
+};
+const DETAIL_COL_MINW = {
+  放行单号: 170, 申请日期: 140, 申请部门: 130, 接收人部门: 130, 物品分类: 110, 放行物品名称: 130,
+  放行数量: 80, 流出门岗: 150, 流入门岗: 150, 实际放行门岗: 150, 实际放行时间: 140,
+  放行状态: 90, 放行超时: 90, 接收时间: 140, 接收状态: 90, 接收超时: 90, 接收人姓名: 100, 物品类型: 120
+};
+function detailCols(key) {
+  const visible = _visibleCols || computeVisibleCols(rows);
+  const keys = (DETAIL_COL_SETS[key] || Object.keys(CONFIG.字段映射)).filter(k => visible.includes(k));
+  return keys.map(k => ({
+    title: k, field: k, headerFilter: "input",
+    minWidth: DETAIL_COL_MINW[k] || 100,
+    widthGrow: (k === "放行物品名称" || k === "申请部门" || k === "接收人部门") ? 2 : 1
+  }));
+}
+
+let detailPanelOpening = false;   // 面板正在展开（首次打开）：图表需延迟到展开完成后绘制
+
+function openDetail(key) {
+  const cfg = KPI_DETAIL[key]; if (!cfg || !rows.length) return;
+  $("detailPanelTitle").textContent = cfg.title;
+  detailPanelOpening = true;                       // ★ 标记首次打开：图表动画等面板展开后再播
+  $("detailOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  if (cfg.multi) {
+    overviewState = { dim: 0, cat: null };
+    $("detailDims").style.display = "";
+    renderOverview();
+  } else {
+    $("detailDims").style.display = "none";
+    $("detailCatFilters").innerHTML = "";
+    renderSimpleDetail(cfg, key);
+  }
+  setTimeout(() => {
+    detailPanelOpening = false;
+    // 图表动画结束后再 resize（避免动画中途强制重绘导致"结尾跳跃"）
+    if (detailChartInst) detailChartInst.resize();
+  }, 1750);
+}
+
+// —— 详情图表统一绘制入口：面板展开动画（350ms）完成后才开始图表动画 ——
+// 首次打开（detailPanelOpening）→ 延迟 360ms 绘制，动画从头完整播放；维度切换/筛选 → 立即绘制
+// onReady(inst) 在实例创建后回调（用于绑定事件等，需在实例存在后执行的操作）
+function renderDetailChart(opt, onReady) {
+  if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
+  if (opt) {
+    $("detailChartBox").style.display = "";
+    const draw = () => {
+      if (!$("detailOverlay").classList.contains("open")) return;   // 面板已关闭则放弃（避免渲染到隐藏容器）
+      detailChartInst = initEC($("detailChart"));
+      detailChartInst.setOption(withDetailAnim(opt));
+      if (onReady) onReady(detailChartInst);
+    };
+    if (detailPanelOpening) setTimeout(draw, 360);
+    else draw();
+  } else { $("detailChartBox").style.display = "none"; }
+}
+
+// —— 普通单维度详情 ——
+function renderSimpleDetail(cfg, key) {
+  const S = computeStats();
+  $("detailChips").innerHTML = cfg.chips(S).map(([l, v, c]) =>
+    `<div class="detailChip"><div class="dc-label">${l}</div><div class="dc-value" style="color:${c}">${v}</div></div>`).join("");
+  renderDetailChart(cfg.chart(S));
+  if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  const tRows = cfg.filter ? rows.filter(cfg.filter) : rows;
+  $("detailTableTitle").textContent = `${cfg.tableTitle}（${tRows.length} 条）`;
+  detailTableInst = new Tabulator("#detailTable2", {
+    data: tRows, columns: detailCols(key), layout: "fitDataStretch",
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+  });
+}
+
+// —— 多维度总览详情（单据类型 / 到达状态 / 超时状态） ——
+function renderOverview() {
+  const S = computeStats();
+  const dims = KPI_DETAIL.overview.dimensions;
+  const dim = dims[overviewState.dim];
+  $("detailChips").innerHTML = [
+    ["放行单总数", S.orderCount, "var(--accent)"],
+    ["放行记录总数", S.total, "var(--cyan)"],
+    ["特级安保单", S.specialOrders, "var(--purple)"],
+    ["在途单据", Object.values(orders).filter(o => o.在途).length, "var(--warn)"]
+  ].map(([l, v, c]) => `<div class="detailChip"><div class="dc-label">${l}</div><div class="dc-value" style="color:${c}">${v}</div></div>`).join("");
+  $("detailDims").innerHTML = dims.map((d, i) =>
+    `<button class="dimBtn ${i === overviewState.dim ? "active" : ""}" data-dim="${i}">${d.label}</button>`).join("");
+  $("detailDims").querySelectorAll(".dimBtn").forEach(b => b.onclick = () => {
+    overviewState.dim = +b.dataset.dim; overviewState.cat = null; renderOverview();
+    setTimeout(() => { if (detailChartInst) detailChartInst.resize(); }, 30);
+  });
+  // —— 分类计数一次性算好（订单级：命中记录所属单去重），饼图与芯片复用 ——
+  const counts = dim.cats.map(c => new Set(rows.filter(c.filter).map(r => r.放行单号)).size);
+  renderDetailChart(overviewPieOption(dim, counts), inst => {
+    inst.off("click");
+    inst.on("click", p => { if (p && p.name) applyCatFilter(p.name); });
+  });
+  renderCatFilters(dim, counts);
+  rebuildOverviewTable(dim);
+}
+
+function overviewPieOption(dim, counts) {
+  return {
+    tooltip: { trigger: "item" },
+    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+    series: [{
+      type: "pie", radius: ["40%", "66%"], center: ["50%", "45%"],
+      animationType: "scale",   // 环形图整体缩放展开，比默认 expansion 扫出更丝滑
+      selectedMode: "single", selectedOffset: 14,
+      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
+      label: { color: "#1d1d1f", formatter: "{b}\n{c} ({d}%)" },
+      data: dim.cats.map((c, i) => ({
+        name: c.name, value: counts[i],
+        itemStyle: { color: c.color }, selected: overviewState.cat === c.name
+      }))
+    }]
+  };
+}
+
+function renderCatFilters(dim, counts) {
+  $("detailCatFilters").innerHTML = dim.cats.map((c, i) =>
+    `<span class="catFilter ${overviewState.cat === c.name ? "active" : ""}" data-cat="${c.name}" style="--cc:${c.color}">${c.name} <b>${counts[i]}</b></span>`
+  ).join("");
+  $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
+    el.onclick = () => applyCatFilter(el.dataset.cat));
+}
+
+function rebuildOverviewTable(dim) {
+  const cf = overviewState.cat ? dim.cats.find(c => c.name === overviewState.cat) : null;
+  const tRows = cf ? rows.filter(cf.filter) : rows;
+  $("detailTableTitle").textContent = `${cf ? cf.name : "全部放行记录"}（${tRows.length} 条）`;
+  if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  detailTableInst = new Tabulator("#detailTable2", {
+    data: tRows, columns: detailCols("overview"), layout: "fitDataStretch",
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+  });
+}
+
+// —— 切换分类筛选：图表丝滑更新 + 明细表联动 ——
+function applyCatFilter(name) {
+  overviewState.cat = (overviewState.cat === name) ? null : name;
+  const dim = KPI_DETAIL.overview.dimensions[overviewState.dim];
+  const counts = dim.cats.map(c => new Set(rows.filter(c.filter).map(r => r.放行单号)).size);
+  if (detailChartInst) detailChartInst.setOption(overviewPieOption(dim, counts));
+  $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
+    el.classList.toggle("active", el.dataset.cat === overviewState.cat));
+  rebuildOverviewTable(dim);
+}
+function closeDetail() {
+  $("detailOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+  setTimeout(() => {
+    if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
+    if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
+  }, 350);
+}
+$("btnDetailClose").onclick = closeDetail;
+$("detailOverlay").addEventListener("click", e => { if (e.target === $("detailOverlay")) closeDetail(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("detailOverlay").classList.contains("open")) closeDetail(); });
+
+// ---------- 实时流入动态栏 ----------
+function pushFeedItems(newRows, eventText) {
+  const box = $("feedItems");
+  const empty = box.querySelector(".empty");
+  if (empty) empty.remove();
+  newRows.forEach(r => {
+    const stCls = r._特保 ? "st-sp" : (String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")) ? "st-bad" : "st-ok";
+    const el = document.createElement("div");
+    el.className = "feedItem feedItem--new";
+    el.innerHTML =
+      `<span class="t">${(r._申请日期 || dayjs()).format("HH:mm:ss")}</span>` +
+      `<b>${r.放行单号}</b>` +
+      `<span>${r.申请部门} · ${r.放行物品名称} ×${r.数量}</span>` +
+      `<span class="route">${r.流出门岗}→${r.流入门岗}</span>` +
+      (eventText
+        ? `<span class="stBadge st-ev">${eventText}</span>`
+        : `<span class="stBadge ${stCls}">${r._特保 ? "特保" : (r.放行状态 || "正常")}</span>`);
+    box.prepend(el);
+  });
+  const N = CONFIG.实时演示.动态栏保留条数;
+  const items = [...box.querySelectorAll(".feedItem:not(.feedItem--out)")];
+  while (items.length > N) {
+    const out = items.pop();
+    out.classList.add("feedItem--out");
+    out.addEventListener("animationend", () => out.remove(), { once: true });
+  }
+}
+function clearFeed() { $("feedItems").innerHTML = '<span class="empty">等待新数据…</span>'; }
+
+// ---------- 实时演示模式 ----------
+function startLive() {
+  if (liveTimer) clearInterval(liveTimer);
+  clearFeed();
+  livePaused = false;
+  updateLiveBtn();
+  $("liveBadge").classList.remove("hidden");
+  $("btnLive").classList.remove("hidden");
+  $("liveFeed").classList.remove("hidden");
+  liveTimer = setInterval(liveTick, CONFIG.实时演示.刷新间隔毫秒 * (PERF.lite ? 2 : 1));  // 低性能模式降频刷新，减轻老机器持续负载
+}
+function stopLive() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+  $("liveBadge").classList.add("hidden");
+  $("btnLive").classList.add("hidden");
+  $("liveFeed").classList.add("hidden");
+  clearFeed();
+}
+$("btnLive").onclick = () => { livePaused = !livePaused; updateLiveBtn(); };
+$("btnPerf").onclick = togglePerfMode;
+function updateLiveBtn() {
+  $("btnLive").textContent = livePaused ? "▶ 恢复刷新" : "⏸ 暂停刷新";
+  $("liveBadge").classList.toggle("paused", livePaused);
+}
+function liveTick() {
+  if (livePaused) return;
+  // —— 从当前数据挑选业务延续动作：新开单 / 推进门岗 / 到达流入门岗 / 接收 ——
+  const orderList = Object.values(computeOrders());
+  const inTransit = orderList.filter(o => o.在途);
+  const arrivedUnrecv = orderList.filter(o => o.已到达 && !o.已接收);
+  const roll = Math.random();
+  let action = "new";
+  if (roll < 0.30) action = "new";
+  else if (roll < 0.55 && inTransit.length) action = "advance";
+  else if (roll < 0.80 && inTransit.length) action = "arrive";
+  else if (arrivedUnrecv.length) action = "receive";
+  if ((action === "advance" || action === "arrive") && !inTransit.length) action = "new";
+  if (action === "receive" && !arrivedUnrecv.length) action = "new";
+
+  const newRows = [], modifiedRows = [], feedRows = [];
+  let feedText = "";
+  const now = dayjs();
+  const fmt = "YYYY/MM/DD HH:mm:ss";
+
+  if (action === "new") {
+    // ① 新开一张放行单（保留原有逻辑）
+    const { 每批最小条数: min, 每批最大条数: max } = CONFIG.实时演示;
+    const n = min + Math.floor(Math.random() * (max - min + 1));
+    for (let i = 0; i < n; i++) newRows.push(...makeDemoOrder(now, rows.length + i).map(r => normalizeRow(r)));
+    rows.push(...newRows);
+    feedRows.push(...newRows);
+  } else if (action === "advance") {
+    // ② 随机选一张在途单，在途中新增一个门岗的放行记录
+    const o = inTransit[Math.floor(Math.random() * inTransit.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const last = recs[recs.length - 1];
+    let gate = pick(DEMO.gates);
+    let guard = 0;
+    while (gate === o.流入门岗 && guard++ < 10) gate = pick(DEMO.gates);   // 中间门岗 ≠ 流入门岗
+    const wasTimeout = o.放行超时;
+    // 清原末笔超时标记（超时标记只在末笔），新末笔保持原单超时状态或按概率新增
+    if (last._放行超时) {
+      last.放行超时 = 0; last._放行超时 = false;
+      modifiedRows.push(last);
+    }
+    const rec = {
+      申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
+      实际放行门岗: gate, 放行人姓名: pick(DEMO.people),
+      实际放行时间: now.format(fmt), 放行状态: Math.random() < 0.06 ? "異常" : "正常",
+      放行超时: wasTimeout ? 1 : (Math.random() < 0.25 ? 1 : 0),
+      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
+    };
+    const newRow = normalizeRow(rec);
+    newRows.push(newRow); rows.push(newRow);
+    feedRows.push(newRow); feedText = wasTimeout ? "在途超时 · 继续流转" : "途经新门岗";
+  } else if (action === "arrive") {
+    // ③ 随机选一张在途单，到达流入门岗完成放行（可能直接接收）
+    const o = inTransit[Math.floor(Math.random() * inTransit.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const last = recs[recs.length - 1];
+    const wasTimeout = o.放行超时;
+    if (last._放行超时) {
+      last.放行超时 = 0; last._放行超时 = false;
+      modifiedRows.push(last);
+    }
+    const rec = {
+      申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
+      实际放行门岗: o.流入门岗, 放行人姓名: pick(DEMO.people),
+      实际放行时间: now.format(fmt), 放行状态: "正常",
+      放行超时: wasTimeout ? 1 : (Math.random() < 0.12 ? 1 : 0),
+      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
+    };
+    // 40% 概率到达后立即完成接收
+    if (Math.random() < 0.4) {
+      rec.接收时间 = now.add(Math.floor(Math.random() * 20) + 5, "minute").format(fmt);
+      rec.接收状态 = "正常";
+      rec.接收人姓名 = pick(DEMO.people);
+      rec.接收人部门 = pick(DEMO.depts);
+      rec.接收超时 = Math.random() < 0.2 ? 1 : 0;
+    }
+    const newRow = normalizeRow(rec);
+    newRows.push(newRow); rows.push(newRow);
+    feedRows.push(newRow);
+    feedText = rec.接收时间 ? (wasTimeout ? "到达流入门岗（超时）·已接收" : "到达流入门岗 · 已接收") : (wasTimeout ? "到达流入门岗（超时）" : "到达流入门岗");
+  } else if (action === "receive") {
+    // ④ 随机选一张已到达未接收单，执行接收动作
+    const o = arrivedUnrecv[Math.floor(Math.random() * arrivedUnrecv.length)];
+    const recs = rows.filter(r => r.放行单号 === o.单号);
+    const rec = recs.find(r => r._已到达) || recs[recs.length - 1];
+    rec.接收时间 = now.add(Math.floor(Math.random() * 30) + 1, "minute").format(fmt);
+    rec.接收状态 = "正常";
+    rec.接收人姓名 = pick(DEMO.people);
+    rec.接收人部门 = pick(DEMO.depts);
+    rec.接收超时 = Math.random() < 0.25 ? 1 : 0;
+    // 重算派生字段（_接收日期 / _接收超时未接收 等）
+    const idx = rows.indexOf(rec);
+    const newRow = normalizeRow(rec);
+    newRow._rowId = rec._rowId;   // 保留行 ID，表格按 ID 增量更新
+    rows[idx] = newRow;
+    modifiedRows.push(newRow);
+    feedRows.push(newRow);
+    feedText = newRow._接收超时 ? "完成接收（接收超时）" : "完成接收";
+  }
+
+  invalidateStats();          // 数据已变，失效缓存
+  const S = computeStats();
+  refreshCards();             // 增量刷新各卡片（KPI/图表/异常卡）
+  if (detailTable) {
+    if (newRows.length) detailTable.addData(newRows, true);
+    if (modifiedRows.length) detailTable.updateData(modifiedRows);
+  }
+  if (feedRows.length) pushFeedItems(feedRows, feedText);
+  updateFileMeta(S);
+  $("liveTime").textContent = dayjs().format("HH:mm:ss");
+}
+
+// ---------- 导出：分析结果 Excel ----------
+$("btnExportExcel").onclick = async () => {
+  await xlsxReady;
+  const S = computeStats();
+  const wb = XLSX.utils.book_new();
+  const kpi = [["指标", "数值"],
+    ["放行单总数", S.orderCount], ["放行记录总数", S.total], ["特级安保单", S.specialOrders],
+    ["在途超时未放行单", S.transitTimeoutOrders.length], ["超时未接收单", S.receiveTimeoutOrders.length],
+    ["放行异常", S.abnormal], ["放行结案完成率", (S.closeRate * 100).toFixed(1) + "%"]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpi), "汇总指标");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+    S.transitTimeoutOrders.map(o => ({ 放行单号: o.单号, 类型: o.特保 ? "特级安保单" : "普通单", 申请部门: o.申请部门, 流入门岗: o.流入门岗, 物品分类: o.物品分类, 记录数: o.记录数 }))), "在途超时未放行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+    S.receiveTimeoutOrders.map(o => ({ 放行单号: o.单号, 类型: o.特保 ? "特级安保单" : "普通单", 申请部门: o.申请部门, 流入门岗: o.流入门岗, 物品分类: o.物品分类, 记录数: o.记录数 }))), "超时未接收");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["时间", "申请量"], ...S.trend]), "时间趋势");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deptTop.map(d => ({ 部门: d.name, 单数: d.value }))), "部门排行");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(stripPrivate)), "明细数据");
+  XLSX.writeFile(wb, "物品放行监控分析结果.xlsx");
+  toast("分析结果已导出 ✅");
+};
+
+// ---------- 导出：转存为 CSV（离线、分块生成；下次加载该 CSV 解析快约 20 倍） ----------
+$("btnToCsv").onclick = async () => {
+  if (!rows.length) { toast("请先加载数据", false); return; }
+  const cols = _visibleCols || computeVisibleCols(rows);
+  showLoading("正在生成 CSV…");
+  await yieldUI(30);
+  const esc = v => {
+    v = (v == null ? "" : (v instanceof Date ? dayjs(v).format("YYYY-MM-DD HH:mm:ss") : String(v)));
+    return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  const parts = [cols.join(",")];
+  const n = rows.length, CH = 10000;
+  for (let s = 0; s < n; s += CH) {
+    const end = Math.min(s + CH, n);
+    let buf = "";
+    for (let i = s; i < end; i++) { const r = rows[i], line = []; for (let k = 0; k < cols.length; k++) line.push(esc(r[cols[k]])); buf += "\n" + line.join(","); }
+    parts.push(buf);
+    setLoadingProgress(end / n * 100, `正在生成 CSV… ${end.toLocaleString()} / ${n.toLocaleString()} 行`);
+    await yieldUI(0);
+  }
+  const blob = new Blob(["\ufeff" + parts.join("")], { type: "text/csv;charset=utf-8" });   // BOM 保证 Excel 正确识别 UTF-8
+  const base = (currentFileName || "放行数据").replace(/\.[^.]+$/, "");
+  saveAs(blob, base + "_转存.csv");
+  hideLoading();
+  toast("已转存为 CSV，下次加载该文件解析更快 ✅");
+};
+
+// ---------- 导出：看板截图 ----------
+$("btnShot").onclick = () => {
+  toast("正在生成截图，请稍候…");
+  html2canvas($("dashboard"), { backgroundColor: "#eef1f6", scale: 2 }).then(canvas => {
+    canvas.toBlob(b => saveAs(b, "物品放行监控看板.png"));
+  });
+};
+
+// ---------- 重新上传 ----------
+$("btnReupload").onclick = () => {
+  stopLive();
+  demoMode = false;
+  $("dashboard").classList.add("hidden");
+  $("dropzone").classList.remove("hidden");
+  ["btnReupload", "btnExportExcel", "btnToCsv", "btnShot"].forEach(id => $(id).classList.add("hidden"));
+  $("fileInput").value = "";
+};
+
+// ---------- 示例数据生成（符合「物品放行监控」文件格式） ----------
+const DEMO = {
+  depts: ["MLB 撕石墨片 A線_ZZ", "品保IQC課_ZZ", "SMT 一課_ZZ", "組裝一課_ZZ", "倉儲物流課_ZZ", "設備維護課_ZZ", "研發一部_ZZ", "資訊部_ZZ"],
+  itemTypes: ["普通物品", "普通物品", "普通物品", "新产品A级物料", "新产品机台"],
+  categories: ["生產物料(非A類)", "耗材", "资讯物品", "设备", "新产品A级物料", "新产品机台"],
+  gates: ["ZZ-D07-1F-南一門", "ZZ-L07-1F-中碼頭崗", "ZZ-D03-1F-北二門", "ZZ-L02-1F-東一門", "ZZ-D05-2F-西三門", "ZZ-L09-1F-南二門"],
+  people: ["劉斌", "陳偉", "張麗", "王強", "李娜", "趙磊", "孫靜", "周濤"],
+  models: ["A2894", "B1032", "C7745", "D2210", "-"],
+  units: ["PCS", "台", "箱", "批"]
+};
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const pad = (n, l) => String(n).padStart(l, "0");
+
+// 模拟一张放行单（符合真实业务规则）：
+//   ① 一单建单后物品种类固定（物品分类整单唯一），多记录仅因经过不同门岗产生；
+//   ② 超时/接收状态记在最后一笔记录上（最后一笔决定整单状态）。
+// 返回 1~3 条记录的数组（每条 = 经过一个门岗）。
+function makeDemoOrder(time, seq) {
+  const special = Math.random() < 0.18;  // 约18%为特级安保单（单号前缀 WF9897）
+  const orderNo = `${special ? CONFIG.特保单号前缀 : CONFIG.普通单号标识}${time.format("YYMMDD")}${pad(1 + (seq % 999999), 6)}`;
+  // —— 整单固定属性：物品类型/分类/申请人/门岗路线 ——
+  const itemType = special ? pick(["新产品A级物料", "新产品机台"]) : "普通物品";
+  const category = special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品")));
+  const itemName = pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]);
+  const applicant = pick(DEMO.people), dept = pick(DEMO.depts), qty = Math.ceil(Math.random() * 200);
+  const from = pick(DEMO.gates);
+  let to = pick(DEMO.gates);
+  if (to === from) to = DEMO.gates[(DEMO.gates.indexOf(from) + 1) % DEMO.gates.length];
+  // —— 整单状态 ——
+  const arrived = Math.random() < 0.62;                       // 62% 已到达流入门岗
+  const releaseTimeout = Math.random() < (arrived ? 0.18 : 0.45);  // 放行超时（到达超时/在途超时）
+  const recv = arrived && Math.random() < 0.55;               // 已接收
+  const recvTimeout = arrived && Math.random() < 0.3;         // 接收超时（含已接收但超时 + 超时未接收）
+  // —— 门岗路径：流出门岗 → (中途门岗) → 流入门岗(已到达时) ——
+  const path = [from];
+  if (arrived) {
+    if (Math.random() < 0.4) { const mid = pick(DEMO.gates); if (mid !== from && mid !== to) path.push(mid); }
+    path.push(to);
+  } else if (Math.random() < 0.5) {
+    const mid = pick(DEMO.gates); if (mid !== from && mid !== to) path.push(mid);
+  }
+  // —— 逐门岗生成放行记录；超时标记只打在最后一笔 ——
+  const recs = [];
+  let t = time.add(Math.floor(Math.random() * 60), "minute");
+  path.forEach((gate, idx) => {
+    if (idx > 0) t = t.add(Math.floor(Math.random() * 120) + 30, "minute");
+    recs.push({
+      "申请日期": time.format("YYYY/MM/DD HH:mm:ss"),
+      "放行单号": orderNo,
+      "物品类型": itemType,
+      "申请人姓名": applicant,
+      "申请人部门": dept,
+      "放行单流出门岗": from,
+      "放行单流入门岗": to,
+      "实际放行门岗": gate,
+      "放行人姓名": pick(DEMO.people),
+      "实际放行时间": t.format("YYYY/MM/DD HH:mm:ss"),
+      "放行状态": Math.random() < 0.06 ? "異常" : "正常",
+      "放行超时": (idx === path.length - 1 && releaseTimeout) ? 1 : 0,
+      "接收时间": "",
+      "接收超时": 0,
+      "接收状态": "",
+      "接收人姓名": "",
+      "接收人部门": "",
+      "物品分类": category,
+      "放行物品名称": itemName,
+      "放行数量": qty,
+      "厂区": "鄭州"
+    });
+  });
+  // —— 接收字段仅记在最后一笔（接收发生在流入门岗） ——
+  if (arrived) {
+    const lastRec = recs[recs.length - 1];
+    if (recv) {
+      lastRec["接收时间"] = t.add(Math.floor(Math.random() * 90) + 10, "minute").format("YYYY/MM/DD HH:mm:ss");
+      lastRec["接收状态"] = "正常";
+      lastRec["接收人姓名"] = pick(DEMO.people);
+      lastRec["接收人部门"] = pick(DEMO.depts);   // 接收人属收货方，部门取随机（与申请部门可不同）
+    } else {
+      lastRec["接收状态"] = "未接收";
+    }
+    if (recvTimeout) lastRec["接收超时"] = 1;
+  }
+  return recs;
+}
+
+$("btnDemo").onclick = async () => {
+  const list = [];
+  for (let i = 0; i < 200; i++) {
+    list.push(...makeDemoOrder(dayjs().subtract(Math.floor(Math.random() * 5), "day")
+      .hour(8 + Math.floor(Math.random() * 12)).minute(Math.floor(Math.random() * 60)), i));
+  }
+  currentFileName = "示例数据（实时演示）";
+  demoMode = true;
+  await processData(list);
+  startLive();
+  toast("实时演示已启动：每秒模拟新数据流入 📡");
+};
+
+// ========== 动态背景系统（从 v5.1 移植，支持每主题不同背景风格） ==========
+var _bgReady = false;
+const bgSrc = document.getElementById('bg-source');
+const bgCtx = bgSrc.getContext('2d');
+const BDPR = Math.min(window.devicePixelRatio || 1, 1.5);
+let bgW = 0, bgH = 0, bgGrad = null;
+
+function sizeBg() {
+  bgW = window.innerWidth; bgH = window.innerHeight;
+  bgSrc.width = Math.round(bgW * BDPR); bgSrc.height = Math.round(bgH * BDPR);
+  bgSrc.style.width = bgW + 'px'; bgSrc.style.height = bgH + 'px';
+  bgCtx.setTransform(BDPR, 0, 0, BDPR, 0, 0);
+  buildBgGradient();
+}
+function buildBgGradient() {
+  const tc = window._themeBgColors || ['#f5f7fc','#edf1f9','#e5ebf5'];
+  bgGrad = bgCtx.createLinearGradient(bgW*0.2, 0, bgW*0.8, bgH);
+  bgGrad.addColorStop(0, tc[0]); bgGrad.addColorStop(0.45, tc[1]); bgGrad.addColorStop(1, tc[2]);
+}
+function makeSprite(r,g,b,size,alpha) {
+  const c = document.createElement('canvas'); c.width = size; c.height = size;
+  const x = c.getContext('2d');
+  const gr = x.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  gr.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gr.addColorStop(0.4, `rgba(${r},${g},${b},${alpha*0.4})`);
+  gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  x.fillStyle = gr; x.fillRect(0,0,size,size);
+  return c;
+}
+let megaSprites = [], megaOrbs = [];
+function initMegaOrbs(n, scale, alpha) {
+  const oc = window._themeBgOrbColors || [[0,113,227],[52,199,89],[94,92,230]];
+  megaSprites = []; for (let i = 0; i < Math.min(n, oc.length); i++) megaSprites.push(makeSprite(oc[i][0],oc[i][1],oc[i][2],512,alpha));
+  megaOrbs = [];
+  for (let i = 0; i < n; i++) megaOrbs.push({ fx: 0.15+Math.random()*0.7, fy: 0.15+Math.random()*0.7, s: scale*(0.8+Math.random()*0.4), sp: 0.00004+Math.random()*0.00004, ph: Math.random()*6.28, si: i%Math.max(1,megaSprites.length) });
+}
+function drawMegaOrbs(ctx,t) {
+  const dim = Math.min(bgW,bgH);
+  for (const o of megaOrbs) {
+    const x = bgW*o.fx + Math.sin(t*o.sp+o.ph)*bgW*0.14;
+    const y = bgH*o.fy + Math.cos(t*o.sp*0.65+o.ph)*bgH*0.10;
+    const sz = dim*o.s*(0.92+0.08*Math.sin(t*o.sp*1.2+o.ph));
+    ctx.drawImage(megaSprites[o.si]||megaSprites[0], x-sz/2, y-sz/2, sz, sz);
+  }
+}
+let auroraRibbons = [];
+function initRibbons(n) {
+  const oc = window._themeBgOrbColors || [[0,113,227],[52,199,89],[94,92,230]];
+  auroraRibbons = [];
+  for (let i = 0; i < n; i++) { const c = oc[i%oc.length];
+    auroraRibbons.push({ yFrac: 0.2+i*0.26, amp: 60+Math.random()*50, color: c, sp: 0.00003+Math.random()*0.00003, ph: Math.random()*6.28, freq: 0.002+Math.random()*0.001, thick: 80+Math.random()*60 });
+  }
+}
+function drawRibbons(ctx,t) {
+  for (const rb of auroraRibbons) {
+    const [cr,cg,cb] = rb.color;
+    const baseY = bgH*rb.yFrac + Math.sin(t*rb.sp*0.7+rb.ph)*bgH*0.04;
+    ctx.beginPath(); ctx.moveTo(-10, bgH+10);
+    for (let x = -10; x <= bgW+10; x += 10) { const y = baseY + Math.sin(x*rb.freq + t*rb.sp + rb.ph)*rb.amp + Math.sin(x*rb.freq*0.4 + t*rb.sp*1.6)*rb.amp*0.35; ctx.lineTo(x, y); }
+    for (let x = bgW+10; x >= -10; x -= 10) { const y = baseY + rb.thick + Math.sin(x*rb.freq*0.8 + t*rb.sp*1.2 + rb.ph+1)*rb.amp*0.4; ctx.lineTo(x, y); }
+    ctx.closePath();
+    const grd = ctx.createLinearGradient(0, baseY-rb.amp, 0, baseY+rb.thick+rb.amp);
+    grd.addColorStop(0, `rgba(${cr},${cg},${cb},0)`); grd.addColorStop(0.25, `rgba(${cr},${cg},${cb},0.07)`);
+    grd.addColorStop(0.5, `rgba(${cr},${cg},${cb},0.10)`); grd.addColorStop(0.75, `rgba(${cr},${cg},${cb},0.07)`);
+    grd.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+    ctx.fillStyle = grd; ctx.fill();
+  }
+}
+let orbSprites = [], orbs = [];
+function initOrbs(n, scale, alpha) {
+  const oc = window._themeBgOrbColors || [[0,113,227],[52,199,89],[94,92,230],[255,159,10],[0,184,212]];
+  orbSprites = []; for (let i = 0; i < Math.min(n, oc.length); i++) orbSprites.push(makeSprite(oc[i][0],oc[i][1],oc[i][2],256,alpha));
+  orbs = [];
+  for (let i = 0; i < n; i++) orbs.push({ fx:Math.random(), fy:Math.random(), s:scale*(0.7+Math.random()*0.6), sp:0.00007+Math.random()*0.00006, ph:Math.random()*6.28, si:i%Math.max(1,orbSprites.length) });
+}
+function drawOrbs(ctx,t) {
+  const dim = Math.min(bgW,bgH);
+  for (const o of orbs) {
+    const x = bgW*o.fx + Math.sin(t*o.sp+o.ph)*bgW*0.07;
+    const y = bgH*o.fy + Math.cos(t*o.sp*0.7+o.ph)*bgH*0.05;
+    const sz = dim*o.s*(0.9+0.1*Math.sin(t*o.sp*1.3+o.ph));
+    ctx.drawImage(orbSprites[o.si]||orbSprites[0], x-sz/2, y-sz/2, sz, sz);
+  }
+}
+let shapes = [];
+function initShapes(count, alpha) {
+  const oc = window._themeBgOrbColors || [[0,113,227],[52,199,89]];
+  shapes = []; const n = count || 0;
+  const types = ['circle','hexagon','triangle','square','ring','diamond'];
+  for (let i = 0; i < n; i++) { const col = oc[i%oc.length];
+    shapes.push({ x:Math.random()*bgW, y:Math.random()*bgH, sz:16+Math.random()*48, vx:(Math.random()-0.5)*0.25, vy:(Math.random()-0.5)*0.18, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.003, type:types[i%types.length], rgba:`rgba(${col[0]},${col[1]},${col[2]},${(alpha+Math.random()*0.04).toFixed(3)})`, ph:Math.random()*6.28 });
+  }
+}
+function polyPath(c,n,r) { c.beginPath(); for(let i=0;i<n;i++){const a=(Math.PI*2/n)*i-Math.PI/2; i===0?c.moveTo(Math.cos(a)*r,Math.sin(a)*r):c.lineTo(Math.cos(a)*r,Math.sin(a)*r);} c.closePath(); }
+function drawShape(c,s,t) {
+  c.save(); c.translate(s.x,s.y); c.rotate(s.rot);
+  const p = 1+0.12*Math.sin(t*0.0005+s.ph); c.scale(p,p);
+  c.fillStyle = s.rgba; c.strokeStyle = s.rgba; c.lineWidth = 1.5;
+  switch(s.type) {
+    case 'circle': c.beginPath(); c.arc(0,0,s.sz/2,0,Math.PI*2); c.fill(); break;
+    case 'hexagon': polyPath(c,6,s.sz/2); c.fill(); break;
+    case 'triangle': polyPath(c,3,s.sz/2); c.fill(); break;
+    case 'square': { const h=s.sz*0.42,r=4; c.beginPath(); c.moveTo(-h+r,-h); c.lineTo(h-r,-h); c.arcTo(h,-h,h,-h+r,r); c.lineTo(h,h-r); c.arcTo(h,h,h-r,h,r); c.lineTo(-h+r,h); c.arcTo(-h,h,-h,h-r,r); c.lineTo(-h,-h+r); c.arcTo(-h,-h,-h+r,-h,r); c.closePath(); c.fill(); break; }
+    case 'ring': c.beginPath(); c.arc(0,0,s.sz/2,0,Math.PI*2); c.lineWidth=2; c.stroke(); break;
+    case 'diamond': polyPath(c,4,s.sz/2); c.fill(); break;
+  }
+  c.restore();
+}
+function drawShapes(ctx,t) { for(const s of shapes){s.x+=s.vx;s.y+=s.vy;s.rot+=s.vr; const m=s.sz; if(s.x<-m)s.x=bgW+m;if(s.x>bgW+m)s.x=-m;if(s.y<-m)s.y=bgH+m;if(s.y>bgH+m)s.y=-m; drawShape(ctx,s,t);} }
+let caustics = [];
+function initCaustics(n) { caustics = []; for(let i=0;i<n;i++) caustics.push({x:Math.random()*bgW,y:Math.random()*bgH,sz:3+Math.random()*8,vx:(Math.random()-0.5)*0.12,vy:(Math.random()-0.5)*0.08,alpha:0.15+Math.random()*0.25,ph:Math.random()*6.28}); }
+function drawCaustics(ctx,t) { for(const c of caustics){c.x+=c.vx;c.y+=c.vy; if(c.x<-20)c.x=bgW+20;if(c.x>bgW+20)c.x=-20;if(c.y<-20)c.y=bgH+20;if(c.y>bgH+20)c.y=-20; const a=c.alpha*(0.4+0.6*Math.sin(t*0.0008+c.ph)); ctx.beginPath(); ctx.arc(c.x,c.y,c.sz,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${a.toFixed(3)})`; ctx.fill();} }
+let stars = [];
+function initStars(n) { stars = []; for(let i=0;i<n;i++) stars.push({x:Math.random()*bgW,y:Math.random()*bgH,sz:0.5+Math.random()*2.5,bright:0.3+Math.random()*0.7,sp:0.001+Math.random()*0.003,ph:Math.random()*6.28,twinkle:Math.random()>0.7}); }
+function drawStars(ctx,t) {
+  for(const s of stars) { const a = s.bright*(0.5+0.5*Math.sin(t*s.sp+s.ph)); ctx.beginPath(); ctx.arc(s.x,s.y,s.sz,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${a.toFixed(3)})`; ctx.fill();
+    if(s.twinkle && Math.sin(t*s.sp*2+s.ph)>0.92) { ctx.strokeStyle=`rgba(255,255,255,${(a*0.5).toFixed(3)})`; ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(s.x-s.sz*3,s.y); ctx.lineTo(s.x+s.sz*3,s.y); ctx.moveTo(s.x,s.y-s.sz*3); ctx.lineTo(s.x,s.y+s.sz*3); ctx.stroke(); }
+  }
+}
+function drawGrid(ctx,t) {
+  const oc = window._themeBgOrbColors || [[74,247,142]];
+  const [cr,cg,cb] = oc[0]; const spacing = 50;
+  ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.07)`; ctx.lineWidth = 0.5;
+  for (let x = 0; x < bgW; x += spacing) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,bgH); ctx.stroke(); }
+  for (let y = 0; y < bgH; y += spacing) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(bgW,y); ctx.stroke(); }
+  ctx.fillStyle = `rgba(${cr},${cg},${cb},0.14)`;
+  for (let x = 0; x < bgW; x += spacing) for (let y = 0; y < bgH; y += spacing) { const pulse = 0.06+0.06*Math.sin(t*0.001+x*0.01+y*0.01); ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.globalAlpha=pulse; ctx.fill(); }
+  ctx.globalAlpha = 1;
+  const flowPos = (t*0.05) % (bgW+bgH);
+  for (let i = 0; i < 3; i++) {
+    const p = (flowPos + i*(bgW+bgH)/3) % (bgW+bgH);
+    if (p < bgW) { ctx.beginPath(); ctx.arc(p, Math.floor(p/spacing)*spacing, 3, 0, Math.PI*2); ctx.fillStyle=`rgba(${cr},${cg},${cb},0.55)`; ctx.fill(); }
+    else { const yp = p - bgW; ctx.beginPath(); ctx.arc(Math.floor(yp/spacing)*spacing, yp, 3, 0, Math.PI*2); ctx.fillStyle=`rgba(${cr},${cg},${cb},0.55)`; ctx.fill(); }
+  }
+}
+let scanLines = [], neonDots = [];
+function initScanLines(n) { scanLines = []; for(let i=0;i<n;i++) scanLines.push({y:Math.random()*bgH,sp:0.3+Math.random()*0.8,width:0.5+Math.random()*1.5,alpha:0.025+Math.random()*0.04}); }
+function initNeonDots(n) {
+  const oc = window._themeBgOrbColors || [[74,247,142],[255,176,0]];
+  neonDots = []; for(let i=0;i<n;i++){const c=oc[i%oc.length]; neonDots.push({x:Math.random()*bgW,y:Math.random()*bgH,sz:1+Math.random()*3,color:c,sp:0.0005+Math.random()*0.002,ph:Math.random()*6.28,vy:(Math.random()-0.5)*0.15});}
+}
+function drawScanLines(ctx,t) { for(const s of scanLines){s.y+=s.sp;if(s.y>bgH)s.y=0; ctx.fillStyle=`rgba(255,255,255,${s.alpha})`; ctx.fillRect(0,s.y,bgW,s.width);} }
+function drawNeonDots(ctx,t) { for(const d of neonDots){d.y+=d.vy;if(d.y<0)d.y=bgH;if(d.y>bgH)d.y=0; const [r,g,b]=d.color; const a=0.3+0.4*Math.sin(t*d.sp+d.ph); ctx.beginPath();ctx.arc(d.x,d.y,d.sz,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${b},${a.toFixed(3)})`;ctx.fill(); ctx.shadowBlur=d.sz*4;ctx.shadowColor=`rgba(${r},${g},${b},${(a*0.5).toFixed(3)})`;ctx.fill();ctx.shadowBlur=0;} }
+let inkBlots = [];
+function initInkBlots(n) {
+  const oc = window._themeBgOrbColors || [[180,67,46]];
+  inkBlots = []; for(let i=0;i<n;i++){const c=oc[i%oc.length]; inkBlots.push({x:Math.random()*bgW,y:Math.random()*bgH,r:60+Math.random()*120,color:c,maxR:150+Math.random()*100,ph:Math.random()*6.28});}
+}
+function drawInkBlots(ctx,t) {
+  for(const b of inkBlots) {
+    const [r,g,b2] = b.color;
+    const curR = b.r + (b.maxR-b.r)*(0.5+0.5*Math.sin(t*0.0002+b.ph));
+    const grd = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,curR);
+    grd.addColorStop(0, `rgba(${r},${g},${b2},0.05)`); grd.addColorStop(0.5, `rgba(${r},${g},${b2},0.025)`); grd.addColorStop(1, `rgba(${r},${g},${b2},0)`);
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(b.x,b.y,curR,0,Math.PI*2); ctx.fill();
+    for(let j=0;j<3;j++){const ang=b.ph+j*2.09+t*0.0001; const len=curR*0.8; ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.quadraticCurveTo(b.x+Math.cos(ang)*len*0.5+Math.sin(t*0.0003+j)*20, b.y+Math.sin(ang)*len*0.5+Math.cos(t*0.0003+j)*20, b.x+Math.cos(ang)*len, b.y+Math.sin(ang)*len); ctx.strokeStyle=`rgba(${r},${g},${b2},0.035)`; ctx.lineWidth=1; ctx.stroke();}
+  }
+}
+let blobs = [];
+function initBlobs() {
+  const oc = window._themeBgOrbColors || [[124,92,255],[103,232,249],[167,139,250]];
+  blobs = []; for(let i=0;i<6;i++){const c=oc[i%oc.length]; blobs.push({x:Math.random()*bgW,y:Math.random()*bgH,r:100+Math.random()*150,color:c,sp:0.00003+Math.random()*0.00004,ph:Math.random()*6.28,points:5+Math.floor(Math.random()*3)});}
+}
+function drawBlobs(ctx,t) {
+  for(const b of blobs) {
+    const [r,g,b2] = b.color;
+    const cx = b.x + Math.sin(t*b.sp+b.ph)*bgW*0.08;
+    const cy = b.y + Math.cos(t*b.sp*0.7+b.ph)*bgH*0.06;
+    ctx.beginPath();
+    for(let i=0;i<=b.points*10;i++){
+      const ang = (i/(b.points*10))*Math.PI*2;
+      const wobble = b.r + Math.sin(ang*b.points+t*0.0008+b.ph)*b.r*0.2 + Math.sin(ang*(b.points+1)+t*0.0006)*b.r*0.1;
+      const px = cx + Math.cos(ang)*wobble;
+      const py = cy + Math.sin(ang)*wobble;
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,b.r*1.3);
+    grd.addColorStop(0, `rgba(${r},${g},${b2},0.15)`); grd.addColorStop(0.6, `rgba(${r},${g},${b2},0.07)`); grd.addColorStop(1, `rgba(${r},${g},${b2},0)`);
+    ctx.fillStyle = grd; ctx.fill();
+  }
+}
+let petals = [];
+function initPetals(n) {
+  const oc = window._themeBgOrbColors || [[244,114,182],[251,113,133]];
+  petals = []; for(let i=0;i<n;i++){const c=oc[i%oc.length]; petals.push({x:Math.random()*bgW,y:Math.random()*bgH,sz:8+Math.random()*16,color:c,vx:(Math.random()-0.5)*0.3,vy:0.15+Math.random()*0.3,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.01,ph:Math.random()*6.28,type:Math.random()>0.5?'petal':'leaf'});}
+}
+function drawPetals(ctx,t) {
+  for(const p of petals) {
+    p.x += p.vx + Math.sin(t*0.0005+p.ph)*0.3; p.y += p.vy; p.rot += p.vr;
+    if(p.y > bgH+30) { p.y = -30; p.x = Math.random()*bgW; }
+    if(p.x < -30) p.x = bgW+30; if(p.x > bgW+30) p.x = -30;
+    const [r,g,b] = p.color;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.15)`;
+    if(p.type==='petal') { ctx.beginPath(); ctx.ellipse(0,0,p.sz*0.4,p.sz,0,0,Math.PI*2); ctx.fill(); }
+    else { ctx.beginPath(); ctx.ellipse(0,0,p.sz*0.25,p.sz*0.8,0.3,0,Math.PI*2); ctx.fill(); }
+    ctx.restore();
+  }
+}
+// ========== 主题背景数据（9 主题 + 默认，从 v5.1/v5.2 移植） ==========
+const THEME_BG_DEFS = {
+  "default": {"ltGrad": ["#f5f7fc","#edf1f9","#e5ebf5"], "dkGrad": ["#0d1117","#161b22","#0d1117"], "ltOrbs": [[0,113,227],[52,199,89],[94,92,230],[255,159,10],[0,184,212]], "dkOrbs": [[88,166,255],[63,185,80],[188,140,255],[210,153,34],[57,210,224]], "bgStyle": "orbs"},
+  "glass": {"ltGrad": ["#f5f7fc","#edf1f9","#e5ebf5"], "dkGrad": ["#0d1117","#161b22","#0d1117"], "ltOrbs": [[0,113,227],[52,199,89],[94,92,230],[255,159,10],[0,184,212]], "dkOrbs": [[88,166,255],[63,185,80],[188,140,255],[210,153,34],[57,210,224]], "bgStyle": "orbs"},
+  "material": {"ltGrad": ["#fff8fd","#fef7ff","#f5eeff"], "dkGrad": ["#141218","#1d1b20","#141218"], "ltOrbs": [[103,80,164],[125,82,96],[234,220,255],[56,102,32],[0,104,116]], "dkOrbs": [[208,188,255],[239,184,200],[124,212,100],[79,216,235],[232,202,78]], "bgStyle": "blob"},
+  "fluent": {"ltGrad": ["#fafafa","#f3f3f3","#ebebeb"], "dkGrad": ["#1b1b1b","#242424","#1b1b1b"], "ltOrbs": [[0,120,212],[16,124,190],[92,45,145],[16,124,16],[0,133,117]], "dkOrbs": [[76,194,255],[0,120,212],[194,155,255],[108,203,95],[79,224,204]], "bgStyle": "acrylic"},
+  "brutal": {"ltGrad": ["#fffef8","#fffdf5","#fff8e1"], "dkGrad": ["#1a1a1a","#222222","#1a1a1a"], "ltOrbs": [[255,62,0],[0,64,255],[123,0,255],[255,136,0],[0,168,89]], "dkOrbs": [[255,107,53],[77,171,255],[179,102,255],[255,193,7],[74,222,128]], "bgStyle": "pop"},
+  "neumorph": {"ltGrad": ["#e8ecf2","#e0e5ec","#d8dde5"], "dkGrad": ["#1a1c20","#222428","#1a1c20"], "ltOrbs": [[108,99,255],[139,131,255],[46,204,113],[155,89,182],[26,188,156]], "dkOrbs": [[139,131,255],[108,99,255],[187,134,252],[79,216,235],[46,204,113]], "bgStyle": "soft"},
+  "clay": {"ltGrad": ["#fffaf2","#fef9f0","#fdf3e7"], "dkGrad": ["#1c1410","#261a14","#1c1410"], "ltOrbs": [[232,89,12],[247,103,7],[255,180,100],[47,158,68],[12,133,153]], "dkOrbs": [[255,140,66],[255,169,77],[255,180,100],[81,207,102],[34,184,207]], "bgStyle": "clay"},
+  "swiss": {"ltGrad": ["#ffffff","#ffffff","#f8f8f8"], "dkGrad": ["#0a0a0a","#111111","#0a0a0a"], "ltOrbs": [[214,40,40],[0,61,165],[0,122,51],[247,127,0],[92,45,145]], "dkOrbs": [[255,68,68],[68,136,255],[68,187,119],[255,170,51],[136,68,204]], "bgStyle": "clean"},
+  "terminal": {"ltGrad": ["#f7f7ef","#f2f2e9","#eaeadd"], "dkGrad": ["#0a120a","#060a06","#060a06"], "ltOrbs": [[10,125,51],[184,134,11],[192,57,43]], "dkOrbs": [[74,247,142],[255,176,0],[85,255,136]], "bgStyle": "synth"},
+  "aurora": {"ltGrad": ["#f2f3fa","#eceef6","#e2e5f0"], "dkGrad": ["#0e0e16","#08080d","#08080d"], "ltOrbs": [[124,92,255],[103,232,249],[167,139,250],[34,211,238],[139,92,246]], "dkOrbs": [[167,139,250],[103,232,249],[196,181,253],[34,211,238],[124,92,255]], "bgStyle": "auroraBg"},
+};
+// ========== 主题背景初始化 & 动画调度 ==========
+let bgAnimId = 0, _bgSkip = false;
+function getBgThemeKey() {
+  var attr = document.documentElement.getAttribute("data-theme");
+  return attr || "default";
+}
+function initThemeBg() {
+  let style = 'orbs';
+  try { const td = THEME_BG_DEFS[getBgThemeKey()]; if (td && td.bgStyle) style = td.bgStyle; } catch(e) {}
+  switch(style) {
+    case 'orbs':    initMegaOrbs(3,0.68,0.32); initRibbons(3); initOrbs(5,1.3,0.22); initShapes(18,0.06); initCaustics(10); break;
+    case 'blob':    initBlobs(); break;
+    case 'acrylic': initMegaOrbs(2,0.50,0.20); initOrbs(4,1.0,0.15); initShapes(12,0.05); initCaustics(8); break;
+    case 'pop':     initShapes(24,0.12); break;
+    case 'soft':    initBlobs(); initMegaOrbs(2,0.55,0.12); break;
+    case 'clay':    initBlobs(); initPetals(12); break;
+    case 'clean':   initOrbs(2,0.6,0.06); break;
+    case 'synth':   initNeonDots(50); initScanLines(3); initStars(40); break;
+    case 'auroraBg':initMegaOrbs(3,0.62,0.30); initStars(90); break;
+  }
+}
+function animBg(t) {
+  bgAnimId = requestAnimationFrame(animBg);
+  if (rows.length > CONFIG.大数据量阈值) { _bgSkip = !_bgSkip; if (_bgSkip) return; }
+  const ctx = bgCtx;
+  let style = 'orbs';
+  try { const td = THEME_BG_DEFS[getBgThemeKey()]; if (td && td.bgStyle) style = td.bgStyle; } catch(e) {}
+  ctx.clearRect(0, 0, bgW, bgH);
+  ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, bgW, bgH);
+  switch(style) {
+    case 'orbs':    drawMegaOrbs(ctx,t); drawRibbons(ctx,t); drawOrbs(ctx,t); drawShapes(ctx,t); drawCaustics(ctx,t); break;
+    case 'blob':    drawBlobs(ctx,t); break;
+    case 'acrylic': drawMegaOrbs(ctx,t); drawOrbs(ctx,t); drawShapes(ctx,t); drawCaustics(ctx,t); break;
+    case 'pop':     drawShapes(ctx,t); drawGrid(ctx,t); break;
+    case 'soft':    drawBlobs(ctx,t); drawMegaOrbs(ctx,t); break;
+    case 'clay':    drawBlobs(ctx,t); drawPetals(ctx,t); break;
+    case 'clean':   drawOrbs(ctx,t); break;
+    case 'synth':   drawGrid(ctx,t); drawNeonDots(ctx,t); drawScanLines(ctx,t); drawStars(ctx,t); break;
+    case 'auroraBg':drawMegaOrbs(ctx,t); drawStars(ctx,t); break;
+  }
+}
+function rebuildBgForTheme() {
+  if (!_bgReady) return;
+  const key = getBgThemeKey();
+  const td = THEME_BG_DEFS[key] || THEME_BG_DEFS["default"];
+  const isDark = (document.documentElement.getAttribute("data-mode") === "dark");
+  window._themeBgColors = isDark ? td.dkGrad : td.ltGrad;
+  window._themeBgOrbColors = isDark ? td.dkOrbs : td.ltOrbs;
+  if (!PERF.lite && typeof sizeBg === "function") { sizeBg(); initThemeBg(); }
+}
+// —— 背景动画：仅高画质模式启动 ——
+_bgReady = true;
+if (!PERF.lite) { rebuildBgForTheme(); if (!bgAnimId) bgAnimId = requestAnimationFrame(animBg); }
+applyPerfTag();
+// ---------- Page Visibility API: 标签页隐藏时暂停背景动画 ----------
+document.addEventListener("visibilitychange", () => {
+  if (PERF.lite) return;
+  if (document.hidden) {
+    if (bgAnimId) { cancelAnimationFrame(bgAnimId); bgAnimId = 0; }
+  } else {
+    if (!bgAnimId) bgAnimId = requestAnimationFrame(animBg);
+  }
+});
+// ---------- 窗口自适应（防抖；低性能模式不重建背景） ----------
+let _resizeTimer = 0;
+window.addEventListener("resize", () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!PERF.lite) { sizeBg(); initThemeBg(); }
+    resizeAllCardCharts();
+  }, 200);
+});
+// 注：背景画布改为 fixed 且仅视口尺寸后，文档高度变化无需重建，已移除 scroll 重建监听（消除滚动卡顿源）
+</script>
+</body>
+</html>

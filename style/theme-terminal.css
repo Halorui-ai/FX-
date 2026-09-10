@@ -1,0 +1,336 @@
+/* ==========================================================================
+   Terminal 终端风格主题覆盖文件
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="terminal" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-terminal.css">
+   特点：等宽字体、终端绿、零圆角、扁平无阴影、命令行提示符前缀
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="terminal"][data-mode="light"]{
+  --bg:#f2f2e9;
+  --bg2:#f7f7ef;
+  --bg3:#eaeadd;
+  --surface:rgba(251,251,242,0.85);
+  --surface2:rgba(244,244,232,0.72);
+  --surface-h:rgba(255,255,246,0.92);
+  --border-theme:#9db39d;
+  --border-theme2:#c3d1c3;
+  --line:rgba(26,46,26,0.12);
+  --txt:#1a2e1a;
+  --txt2:rgba(26,46,26,0.55);
+  --accent:#0a7d33;
+  --accent2:#0f9d4a;
+  --ok:#0a7d33;
+  --bad:#c0392b;
+  --warn:#b8860b;
+  --purple:#6a5acd;
+  --cyan:#0a7d33;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:0px;
+  --card-sh:none;
+  --card-sh-h:none;
+  --card-bd:1px solid var(--border-theme);
+  --btn-r:0px;
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="terminal"][data-mode="dark"]{
+  --bg:#060a06;
+  --bg2:#0a120a;
+  --bg3:#060a06;
+  --surface:rgba(12,20,12,0.85);
+  --surface2:rgba(16,26,16,0.72);
+  --surface-h:rgba(22,36,22,0.92);
+  --border-theme:#233223;
+  --border-theme2:#1a261a;
+  --line:rgba(201,220,201,0.12);
+  --txt:#c9dcc9;
+  --txt2:rgba(201,220,201,0.55);
+  --accent:#4af78e;
+  --accent2:#6affab;
+  --ok:#4af78e;
+  --bad:#ff5555;
+  --warn:#ffb000;
+  --purple:#b39ddb;
+  --cyan:#4af78e;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:0px;
+  --card-sh:none;
+  --card-sh-h:none;
+  --card-bd:1px solid var(--border-theme);
+  --btn-r:0px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="terminal"] html,
+[data-theme="terminal"]{
+  background:var(--bg)!important;
+}
+[data-theme="terminal"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:"Cascadia Code","JetBrains Mono",Consolas,"Courier New",monospace!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="terminal"] h1{font-weight:700!important;letter-spacing:-0.2px!important}
+[data-theme="terminal"] h1::before{
+  content:">_ "!important;
+  color:var(--accent)!important;
+  font-weight:700!important;
+}
+[data-theme="terminal"] .sub{color:var(--txt2)!important;font-size:12px!important}
+
+/* 数字 / 计数 / 时间戳继承等宽字体 */
+[data-theme="terminal"] .kpi .value,
+[data-theme="terminal"] .cardBody .kpiValue,
+[data-theme="terminal"] .kpi .kpiSub,
+[data-theme="terminal"] .cardBody .kpiSub,
+[data-theme="terminal"] .analyzeCard .ac-count,
+[data-theme="terminal"] .feedItem .t{font-family:inherit!important}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，终端风格使用 synth 背景模式） */
+[data-theme="terminal"] .lg-tint,
+[data-theme="terminal"] .lg-edge{display:none!important}
+
+/* ========== 4. 按钮系统 → 终端扁平按钮 ========== */
+[data-theme="terminal"] button,
+[data-theme="terminal"] .dimBtn,
+[data-theme="terminal"] .catFilter{
+  border-radius:0!important;
+  background:transparent!important;
+  border:1px solid var(--border-theme)!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:.8px!important;
+  font-size:12px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:border-color .18s ease, color .18s ease!important;
+}
+[data-theme="terminal"] button:hover,
+[data-theme="terminal"] .dimBtn:hover,
+[data-theme="terminal"] .catFilter:hover{
+  border-color:var(--accent)!important;
+  color:var(--accent)!important;
+}
+[data-theme="terminal"] button.primary{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+}
+[data-theme="terminal"] .dimBtn.active,
+[data-theme="terminal"] .catFilter.active{
+  border-color:var(--accent)!important;
+  color:var(--accent)!important;
+  box-shadow:inset 0 0 0 1px var(--accent)!important;
+}
+
+/* ========== 5. 顶栏 / 实时栏 / 上传区 → 零圆角面板 ========== */
+[data-theme="terminal"] #topbar,
+[data-theme="terminal"] #liveFeed,
+[data-theme="terminal"] #dropzone{
+  border-radius:0!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="terminal"] #fileMeta b{color:var(--accent)!important}
+[data-theme="terminal"] #liveBadge{border:1px solid var(--border-theme)!important;border-radius:0!important;background:transparent!important;color:var(--ok)!important;text-transform:uppercase!important;letter-spacing:.5px!important}
+[data-theme="terminal"] .liveDot{background:var(--ok)!important}
+[data-theme="terminal"] #liveFeed .feedLabel{color:var(--ok)!important;border-right:1px solid var(--line)!important;text-transform:uppercase!important;letter-spacing:.5px!important}
+
+[data-theme="terminal"] .feedItem{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:0!important;
+}
+[data-theme="terminal"] .feedItem b{color:var(--txt)!important}
+[data-theme="terminal"] .feedItem .t,
+[data-theme="terminal"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="terminal"] .stBadge{
+  border:1px solid currentColor!important;
+  border-radius:0!important;
+  text-transform:uppercase!important;
+  letter-spacing:.5px!important;
+  font-size:10px!important;
+}
+[data-theme="terminal"] .st-ok{color:var(--ok)!important}
+[data-theme="terminal"] .st-bad{color:var(--bad)!important}
+[data-theme="terminal"] .st-warn{color:var(--warn)!important}
+[data-theme="terminal"] .st-sp{color:var(--purple)!important}
+
+/* ========== 6. 上传区 ========== */
+[data-theme="terminal"] #dropzone.over{border-color:var(--accent)!important}
+[data-theme="terminal"] #dropzone p{color:var(--txt2)!important}
+[data-theme="terminal"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 7. KPI 卡片 → 扁平终端卡 ========== */
+[data-theme="terminal"] .kpi{
+  border-radius:0!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:border-color .2s ease!important;
+}
+/* 顶部全宽 2px 高亮线 */
+[data-theme="terminal"] .kpi::before,
+[data-theme="terminal"] .cardSlot::before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;left:0!important;right:auto!important;bottom:auto!important;
+  width:100%!important;height:2px!important;
+  background:var(--accent)!important;
+  border-radius:0!important;
+}
+[data-theme="terminal"] .kpi .label,
+[data-theme="terminal"] .cardBody .kpiLabel{
+  text-transform:uppercase!important;
+  letter-spacing:1.5px!important;
+  font-size:10px!important;
+  color:var(--txt2)!important;
+}
+[data-theme="terminal"] .kpi .value,
+[data-theme="terminal"] .cardBody .kpiValue{
+  color:var(--accent)!important;
+  font-weight:700!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="terminal"] .kpi .kpiSub,
+[data-theme="terminal"] .cardBody .kpiSub{color:var(--txt2)!important}
+[data-theme="terminal"] .kpi .kpiSub b,
+[data-theme="terminal"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="terminal"] .kpi:hover,
+[data-theme="terminal"] .cardSlot:hover{border-color:var(--accent)!important}
+
+/* ========== 8. 图表 / 分析 / 明细卡 ========== */
+[data-theme="terminal"] .chartCard,
+[data-theme="terminal"] .analyzeCard,
+[data-theme="terminal"] #detailCard,
+[data-theme="terminal"] .cardSlot{
+  border-radius:0!important;
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:border-color .2s ease!important;
+}
+[data-theme="terminal"] .chartCard:hover,
+[data-theme="terminal"] .analyzeCard:hover,
+[data-theme="terminal"] #detailCard:hover,
+[data-theme="terminal"] .cardSlot:hover{border-color:var(--accent)!important}
+[data-theme="terminal"] .chartCard h3,
+[data-theme="terminal"] .analyzeCard h3,
+[data-theme="terminal"] #detailCard h3,
+[data-theme="terminal"] .cardTitle{
+  color:var(--txt)!important;
+  font-family:inherit!important;
+  border-left:2px solid var(--accent)!important;
+  padding-left:8px!important;
+}
+[data-theme="terminal"] .analyzeCard .ac-count{color:var(--ac,var(--warn))!important}
+[data-theme="terminal"] .analyzeCard .ac-more{color:var(--accent)!important}
+
+/* ========== 9. 明细表 ========== */
+[data-theme="terminal"] .tabulator{
+  background:var(--surface)!important;
+  border:1px solid var(--border-theme)!important;
+  border-radius:0!important;
+}
+[data-theme="terminal"] .tabulator .tabulator-header{
+  background:var(--surface2)!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:.5px!important;
+  font-size:11px!important;
+  border-bottom:1px solid var(--border-theme)!important;
+}
+[data-theme="terminal"] .tabulator .tabulator-row{
+  background:transparent!important;color:var(--txt)!important;border-bottom:1px solid var(--line)!important;
+}
+[data-theme="terminal"] .tabulator .tabulator-row:hover{background:var(--surface-h)!important}
+[data-theme="terminal"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="terminal"] .tabulator .tabulator-page{
+  background:transparent!important;border:1px solid var(--border-theme)!important;color:var(--txt)!important;border-radius:0!important;text-transform:uppercase!important;
+}
+[data-theme="terminal"] .tabulator .tabulator-page.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+
+/* ========== 10. 二级详情面板 ========== */
+[data-theme="terminal"] #detailOverlay{background:rgba(0,0,0,0.5)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+[data-theme="terminal"] #detailPanel{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;
+}
+[data-theme="terminal"] #detailPanelTitle::before{background:var(--accent)!important;border-radius:0!important}
+[data-theme="terminal"] .detailChip{
+  background:var(--surface2)!important;border:1px solid var(--border-theme2)!important;border-radius:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+[data-theme="terminal"] .detailChip .dc-label{color:var(--txt2)!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.5px!important}
+[data-theme="terminal"] .detailChip .dc-value{color:var(--txt)!important;font-weight:700!important}
+
+/* ========== 11. 模块化卡片 / 选择器 ========== */
+[data-theme="terminal"] .cardBody .kpiValue{color:var(--txt)!important;font-weight:700!important}
+[data-theme="terminal"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="terminal"] .cardRemove{border:1px solid var(--border-theme)!important;background:transparent!important;border-radius:0!important;box-shadow:none!important}
+[data-theme="terminal"] .cardRemove:hover{color:var(--bad)!important;border-color:var(--bad)!important}
+
+[data-theme="terminal"] #themeSelect,
+[data-theme="terminal"] #layoutSelect{
+  border-radius:0!important;background:var(--bg)!important;border:1px solid var(--border-theme)!important;color:var(--txt)!important;text-transform:uppercase!important;letter-spacing:.8px!important;font-size:12px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;
+}
+[data-theme="terminal"] #themeSelect option,
+[data-theme="terminal"] #layoutSelect option{background:var(--bg)!important;color:var(--txt)!important}
+
+/* ========== 12. 加载遮罩 / 性能标签 ========== */
+[data-theme="terminal"] #loadingOverlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+[data-theme="terminal"][data-mode="dark"] #loadingOverlay{background:rgba(6,10,6,0.7)!important}
+[data-theme="terminal"][data-mode="light"] #loadingOverlay{background:rgba(242,242,233,0.75)!important}
+[data-theme="terminal"] .loadingCard{
+  background:var(--surface)!important;border:1px solid var(--border-theme)!important;border-radius:0!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important;
+}
+[data-theme="terminal"] .spinner{border-color:var(--border-theme)!important;border-top-color:var(--accent)!important}
+[data-theme="terminal"] #loadingText{color:var(--txt)!important;text-transform:uppercase!important;letter-spacing:.5px!important}
+[data-theme="terminal"] #progressBar{background:var(--accent)!important}
+[data-theme="terminal"] #perfTag{
+  background:transparent!important;border:1px solid var(--border-theme)!important;border-radius:0!important;color:var(--txt2)!important;text-transform:uppercase!important;letter-spacing:.5px!important;
+}
+
+/* ========== 13. 滚动条（块状终端风） ========== */
+[data-theme="terminal"]::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="terminal"]::-webkit-scrollbar-track{background:var(--bg2)}
+[data-theme="terminal"]::-webkit-scrollbar-thumb{background:var(--border-theme);border-radius:0}
+[data-theme="terminal"]::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* ========== 14. 深色模式数字可读性修复 ========== */
+[data-theme="terminal"][data-mode="dark"] .kpi .value,
+[data-theme="terminal"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="terminal"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="terminal"][data-mode="dark"] .detailChip .dc-value{
+  color:var(--txt)!important;
+  opacity:1!important;
+}
+/* 终端暗色：KPI 数字用高亮绿 + 发光 */
+[data-theme="terminal"][data-mode="dark"] .kpi .value,
+[data-theme="terminal"][data-mode="dark"] .cardBody .kpiValue{
+  color:#4af78e!important;
+  text-shadow:0 0 8px rgba(74,247,142,0.55)!important;
+}
+[data-theme="terminal"][data-mode="dark"] .cardBody .kpiValue{
+  color:#4af78e!important;
+}
+/* 亮色模式：无 text-shadow */
+[data-theme="terminal"][data-mode="light"] .kpi .value,
+[data-theme="terminal"][data-mode="light"] .cardBody .kpiValue{
+  text-shadow:none!important;
+}

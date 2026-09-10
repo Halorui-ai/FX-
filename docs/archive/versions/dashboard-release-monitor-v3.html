@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>物品放行监控数据看板 v2.0（实时动态版）</title>
-<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
-<link rel="stylesheet" href="./lib/toastify.css">
+<title>物品放行监控数据看板 v3.0（性能自适应版）</title>
+<link rel="stylesheet" href="../../../lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="../../../lib/toastify.css">
 <style>
 /* ========== 全局样式（液态玻璃风） ========== */
 :root{
@@ -89,7 +89,7 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 #errPanel li{color:#c0392b;margin-left:20px;line-height:1.8}
 
 /* ========== 动态背景画布 + 玻璃层 ========== */
-#bg-source{position:absolute; left:0; top:0; z-index:-1; pointer-events:none;}
+#bg-source{position:fixed; left:0; top:0; z-index:-1; pointer-events:none;}
 .lg-tint,.lg-edge{position:absolute !important;}
 .lg-tint  {inset:0; z-index:1 !important; pointer-events:none; border-radius:inherit;
   background:linear-gradient(135deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.02) 45%, rgba(255,255,255,.06) 100%);}
@@ -235,6 +235,47 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
 #loadingText{font-size:14px;color:var(--txt);margin-bottom:14px}
 .progressTrack{width:230px;height:6px;border-radius:3px;background:rgba(0,0,0,0.08);overflow:hidden}
 #progressBar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .3s ease}
+
+/* ========== 性能模式指示与切换 ========== */
+#perfTag{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:20px;font-size:11px;
+  border:1px solid var(--line);background:rgba(255,255,255,0.5);color:var(--txt2)}
+#perfTag b{font-weight:600}
+#perfTag.lite b{color:var(--warn)}
+#perfTag.full b{color:var(--ok)}
+
+/* ========== 低性能模式（老电脑 / 小内存）降级：去毛玻璃 + 纯色卡片 + 静态背景 + 关高开销动画 ========== */
+body.perf-lite #bg-source{display:none}
+body.perf-lite{background:linear-gradient(160deg,#f5f7fc 0%,#edf1f9 50%,#e5ebf5 100%);background-attachment:fixed}
+body.perf-lite #topbar,
+body.perf-lite #liveFeed,
+body.perf-lite #dropzone,
+body.perf-lite .kpi,
+body.perf-lite .chartCard,
+body.perf-lite .analyzeCard,
+body.perf-lite #detailCard,
+body.perf-lite .loadingCard,
+body.perf-lite button,
+body.perf-lite #detailPanel,
+body.perf-lite #detailOverlay,
+body.perf-lite #loadingOverlay,
+body.perf-lite .detailChip,
+body.perf-lite .dimBtn,
+body.perf-lite .catFilter{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.perf-lite .kpi,
+body.perf-lite .chartCard,
+body.perf-lite .analyzeCard,
+body.perf-lite #detailCard{background:rgba(255,255,255,0.82)!important}
+body.perf-lite #topbar,body.perf-lite #liveFeed,body.perf-lite #dropzone{background:rgba(255,255,255,0.86)!important}
+body.perf-lite #detailPanel{background:rgba(248,250,253,0.98)!important}
+body.perf-lite #detailOverlay{background:rgba(0,0,0,0.30)!important}
+body.perf-lite #loadingOverlay{background:rgba(238,241,246,0.92)!important}
+/* 关闭卡片 hover 位移与过渡（减少重排重绘） */
+body.perf-lite .chartCard,body.perf-lite .kpi,body.perf-lite .analyzeCard{transition:none!important}
+body.perf-lite .chartCard:hover,body.perf-lite .kpi:hover,body.perf-lite .analyzeCard:hover{transform:none!important;box-shadow:0 4px 24px rgba(0,0,0,0.04)!important}
+/* 关闭动态栏流入动画 */
+body.perf-lite .feedItem,body.perf-lite .feedItem--new,body.perf-lite .feedItem--out{animation:none!important}
+/* 低性能模式下不注入玻璃折射层 */
+body.perf-lite .lg-tint,body.perf-lite .lg-edge{display:none!important}
 </style>
 </head>
 <body>
@@ -250,9 +291,11 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
     <div class="metaRow">
       <span id="fileMeta"></span>
       <span id="liveBadge" class="hidden"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b id="liveTime">--:--:--</b></span>
+      <span id="perfTag" title="当前渲染模式"></span>
     </div>
   </div>
   <div class="actions">
+    <button id="btnPerf" title="切换渲染性能模式（高画质 / 流畅）">⚙️ 性能模式</button>
     <button id="btnLive" class="hidden">⏸ 暂停刷新</button>
     <button id="btnReupload" class="hidden">📂 重新上传</button>
     <button id="btnExportExcel" class="hidden">📊 导出分析结果 Excel</button>
@@ -355,20 +398,20 @@ button.primary:hover{filter:brightness(1.06);color:#fff}
   </div>
 </div>
 
-<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v2.0（实时动态版）</div>
+<div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v3.0（性能自适应版）</div>
 
 <!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
-<script src="./lib/echarts.min.js"></script>
-<script src="./lib/echarts-liquidfill.min.js"></script>
-<script src="./lib/xlsx.full.min.js"></script>
-<script src="./lib/papaparse.min.js"></script>
-<script src="./lib/dayjs.min.js"></script>
-<script src="./lib/lodash.min.js"></script>
-<script src="./lib/countUp.umd.js"></script>
-<script src="./lib/tabulator.min.js"></script>
-<script src="./lib/toastify.js"></script>
-<script src="./lib/html2canvas.min.js"></script>
-<script src="./lib/FileSaver.min.js"></script>
+<script src="../../../lib/echarts.min.js"></script>
+<script src="../../../lib/echarts-liquidfill.min.js"></script>
+<script src="../../../lib/xlsx.full.min.js"></script>
+<script src="../../../lib/papaparse.min.js"></script>
+<script src="../../../lib/dayjs.min.js"></script>
+<script src="../../../lib/lodash.min.js"></script>
+<script src="../../../lib/countUp.umd.js"></script>
+<script src="../../../lib/tabulator.min.js"></script>
+<script src="../../../lib/toastify.js"></script>
+<script src="../../../lib/html2canvas.min.js"></script>
+<script src="../../../lib/FileSaver.min.js"></script>
 
 <script>
 /* =====================================================================
@@ -419,6 +462,37 @@ const CONFIG = {
   // —— 实时演示模式 ——
   实时演示: { 刷新间隔毫秒: 1000, 每批最小条数: 1, 每批最大条数: 1, 动态栏保留条数: 4 }
 };
+
+/* =====================================================================
+ * ★★★ 性能自适应层（PERF）★★★
+ * 依据硬件能力（内存 / CPU 核心）+ 用户手动选择，决定渲染档位：
+ *   full  = 完整液态玻璃（动态背景 + 毛玻璃）
+ *   lite  = 老电脑友好（静态背景 + 纯色卡片 + 关高开销动画）
+ * 手动选择记忆在 localStorage.perfMode，优先级高于自动判定。
+ * ===================================================================== */
+const PERF = (() => {
+  const mem = navigator.deviceMemory || 8;          // 单位 GB，浏览器不支持时按 8 估计
+  const cores = navigator.hardwareConcurrency || 4; // 逻辑核心数
+  // 自动判定：内存 ≤4GB 或 核心 ≤2 → 判定为低性能设备
+  const auto = (mem <= 4 || cores <= 2) ? "lite" : "full";
+  let saved = null;
+  try { saved = localStorage.getItem("perfMode"); } catch (e) { }
+  const mode = (saved === "lite" || saved === "full") ? saved : auto;
+  return { mem, cores, auto, mode, manual: !!saved, lite: mode === "lite" };
+})();
+// 尽早应用降级 class，避免首帧渲染重开销毛玻璃
+document.body.classList.toggle("perf-lite", PERF.lite);
+function applyPerfTag() {
+  const el = $("perfTag"); if (!el) return;
+  el.className = PERF.lite ? "lite" : "full";
+  el.innerHTML = `🖥️ <b>${PERF.lite ? "流畅模式" : "高画质模式"}</b>`;
+  el.title = `当前：${PERF.lite ? "流畅（适配老电脑/小内存）" : "高画质（完整液态玻璃）"} · 检测：内存${PERF.mem}GB/${PERF.cores}核 · ${PERF.manual ? "手动选择" : "自动判定"}`;
+}
+function togglePerfMode() {
+  const next = PERF.lite ? "full" : "lite";
+  try { localStorage.setItem("perfMode", next); } catch (e) { }
+  location.reload();  // 重新加载以正确重建图表 DPR 与背景，确保档位彻底切换
+}
 
 /* =====================================================================
  * 以下为程序逻辑，一般不需要修改
@@ -477,6 +551,8 @@ function setLoadingProgress(pct, msg) {
   if (msg) $("loadingText").textContent = msg;
 }
 function hideLoading() { $("loadingOverlay").classList.remove("show"); }
+// 让出主线程并给浏览器一次绘制机会（用于进度条真实刷新）
+const yieldUI = (ms = 0) => new Promise(r => setTimeout(r, ms));
 
 function handleFile(file) {
   const ext = file.name.split(".").pop().toLowerCase();
@@ -486,28 +562,30 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.onload = async e => {
     try {
-      setLoadingProgress(15, "正在解析文件结构…");
-      await new Promise(r => setTimeout(r, 30));  // 让遮罩先完成渲染再执行重活
+      setLoadingProgress(8, "正在读取文件内容…");
+      await yieldUI(30);  // 让遮罩与进度先完成绘制
       let list;
       if (ext === "csv") {
+        setLoadingProgress(12, "正在解码 CSV…");
+        await yieldUI(50);
         const text = decodeText(e.target.result);
         const aoa = Papa.parse(text, { skipEmptyLines: true }).data;
         const hIdx = findHeaderRow(aoa);
         if (hIdx < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
         const header = aoa[hIdx].map(h => String(h).trim());
-        list = aoa.slice(hIdx + 1).map(arr => {
-          const o = {}; header.forEach((h, i) => o[h] = arr[i] != null ? arr[i] : ""); return o;
+        list = await buildRowsChunked(aoa.length - hIdx - 1, i => {
+          const arr = aoa[hIdx + 1 + i], o = {};
+          for (let k = 0; k < header.length; k++) o[header[k]] = arr[k] != null ? arr[k] : "";
+          return o;
         });
       } else {
+        setLoadingProgress(15, "正在解析工作表结构（大文件可能需要几秒）…");
+        await yieldUI(60);  // 确保该提示先绘制，再执行同步阻塞的 XLSX.read
         const wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const hIdx = findHeaderRow(XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }));
-        if (hIdx < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
-        if (hIdx > 0) {  // 跳过顶部合并标题行，以真实表头行作为解析起点
-          const ref = XLSX.utils.decode_range(ws["!ref"]);
-          ref.s.r = hIdx; ws["!ref"] = XLSX.utils.encode_range(ref);
-        }
-        list = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        setLoadingProgress(22, "正在定位表头…");
+        await yieldUI(0);
+        list = await sheetToRowsChunked(ws);
       }
       if (!list.length) { toast("文件中没有读到数据行", false); return; }
       if (list.length > CONFIG.大文件警告行数) toast(`数据量较大（${list.length} 行），已启用大数据优化模式`, false);
@@ -537,6 +615,54 @@ function findHeaderRow(aoa) {
     for (const v of row) { if (v != null && aliases.has(String(v).trim()) && ++hits >= 2) return i; }
   }
   return -1;
+}
+
+// ---------- 分块构建行对象（每块让出主线程 + 刷新进度，避免大文件提取阶段冻结） ----------
+async function buildRowsChunked(total, makeRow) {
+  const out = [];
+  const CHUNK = 8000;
+  for (let i = 0; i < total; i++) {
+    const o = makeRow(i);
+    if (o) out.push(o);
+    if ((i + 1) % CHUNK === 0) {
+      setLoadingProgress(22 + (i + 1) / total * 33, `正在提取数据行… ${(i + 1).toLocaleString()} / ${total.toLocaleString()} 行`);
+      await yieldUI(0);
+    }
+  }
+  return out;
+}
+
+// ---------- 分块提取工作表数据：表头仅读前 20 行定位，数据逐块读取且跳过空行 ----------
+// 避免对全表调用两次 sheet_to_json（原先 findHeaderRow 一次 + 取数据一次），大文件开销减半且不冻结
+async function sheetToRowsChunked(ws) {
+  const rng = XLSX.utils.decode_range(ws["!ref"]);
+  const cellVal = (r, c) => { const cell = ws[XLSX.utils.encode_cell({ r, c })]; return cell && cell.v != null ? cell.v : ""; };
+  // 表头定位：仅读前 20 行构造小型 AOA
+  const headAoa = [], headEnd = Math.min(rng.s.r + 19, rng.e.r);
+  for (let r = rng.s.r; r <= headEnd; r++) {
+    const row = [];
+    for (let c = rng.s.c; c <= rng.e.c; c++) row.push(cellVal(r, c));
+    headAoa.push(row);
+  }
+  const hRel = findHeaderRow(headAoa);
+  if (hRel < 0) throw new Error("未找到可识别的表头行（请确认文件包含「放行单号」等列）");
+  const headerRow = rng.s.r + hRel;
+  const header = [];
+  for (let c = rng.s.c; c <= rng.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: headerRow, c })];
+    header.push(cell && (cell.w != null || cell.v != null) ? String(cell.w != null ? cell.w : cell.v).trim() : ("列" + c));
+  }
+  // 分块提取数据行（跳过全空行）
+  return buildRowsChunked(rng.e.r - headerRow, i => {
+    const r = headerRow + 1 + i, o = {};
+    let empty = true;
+    for (let c = rng.s.c; c <= rng.e.c; c++) {
+      const v = cellVal(r, c);
+      o[header[c - rng.s.c]] = v;
+      if (v !== "") empty = false;
+    }
+    return empty ? null : o;
+  });
 }
 
 // ---------- 字段映射与校验 ----------
@@ -569,7 +695,7 @@ async function processData(rawList) {
     for (let s = 0; s < n; s += chunk) {
       const end = Math.min(s + chunk, n);
       for (let i = s; i < end; i++) rows[i] = normalizeRow(rawList[i]);
-      setLoadingProgress(30 + end / n * 55, `正在标准化数据… ${end.toLocaleString()} / ${n.toLocaleString()} 行`);
+      setLoadingProgress(58 + end / n * 30, `正在标准化数据… ${end.toLocaleString()} / ${n.toLocaleString()} 行`);
       await new Promise(r => setTimeout(r, 0));
     }
   } else {
@@ -623,8 +749,11 @@ function computeOrders() {
   return map;
 }
 
-// ---------- 汇总计算 ----------
-function computeStats() {
+// ---------- 汇总计算（结果缓存：数据未变时二级页/导出直接复用，避免重复全量扫描） ----------
+let _statsCache = null;
+function invalidateStats() { _statsCache = null; }
+function computeStats() { return _statsCache || (_statsCache = _computeStatsRaw()); }
+function _computeStatsRaw() {
   orders = computeOrders();
   const orderList = Object.values(orders);
   const total = rows.length;
@@ -704,8 +833,11 @@ const SMOOTH_ANIM = {
   animationDurationUpdate: 700, animationEasingUpdate: "cubicInOut"
 };
 const LARGE_ANIM = { animation: false, animationDuration: 0, animationDurationUpdate: 0 };
-const animOpt = () => rows.length > CONFIG.大数据量阈值 ? LARGE_ANIM : SMOOTH_ANIM;
+const animOpt = () => (PERF.lite || rows.length > CONFIG.大数据量阈值) ? LARGE_ANIM : SMOOTH_ANIM;
 const withAnim = opt => Object.assign({}, animOpt(), opt);
+// —— ECharts 统一初始化：限制设备像素比（低性能模式强制 1x），降低高 DPR 屏显存/填充压力 ——
+const EC_DPR = Math.min(window.devicePixelRatio || 1, PERF.lite ? 1 : 1.5);
+const initEC = dom => echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
 function hbarOption(data, color) {
   return {
     tooltip: {},
@@ -793,8 +925,10 @@ function destroyCharts() { Object.values(CH).forEach(c => c.dispose()); CH = {};
 
 function renderAll() {
   destroyCharts();
+  invalidateStats();          // 数据已变，丢弃旧缓存
   const S = computeStats();
   updateFileMeta(S);
+  applyPerfTag();
 
   counters.orders = new countUp.CountUp("kpiOrders", S.orderCount, { separator: ",", duration: 0.9 });
   counters.records = new countUp.CountUp("kpiRecordsSub", S.total, { separator: ",", duration: 0.9 });
@@ -803,27 +937,27 @@ function renderAll() {
   counters.receive = new countUp.CountUp("kpiReceive", S.receiveTimeoutRows.length, { separator: ",", duration: 0.9 });
   Object.values(counters).forEach(c => c.start());
 
-  CH.liquid = echarts.init($("liquidChart")); CH.liquid.setOption(optionBuilders.liquid(S), true);
-  CH.type = echarts.init($("chartType")); CH.type.setOption(optionBuilders.type(S), true);
-  if (S.trend.length) { CH.trend = echarts.init($("chartTrend")); CH.trend.setOption(optionBuilders.trend(S), true); $("cardTrend").classList.remove("hidden"); }
+  CH.liquid = initEC($("liquidChart")); CH.liquid.setOption(optionBuilders.liquid(S), true);
+  CH.type = initEC($("chartType")); CH.type.setOption(optionBuilders.type(S), true);
+  if (S.trend.length) { CH.trend = initEC($("chartTrend")); CH.trend.setOption(optionBuilders.trend(S), true); $("cardTrend").classList.remove("hidden"); }
   else { $("cardTrend").classList.add("hidden"); }
-  CH.dept = echarts.init($("chartDept")); CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"), true);
-  CH.cat = echarts.init($("chartCat")); CH.cat.setOption(catOption(S), true);
-  if (S.routeTop.length) { CH.route = echarts.init($("chartRoute")); CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"), true); $("cardRoute").classList.remove("hidden"); }
+  CH.dept = initEC($("chartDept")); CH.dept.setOption(hbarOption(S.deptTop, "#0071e3"), true);
+  CH.cat = initEC($("chartCat")); CH.cat.setOption(catOption(S), true);
+  if (S.routeTop.length) { CH.route = initEC($("chartRoute")); CH.route.setOption(hbarOption(S.routeTop, "#00b8d4"), true); $("cardRoute").classList.remove("hidden"); }
   else { $("cardRoute").classList.add("hidden"); }
-  CH.status = echarts.init($("chartStatus")); CH.status.setOption(optionBuilders.status(S), true);
-  CH.deptCat = echarts.init($("chartDeptCat")); CH.deptCat.setOption(optionBuilders.deptCat(S), true);
+  CH.status = initEC($("chartStatus")); CH.status.setOption(optionBuilders.status(S), true);
+  CH.deptCat = initEC($("chartDeptCat")); CH.deptCat.setOption(optionBuilders.deptCat(S), true);
 
   renderAnalysisCards(S);
 
-  const cols = Object.keys(CONFIG.字段映射)
-    .filter(k => rows.some(r => r[k] !== "" && r[k] != null))
-    .map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
+  // —— 预计算可见列并缓存（供二级页复用，避免重复全表扫描字段非空性）——
+  _visibleCols = computeVisibleCols(rows);
+  const cols = _visibleCols.map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
   if (detailTable) detailTable.destroy();
-  // —— 大数据量优化：渐进渲染 + 虚拟DOM，仅绘制可视行，数万行也不卡顿 ——
+  // —— 大数据量优化：渐进渲染 + 虚拟DOM；直接绑定 rows（列只声明可见字段，_字段不显示）避免全量复制对象 ——
   const isLarge = rows.length > CONFIG.大数据量阈值;
   detailTable = new Tabulator("#detailTable", {
-    data: rows.map(stripPrivate), columns: cols, layout: "fitColumns",
+    data: rows, columns: cols, layout: "fitColumns",
     pagination: true, paginationSize: isLarge ? 50 : 20,
     ...(isLarge ? { progressiveLoad: "scroll", renderVertical: "virtual" } : {}),
     movableColumns: true, placeholder: "暂无数据"
@@ -841,6 +975,7 @@ function renderAll() {
 }
 
 function scheduleRefraction() {
+  if (PERF.lite) return;  // 低性能模式不注入玻璃折射层，减少 DOM 与合成开销
   document.querySelectorAll('.kpi, .chartCard, .analyzeCard, #detailCard').forEach(card => {
     if (!card.querySelector(':scope > .lg-tint')) {
       const tint = document.createElement('div'); tint.className = 'lg-tint';
@@ -988,11 +1123,18 @@ const KPI_DETAIL = {
 };
 
 let overviewState = { dim: 0, cat: null };
+let _visibleCols = null;   // 全局可见列缓存（基于全量 rows 采样计算一次）
 
-function detailCols(tRows) {
-  return Object.keys(CONFIG.字段映射)
-    .filter(k => tRows.some(r => r[k] !== "" && r[k] != null))
-    .map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
+// 采样扫描字段非空性：大数据时只看前 1000 行足以判定列是否有值，避免 O(字段×全行) 扫描
+function computeVisibleCols(list) {
+  const sample = list.length > 1000 ? list.slice(0, 1000) : list;
+  return Object.keys(CONFIG.字段映射).filter(k => sample.some(r => r[k] !== "" && r[k] != null));
+}
+
+// 二级页表格列：直接复用全局可见列缓存（列集合不随筛选变化）
+function detailCols() {
+  const keys = _visibleCols || computeVisibleCols(rows);
+  return keys.map(k => ({ title: k, field: k, headerFilter: "input", widthGrow: (k === "放行物品名称" || k === "流入门岗") ? 2 : 1 }));
 }
 
 function openDetail(key) {
@@ -1019,13 +1161,13 @@ function renderSimpleDetail(cfg) {
     `<div class="detailChip"><div class="dc-label">${l}</div><div class="dc-value" style="color:${c}">${v}</div></div>`).join("");
   if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
   const opt = cfg.chart(S);
-  if (opt) { $("detailChartBox").style.display = ""; detailChartInst = echarts.init($("detailChart")); detailChartInst.setOption(withAnim(opt)); }
+  if (opt) { $("detailChartBox").style.display = ""; detailChartInst = initEC($("detailChart")); detailChartInst.setOption(withAnim(opt)); }
   else { $("detailChartBox").style.display = "none"; }
   if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
   const tRows = cfg.filter ? rows.filter(cfg.filter) : rows;
   $("detailTableTitle").textContent = `${cfg.tableTitle}（${tRows.length} 条）`;
   detailTableInst = new Tabulator("#detailTable2", {
-    data: tRows.map(stripPrivate), columns: detailCols(tRows), layout: "fitColumns",
+    data: tRows, columns: detailCols(), layout: "fitColumns",
     pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
   });
 }
@@ -1047,17 +1189,19 @@ function renderOverview() {
     overviewState.dim = +b.dataset.dim; overviewState.cat = null; renderOverview();
     setTimeout(() => { if (detailChartInst) detailChartInst.resize(); }, 30);
   });
+  // —— 分类计数一次性算好，饼图与芯片复用，避免重复 filter().length ——
+  const counts = dim.cats.map(c => rows.filter(c.filter).length);
   if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
   $("detailChartBox").style.display = "";
-  detailChartInst = echarts.init($("detailChart"));
-  detailChartInst.setOption(withAnim(overviewPieOption(dim)));
+  detailChartInst = initEC($("detailChart"));
+  detailChartInst.setOption(withAnim(overviewPieOption(dim, counts)));
   detailChartInst.off("click");
   detailChartInst.on("click", p => { if (p && p.name) applyCatFilter(p.name); });
-  renderCatFilters(dim);
+  renderCatFilters(dim, counts);
   rebuildOverviewTable(dim);
 }
 
-function overviewPieOption(dim) {
+function overviewPieOption(dim, counts) {
   return {
     tooltip: { trigger: "item" },
     legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
@@ -1066,19 +1210,18 @@ function overviewPieOption(dim) {
       selectedMode: "single", selectedOffset: 14,
       itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
       label: { color: "#1d1d1f", formatter: "{b}\n{c} ({d}%)" },
-      data: dim.cats.map(c => ({
-        name: c.name, value: rows.filter(c.filter).length,
+      data: dim.cats.map((c, i) => ({
+        name: c.name, value: counts[i],
         itemStyle: { color: c.color }, selected: overviewState.cat === c.name
       }))
     }]
   };
 }
 
-function renderCatFilters(dim) {
-  $("detailCatFilters").innerHTML = dim.cats.map(c => {
-    const cnt = rows.filter(c.filter).length;
-    return `<span class="catFilter ${overviewState.cat === c.name ? "active" : ""}" data-cat="${c.name}" style="--cc:${c.color}">${c.name} <b>${cnt}</b></span>`;
-  }).join("");
+function renderCatFilters(dim, counts) {
+  $("detailCatFilters").innerHTML = dim.cats.map((c, i) =>
+    `<span class="catFilter ${overviewState.cat === c.name ? "active" : ""}" data-cat="${c.name}" style="--cc:${c.color}">${c.name} <b>${counts[i]}</b></span>`
+  ).join("");
   $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
     el.onclick = () => applyCatFilter(el.dataset.cat));
 }
@@ -1089,7 +1232,7 @@ function rebuildOverviewTable(dim) {
   $("detailTableTitle").textContent = `${cf ? cf.name : "全部放行记录"}（${tRows.length} 条）`;
   if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
   detailTableInst = new Tabulator("#detailTable2", {
-    data: tRows.map(stripPrivate), columns: detailCols(tRows), layout: "fitColumns",
+    data: tRows, columns: detailCols(), layout: "fitColumns",
     pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
   });
 }
@@ -1098,7 +1241,8 @@ function rebuildOverviewTable(dim) {
 function applyCatFilter(name) {
   overviewState.cat = (overviewState.cat === name) ? null : name;
   const dim = KPI_DETAIL.overview.dimensions[overviewState.dim];
-  if (detailChartInst) detailChartInst.setOption(overviewPieOption(dim));
+  const counts = dim.cats.map(c => rows.filter(c.filter).length);
+  if (detailChartInst) detailChartInst.setOption(overviewPieOption(dim, counts));
   $("detailCatFilters").querySelectorAll(".catFilter").forEach(el =>
     el.classList.toggle("active", el.dataset.cat === overviewState.cat));
   rebuildOverviewTable(dim);
@@ -1153,7 +1297,7 @@ function startLive() {
   $("liveBadge").classList.remove("hidden");
   $("btnLive").classList.remove("hidden");
   $("liveFeed").classList.remove("hidden");
-  liveTimer = setInterval(liveTick, CONFIG.实时演示.刷新间隔毫秒);
+  liveTimer = setInterval(liveTick, CONFIG.实时演示.刷新间隔毫秒 * (PERF.lite ? 2 : 1));  // 低性能模式降频刷新，减轻老机器持续负载
 }
 function stopLive() {
   if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
@@ -1163,6 +1307,7 @@ function stopLive() {
   clearFeed();
 }
 $("btnLive").onclick = () => { livePaused = !livePaused; updateLiveBtn(); };
+$("btnPerf").onclick = togglePerfMode;
 function updateLiveBtn() {
   $("btnLive").textContent = livePaused ? "▶ 恢复刷新" : "⏸ 暂停刷新";
   $("liveBadge").classList.toggle("paused", livePaused);
@@ -1175,6 +1320,7 @@ function liveTick() {
   for (let i = 0; i < n; i++) newRaw.push(makeDemoRow(dayjs(), rows.length + i));
   const newRows = newRaw.map(r => normalizeRow(r));
   rows = rows.concat(newRows);
+  invalidateStats();          // 新增数据后失效缓存，确保重算
   const S = computeStats();
   counters.orders && counters.orders.update(S.orderCount);
   counters.records && counters.records.update(S.total);
@@ -1190,7 +1336,7 @@ function liveTick() {
   CH.status && CH.status.setOption(optionBuilders.status(S));
   CH.deptCat && CH.deptCat.setOption(optionBuilders.deptCat(S));
   renderAnalysisCards(S);
-  if (detailTable) detailTable.addData(newRows.map(stripPrivate), true);
+  if (detailTable) detailTable.addData(newRows, true);
   pushFeedItems(newRows);
   updateFileMeta(S);
   $("liveTime").textContent = dayjs().format("HH:mm:ss");
@@ -1307,7 +1453,7 @@ let bgW = 0, bgH = 0, bgGrad = null;
 
 function sizeBg() {
   bgW = window.innerWidth;
-  bgH = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+  bgH = window.innerHeight;   // 画布已 fixed，仅需覆盖视口（而非整个文档高度），大幅降低显存与填充压力
   bgSrc.width = Math.round(bgW * BDPR);
   bgSrc.height = Math.round(bgH * BDPR);
   bgSrc.style.width = bgW + 'px';
@@ -1419,22 +1565,20 @@ function animBg(t) {
     drawShape(bgCtx, s, t);
   }
 }
-sizeBg(); initShapes();
-bgAnimId = requestAnimationFrame(animBg);
+// —— 背景动画：仅高画质模式启动；画布 fixed 且仅覆盖视口，滚动不重建 ——
+if (!PERF.lite) { sizeBg(); initShapes(); bgAnimId = requestAnimationFrame(animBg); }
+applyPerfTag();   // 首屏（尚未加载数据）也显示当前性能模式标签
 
-// ---------- 窗口自适应 ----------
-let _resizeRaf = 0, _lastDocH = bgH;
+// ---------- 窗口自适应（防抖；低性能模式不重建背景） ----------
+let _resizeTimer = 0;
 window.addEventListener("resize", () => {
-  if (_resizeRaf) cancelAnimationFrame(_resizeRaf);
-  _resizeRaf = requestAnimationFrame(() => {
-    sizeBg(); initShapes();
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!PERF.lite) { sizeBg(); initShapes(); }
     Object.values(CH).forEach(c => c.resize());
-  });
+  }, 200);
 });
-window.addEventListener("scroll", () => {
-  const h = document.documentElement.scrollHeight;
-  if (h !== _lastDocH) { _lastDocH = h; sizeBg(); initShapes(); }
-}, { passive: true });
+// 注：背景画布改为 fixed 且仅视口尺寸后，文档高度变化无需重建，已移除 scroll 重建监听（消除滚动卡顿源）
 </script>
 </body>
 </html>

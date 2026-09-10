@@ -1,0 +1,705 @@
+/* ==========================================================================
+   Claymorphism 粘土拟态主题覆盖文件
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="clay" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-clay.css">
+   特点：暖色调双向阴影、超大圆角、暖色边框、粘土感凸起
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="clay"][data-mode="light"]{
+  --bg:#fef9f0;
+  --bg2:#fffaf2;
+  --bg3:#fdf3e7;
+  --surface:rgba(255,245,230,0.55);
+  --surface2:rgba(255,245,230,0.38);
+  --surface-h:rgba(255,245,230,0.70);
+  --border-theme:rgba(255,180,100,0.30);
+  --border-theme2:rgba(255,180,100,0.15);
+  --line:rgba(61,44,30,0.10);
+  --txt:#3d2c1e;
+  --txt2:rgba(61,44,30,0.55);
+  --accent:#e8590c;
+  --accent2:#f76707;
+  --ok:#2f9e44;
+  --bad:#e03131;
+  --warn:#f08c00;
+  --purple:#9c36b5;
+  --cyan:#0c8599;
+  --glass-blur:0px;
+  --glass-sat:120%;
+  --card-r:24px;
+  --card-sh:6px 6px 16px rgba(232,89,12,0.10), -4px -4px 12px rgba(255,255,255,0.70);
+  --card-sh-h:8px 8px 20px rgba(232,89,12,0.14), -6px -6px 16px rgba(255,255,255,0.80);
+  --card-bd:2px solid rgba(255,180,100,0.30);
+  --btn-r:20px;
+  /* 粘土专用：按钮凹陷阴影 */
+  --clay-inset:inset 3px 3px 8px rgba(232,89,12,0.10), inset -3px -3px 8px rgba(255,255,255,0.60);
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="clay"][data-mode="dark"]{
+  --bg:#1c1410;
+  --bg2:#261a14;
+  --bg3:#1c1410;
+  --surface:rgba(232,89,12,0.10);
+  --surface2:rgba(247,103,7,0.06);
+  --surface-h:rgba(232,89,12,0.16);
+  --border-theme:rgba(255,180,100,0.18);
+  --border-theme2:rgba(255,180,100,0.08);
+  --line:rgba(253,232,208,0.10);
+  --txt:#fde8d0;
+  --txt2:rgba(253,232,208,0.55);
+  --accent:#ff8c42;
+  --accent2:#ffa94d;
+  --ok:#51cf66;
+  --bad:#ff6b6b;
+  --warn:#fcc419;
+  --purple:#cc5de8;
+  --cyan:#22b8cf;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:24px;
+  --card-sh:4px 4px 12px rgba(0,0,0,0.20), -3px -3px 10px rgba(255,255,255,0.06);
+  --card-sh-h:6px 6px 16px rgba(0,0,0,0.28), -4px -4px 12px rgba(255,255,255,0.08);
+  --card-bd:2px solid rgba(255,180,100,0.18);
+  --btn-r:20px;
+  --clay-inset:inset 3px 3px 8px rgba(0,0,0,0.25), inset -3px -3px 8px rgba(255,255,255,0.04);
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="clay"] html,
+[data-theme="clay"]{
+  background:var(--bg)!important;
+}
+[data-theme="clay"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="clay"] h1{font-size:23px!important;font-weight:600!important;letter-spacing:-0.3px!important}
+[data-theme="clay"] .sub{color:var(--txt2)!important;font-size:12px!important}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，粘土风格使用 clay 背景模式） */
+[data-theme="clay"] .lg-tint,
+[data-theme="clay"] .lg-edge{display:none!important}
+
+/* ========== 4. 按钮系统 → 粘土拟态凸起按钮 ========== */
+[data-theme="clay"] button{
+  border-radius:var(--btn-r)!important;
+  border:var(--card-bd)!important;
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+  font-size:13px!important;
+  padding:9px 18px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease, background .18s ease!important;
+}
+[data-theme="clay"] button:hover{
+  color:var(--accent)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] button:active{
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] button.primary{
+  background:var(--accent)!important;
+  border:2px solid var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] button.primary:hover{
+  background:var(--accent2)!important;
+  border-color:var(--accent2)!important;
+  color:#fff!important;
+  filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 5. 顶栏 → 粘土面板 ========== */
+[data-theme="clay"] #topbar{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:16px 18px!important;
+}
+[data-theme="clay"] #fileMeta b{color:var(--accent)!important;font-weight:600!important}
+
+/* LIVE 徽标 */
+[data-theme="clay"] #liveBadge{
+  border:var(--card-bd)!important;
+  border-radius:999px!important;
+  background:var(--bg)!important;
+  color:var(--ok)!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] .liveDot{background:var(--ok)!important}
+[data-theme="clay"] #liveBadge.paused{
+  color:var(--warn)!important;
+}
+
+/* ========== 6. 实时流入动态栏 ========== */
+[data-theme="clay"] #liveFeed{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] #liveFeed .feedLabel{
+  color:var(--ok)!important;
+  border-right:1px solid var(--line)!important;
+  font-weight:600!important;
+}
+[data-theme="clay"] .feedItem{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:14px!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] .feedItem b{color:var(--txt)!important;font-weight:600!important}
+[data-theme="clay"] .feedItem .t,
+[data-theme="clay"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="clay"] .st-ok{background:rgba(47,158,68,0.12)!important;color:var(--ok)!important;border:1px solid rgba(47,158,68,0.30)!important}
+[data-theme="clay"] .st-bad{background:rgba(224,49,49,0.10)!important;color:var(--bad)!important;border:1px solid rgba(224,49,49,0.30)!important}
+[data-theme="clay"] .st-warn{background:rgba(240,140,0,0.12)!important;color:var(--warn)!important;border:1px solid rgba(240,140,0,0.30)!important}
+[data-theme="clay"] .st-sp{background:rgba(156,54,181,0.10)!important;color:var(--purple)!important;border:1px solid rgba(156,54,181,0.30)!important}
+
+/* ========== 7. 上传区 ========== */
+[data-theme="clay"] #dropzone{
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease!important;
+}
+[data-theme="clay"] #dropzone.over{
+  border-color:var(--accent)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] #dropzone .big{font-size:40px!important}
+[data-theme="clay"] #dropzone p{color:var(--txt2)!important;line-height:1.9!important}
+[data-theme="clay"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 8. 错误面板 ========== */
+[data-theme="clay"] #errPanel{
+  border:1px solid rgba(224,49,49,0.30)!important;
+  background:var(--bg)!important;
+  border-radius:var(--card-r)!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] #errPanel h3{color:var(--bad)!important;font-weight:600!important}
+[data-theme="clay"] #errPanel li{color:var(--bad)!important}
+
+/* ========== 9. KPI 卡片 → 粘土拟态凸起卡 ========== */
+[data-theme="clay"] .kpi{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:18px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+[data-theme="clay"] .kpi::before,
+[data-theme="clay"] .cardSlot::before{
+  border-radius:var(--card-r) 0 0 var(--card-r)!important;
+  width:4px!important;
+}
+[data-theme="clay"] .kpi .label,
+[data-theme="clay"] .cardBody .kpiLabel{
+  color:var(--txt2)!important;
+  font-size:12px!important;
+  letter-spacing:0!important;
+}
+[data-theme="clay"] .kpi .value,
+[data-theme="clay"] .cardBody .kpiValue{
+  font-size:28px!important;
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="clay"] .kpi .kpiSub,
+[data-theme="clay"] .cardBody .kpiSub{
+  color:var(--txt2)!important;
+  font-family:"Segoe UI",monospace!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="clay"] .kpi .kpiSub b,
+[data-theme="clay"] .cardBody .kpiSub b{color:var(--accent)!important;font-weight:600!important}
+[data-theme="clay"] .kpi .clickHint,
+[data-theme="clay"] .cardBody .clickHint{color:var(--txt2)!important;opacity:.55!important}
+[data-theme="clay"] .kpi:hover,
+[data-theme="clay"] .cardSlot:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 10. 图表卡片 ========== */
+[data-theme="clay"] .chartCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+[data-theme="clay"] .chartCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+  margin-bottom:6px!important;
+}
+[data-theme="clay"] .chartCard:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 11. 专项分析卡片 ========== */
+[data-theme="clay"] .analyzeCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+[data-theme="clay"] .analyzeCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+  padding-left:8px!important;
+}
+[data-theme="clay"] .analyzeCard .ac-count{
+  font-size:24px!important;
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--ac,var(--warn))!important;
+}
+[data-theme="clay"] .analyzeCard .ac-desc{color:var(--txt2)!important;font-size:12px!important;line-height:1.6!important}
+[data-theme="clay"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:600!important}
+[data-theme="clay"] .analyzeCard .ac-empty{color:var(--txt2)!important}
+[data-theme="clay"] .analyzeCard:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="clay"] .ac-tag{
+  border-radius:10px!important;
+  font-weight:600!important;
+}
+
+/* ========== 12. 明细表 ========== */
+[data-theme="clay"] #detailCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+}
+[data-theme="clay"] #detailCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+  margin-bottom:10px!important;
+}
+[data-theme="clay"] .tabulator{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-header{
+  background:rgba(255,180,100,0.06)!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+  font-weight:600!important;
+}
+[data-theme="clay"] .tabulator .tabulator-header .tabulator-col{
+  background:transparent!important;
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-row{
+  background:transparent!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-row.tabulator-row-even{
+  background:rgba(255,180,100,0.03)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-row:hover{
+  background:rgba(232,89,12,0.06)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-cell{
+  border-right:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-footer{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:10px!important;
+  box-shadow:var(--card-sh)!important;
+  padding:4px 10px!important;
+}
+[data-theme="clay"] .tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  border-color:var(--accent)!important;
+  box-shadow:none!important;
+}
+[data-theme="clay"] .tabulator .tabulator-page:hover{
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .tabulator .tabulator-header .tabulator-header-filter input{
+  background:var(--bg)!important;
+  border:1px solid var(--border-theme)!important;
+  border-radius:10px!important;
+  color:var(--txt)!important;
+  box-shadow:var(--clay-inset)!important;
+  padding:2px 8px!important;
+}
+[data-theme="clay"] .tabulator-popup-container{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  box-shadow:var(--card-sh-h)!important;
+  border-radius:14px!important;
+}
+[data-theme="clay"] .tabulator-edit-list .tabulator-edit-list-item{color:var(--txt)!important}
+[data-theme="clay"] .tabulator-edit-list .tabulator-edit-list-item.active{
+  background:rgba(232,89,12,0.10)!important;
+  color:var(--accent)!important;
+}
+[data-theme="clay"] .tabulator-row.tabulator-group{
+  background:rgba(255,180,100,0.05)!important;
+  color:var(--txt)!important;
+  border-color:var(--line)!important;
+}
+[data-theme="clay"] .footerNote{color:var(--txt2)!important;font-size:12px!important}
+
+/* ========== 13. 二级详情面板 ========== */
+[data-theme="clay"] #detailOverlay{
+  background:rgba(0,0,0,0.25)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="clay"] #detailPanel{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:28px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="clay"] #detailPanelHead{
+  border-bottom:1px solid var(--line)!important;
+  padding:20px 24px 16px!important;
+}
+[data-theme="clay"] #detailPanelTitle{
+  font-size:18px!important;
+  font-weight:600!important;
+}
+[data-theme="clay"] #detailPanelTitle::before{
+  background:var(--accent)!important;
+  border-radius:3px!important;
+}
+[data-theme="clay"] #btnDetailClose{
+  border:var(--card-bd)!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .2s ease, color .2s ease!important;
+}
+[data-theme="clay"] #btnDetailClose:hover{
+  color:var(--bad)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .detailChip{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:16px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] .detailChip .dc-label{
+  color:var(--txt2)!important;
+  font-size:11px!important;
+}
+[data-theme="clay"] .detailChip .dc-value{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+}
+[data-theme="clay"] #detailChartBox{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:16px!important;
+  box-shadow:var(--clay-inset)!important;
+}
+
+/* 多维度切换器 → 粘土拟态切换器 */
+[data-theme="clay"] .dimBtn{
+  border:var(--card-bd)!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  font-weight:500!important;
+  border-radius:999px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease!important;
+}
+[data-theme="clay"] .dimBtn:hover{
+  color:var(--accent)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .dimBtn.active{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+
+/* 分类筛选芯片 */
+[data-theme="clay"] .catFilter{
+  border:1px solid var(--border-theme)!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:14px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease!important;
+}
+[data-theme="clay"] .catFilter:hover{
+  color:var(--txt)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .catFilter.active{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .catFilter.active::before{
+  box-shadow:0 0 0 3px rgba(232,89,12,0.20)!important;
+  opacity:1!important;
+}
+[data-theme="clay"] #detailTableBox h4{
+  font-size:13px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+}
+
+/* ========== 14. 布局工具栏 & 选择器 ========== */
+[data-theme="clay"] #layoutSelect,
+[data-theme="clay"] #themeSelect{
+  cursor:pointer!important;
+  border:1px solid var(--border-theme)!important;
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+  border-radius:var(--btn-r)!important;
+  padding:7px 12px!important;
+  font-size:13px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease!important;
+  max-width:200px!important;
+}
+[data-theme="clay"] #layoutSelect:hover,
+[data-theme="clay"] #themeSelect:hover{
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] #layoutSelect:focus,
+[data-theme="clay"] #themeSelect:focus{
+  outline:none!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] #layoutSelect option,
+[data-theme="clay"] #themeSelect option{
+  background:#fff!important;
+  color:#3d2c1e!important;
+}
+
+/* ========== 15. 模块化卡片 ========== */
+[data-theme="clay"] .cardSlot{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .3s ease!important;
+}
+[data-theme="clay"] .cardSlot:hover{
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="clay"] .cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:3px!important;
+}
+[data-theme="clay"] .cardTitle{
+  font-size:13px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:7px!important;
+}
+[data-theme="clay"] .cardRemove{
+  border:none!important;
+  background:var(--bg)!important;
+  box-shadow:var(--card-sh)!important;
+  border-radius:8px!important;
+  transition:box-shadow .2s ease, color .2s ease!important;
+}
+[data-theme="clay"] .cardRemove:hover{
+  color:var(--bad)!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] .cardBody .kpiValue{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--txt)!important;
+}
+[data-theme="clay"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="clay"] .cardBody .ac-count{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+}
+
+/* ========== 16. 加载遮罩 ========== */
+[data-theme="clay"] #loadingOverlay{
+  background:rgba(254,249,240,0.70)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+[data-theme="clay"] .loadingCard{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="clay"] .spinner{
+  border-color:rgba(232,89,12,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+[data-theme="clay"] #loadingText{
+  color:var(--txt)!important;
+  font-weight:500!important;
+}
+[data-theme="clay"] .progressTrack{
+  background:var(--bg)!important;
+  border-radius:999px!important;
+  box-shadow:var(--clay-inset)!important;
+}
+[data-theme="clay"] #progressBar{
+  background:var(--accent)!important;
+  border-radius:999px!important;
+}
+
+/* ========== 17. 性能模式标签 ========== */
+[data-theme="clay"] #perfTag{
+  border:1px solid var(--border-theme)!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:999px!important;
+  font-weight:500!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="clay"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 18. 低性能模式适配 ========== */
+[data-theme="clay"] body.perf-lite{background:var(--bg)!important}
+[data-theme="clay"] body.perf-lite #bg-source{display:none!important}
+[data-theme="clay"] body.perf-lite #topbar,
+[data-theme="clay"] body.perf-lite #liveFeed,
+[data-theme="clay"] body.perf-lite #dropzone,
+[data-theme="clay"] body.perf-lite .kpi,
+[data-theme="clay"] body.perf-lite .chartCard,
+[data-theme="clay"] body.perf-lite .analyzeCard,
+[data-theme="clay"] body.perf-lite #detailCard,
+[data-theme="clay"] body.perf-lite .loadingCard,
+[data-theme="clay"] body.perf-lite #detailPanel,
+[data-theme="clay"] body.perf-lite #loadingOverlay,
+[data-theme="clay"] body.perf-lite .cardSlot,
+[data-theme="clay"] body.perf-lite .detailChip,
+[data-theme="clay"] body.perf-lite .dimBtn,
+[data-theme="clay"] body.perf-lite .catFilter,
+[data-theme="clay"] body.perf-lite button{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="clay"] body.perf-lite .chartCard:hover,
+[data-theme="clay"] body.perf-lite .kpi:hover,
+[data-theme="clay"] body.perf-lite .analyzeCard:hover{
+  transform:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="clay"] body.perf-lite #loadingOverlay{background:rgba(254,249,240,0.92)!important}
+[data-theme="clay"] body.perf-lite #detailOverlay{background:rgba(0,0,0,0.25)!important}
+
+/* ========== 19. 滚动条（粘土风格） ========== */
+[data-theme="clay"]::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="clay"]::-webkit-scrollbar-track{background:transparent}
+[data-theme="clay"]::-webkit-scrollbar-thumb{
+  background:var(--bg);
+  border-radius:5px;
+  border:2px solid transparent;
+  box-shadow:inset 2px 2px 5px rgba(232,89,12,0.12), inset -2px -2px 5px rgba(255,255,255,0.50);
+}
+[data-theme="clay"]::-webkit-scrollbar-thumb:hover{
+  box-shadow:inset 2px 2px 5px rgba(232,89,12,0.18), inset -2px -2px 5px rgba(255,255,255,0.60);
+}
+
+/* ========== 20. 深色模式数字可读性修复 ========== */
+[data-theme="clay"][data-mode="dark"] .kpi .value,
+[data-theme="clay"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="clay"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="clay"][data-mode="dark"] .detailChip .dc-value{
+  color:#fff5e8!important;
+  opacity:1!important;
+}
+/* 深色模式下 KPI 子标题也提亮 */
+[data-theme="clay"][data-mode="dark"] .kpi .kpiSub,
+[data-theme="clay"][data-mode="dark"] .cardBody .kpiSub{
+  color:rgba(255,245,232,0.65)!important;
+}

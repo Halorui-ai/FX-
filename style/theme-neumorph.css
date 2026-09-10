@@ -1,0 +1,705 @@
+/* ==========================================================================
+   Neumorphism 新拟态主题覆盖文件
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="neumorph" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-neumorph.css">
+   特点：双向阴影凸起、大圆角、无边框、无毛玻璃
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="neumorph"][data-mode="light"]{
+  --bg:#e0e5ec;
+  --bg2:#e8ecf2;
+  --bg3:#d8dde5;
+  --surface:rgba(224,229,236,0.60);
+  --surface2:rgba(224,229,236,0.40);
+  --surface-h:rgba(224,229,236,0.75);
+  --border-theme:rgba(224,229,236,0.50);
+  --border-theme2:rgba(224,229,236,0.30);
+  --line:rgba(51,51,51,0.10);
+  --txt:#333333;
+  --txt2:rgba(51,51,51,0.50);
+  --accent:#6c63ff;
+  --accent2:#8b83ff;
+  --ok:#2ecc71;
+  --bad:#e74c3c;
+  --warn:#f39c12;
+  --purple:#9b59b6;
+  --cyan:#1abc9c;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:20px;
+  --card-sh:8px 8px 20px rgba(0,0,0,0.10), -6px -6px 16px rgba(255,255,255,0.80);
+  --card-sh-h:10px 10px 24px rgba(0,0,0,0.12), -8px -8px 20px rgba(255,255,255,0.90);
+  --card-bd:none;
+  --btn-r:16px;
+  /* 新拟态专用：按钮凹陷阴影 */
+  --neu-inset:inset 3px 3px 8px rgba(0,0,0,0.10), inset -3px -3px 8px rgba(255,255,255,0.70);
+  --neu-inset-dark:inset 3px 3px 8px rgba(0,0,0,0.25), inset -3px -3px 8px rgba(255,255,255,0.05);
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="neumorph"][data-mode="dark"]{
+  --bg:#1a1c20;
+  --bg2:#222428;
+  --bg3:#1a1c20;
+  --surface:rgba(40,44,52,0.60);
+  --surface2:rgba(40,44,52,0.40);
+  --surface-h:rgba(40,44,52,0.75);
+  --border-theme:rgba(40,44,52,0.50);
+  --border-theme2:rgba(40,44,52,0.30);
+  --line:rgba(200,204,212,0.10);
+  --txt:#c8ccd4;
+  --txt2:rgba(200,204,212,0.55);
+  --accent:#8b83ff;
+  --accent2:#a89bff;
+  --ok:#2ecc71;
+  --bad:#e74c3c;
+  --warn:#f39c12;
+  --purple:#bb86fc;
+  --cyan:#4fd8eb;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:20px;
+  --card-sh:6px 6px 16px rgba(0,0,0,0.25), -4px -4px 12px rgba(255,255,255,0.06);
+  --card-sh-h:8px 8px 20px rgba(0,0,0,0.30), -6px -6px 16px rgba(255,255,255,0.08);
+  --card-bd:none;
+  --btn-r:16px;
+  --neu-inset:inset 3px 3px 8px rgba(0,0,0,0.25), inset -3px -3px 8px rgba(255,255,255,0.05);
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="neumorph"] html,
+[data-theme="neumorph"]{
+  background:var(--bg)!important;
+}
+[data-theme="neumorph"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="neumorph"] h1{font-size:23px!important;font-weight:600!important;letter-spacing:-0.3px!important}
+[data-theme="neumorph"] .sub{color:var(--txt2)!important;font-size:12px!important}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，新拟态风格使用 soft 背景模式） */
+[data-theme="neumorph"] .lg-tint,
+[data-theme="neumorph"] .lg-edge{display:none!important}
+
+/* ========== 4. 按钮系统 → 新拟态凸起按钮 ========== */
+[data-theme="neumorph"] button{
+  border-radius:var(--btn-r)!important;
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+  font-size:13px!important;
+  padding:9px 18px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease!important;
+}
+[data-theme="neumorph"] button:hover{
+  color:var(--accent)!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] button:active{
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] button.primary{
+  background:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] button.primary:hover{
+  background:var(--accent2)!important;
+  color:#fff!important;
+  filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 5. 顶栏 → 新拟态面板 ========== */
+[data-theme="neumorph"] #topbar{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:16px 18px!important;
+}
+[data-theme="neumorph"] #fileMeta b{color:var(--accent)!important;font-weight:600!important}
+
+/* LIVE 徽标 */
+[data-theme="neumorph"] #liveBadge{
+  border:none!important;
+  border-radius:999px!important;
+  background:var(--bg)!important;
+  color:var(--ok)!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] .liveDot{background:var(--ok)!important}
+[data-theme="neumorph"] #liveBadge.paused{
+  color:var(--warn)!important;
+}
+
+/* ========== 6. 实时流入动态栏 ========== */
+[data-theme="neumorph"] #liveFeed{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] #liveFeed .feedLabel{
+  color:var(--ok)!important;
+  border-right:1px solid var(--line)!important;
+  font-weight:600!important;
+}
+[data-theme="neumorph"] .feedItem{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:12px!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] .feedItem b{color:var(--txt)!important;font-weight:600!important}
+[data-theme="neumorph"] .feedItem .t,
+[data-theme="neumorph"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="neumorph"] .st-ok{background:rgba(46,204,113,0.12)!important;color:var(--ok)!important;border:none!important}
+[data-theme="neumorph"] .st-bad{background:rgba(231,76,60,0.12)!important;color:var(--bad)!important;border:none!important}
+[data-theme="neumorph"] .st-warn{background:rgba(243,156,18,0.12)!important;color:var(--warn)!important;border:none!important}
+[data-theme="neumorph"] .st-sp{background:rgba(155,89,182,0.12)!important;color:var(--purple)!important;border:none!important}
+
+/* ========== 7. 上传区 ========== */
+[data-theme="neumorph"] #dropzone{
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease!important;
+}
+[data-theme="neumorph"] #dropzone.over{
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] #dropzone .big{font-size:40px!important}
+[data-theme="neumorph"] #dropzone p{color:var(--txt2)!important;line-height:1.9!important}
+[data-theme="neumorph"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 8. 错误面板 ========== */
+[data-theme="neumorph"] #errPanel{
+  border:none!important;
+  background:var(--bg)!important;
+  border-radius:var(--card-r)!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] #errPanel h3{color:var(--bad)!important;font-weight:600!important}
+[data-theme="neumorph"] #errPanel li{color:var(--bad)!important}
+
+/* ========== 9. KPI 卡片 → 新拟态凸起卡 ========== */
+[data-theme="neumorph"] .kpi{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:18px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+/* 新拟态隐藏左侧色条 ::before，改为内嵌小圆点指示 */
+[data-theme="neumorph"] .kpi::before,
+[data-theme="neumorph"] .cardSlot::before{
+  display:none!important;
+}
+[data-theme="neumorph"] .kpi .label,
+[data-theme="neumorph"] .cardBody .kpiLabel{
+  color:var(--txt2)!important;
+  font-size:12px!important;
+  letter-spacing:0!important;
+}
+[data-theme="neumorph"] .kpi .value,
+[data-theme="neumorph"] .cardBody .kpiValue{
+  font-size:28px!important;
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="neumorph"] .kpi .kpiSub,
+[data-theme="neumorph"] .cardBody .kpiSub{
+  color:var(--txt2)!important;
+  font-family:"Segoe UI",monospace!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="neumorph"] .kpi .kpiSub b,
+[data-theme="neumorph"] .cardBody .kpiSub b{color:var(--accent)!important;font-weight:600!important}
+[data-theme="neumorph"] .kpi .clickHint,
+[data-theme="neumorph"] .cardBody .clickHint{color:var(--txt2)!important;opacity:.55!important}
+[data-theme="neumorph"] .kpi:hover,
+[data-theme="neumorph"] .cardSlot:hover{
+  transform:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 10. 图表卡片 ========== */
+[data-theme="neumorph"] .chartCard{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+[data-theme="neumorph"] .chartCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+  margin-bottom:6px!important;
+}
+[data-theme="neumorph"] .chartCard:hover{
+  transform:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 11. 专项分析卡片 ========== */
+[data-theme="neumorph"] .analyzeCard{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+  transition:box-shadow .3s ease, transform .22s ease!important;
+}
+[data-theme="neumorph"] .analyzeCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+  padding-left:8px!important;
+}
+[data-theme="neumorph"] .analyzeCard .ac-count{
+  font-size:24px!important;
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--ac,var(--warn))!important;
+}
+[data-theme="neumorph"] .analyzeCard .ac-desc{color:var(--txt2)!important;font-size:12px!important;line-height:1.6!important}
+[data-theme="neumorph"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:600!important}
+[data-theme="neumorph"] .analyzeCard .ac-empty{color:var(--txt2)!important}
+[data-theme="neumorph"] .analyzeCard:hover{
+  transform:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="neumorph"] .ac-tag{
+  border-radius:8px!important;
+  font-weight:600!important;
+}
+
+/* ========== 12. 明细表 ========== */
+[data-theme="neumorph"] #detailCard{
+  background:var(--surface)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  padding:14px!important;
+}
+[data-theme="neumorph"] #detailCard h3{
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+  margin-bottom:10px!important;
+}
+[data-theme="neumorph"] .tabulator{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-header{
+  background:rgba(0,0,0,0.03)!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+  font-weight:600!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-header .tabulator-col{
+  background:transparent!important;
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-row{
+  background:transparent!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-row.tabulator-row-even{
+  background:rgba(0,0,0,0.015)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-row:hover{
+  background:rgba(108,99,255,0.06)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-cell{
+  border-right:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-footer{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:8px!important;
+  box-shadow:var(--card-sh)!important;
+  padding:4px 10px!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-page:hover{
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .tabulator .tabulator-header .tabulator-header-filter input{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:8px!important;
+  color:var(--txt)!important;
+  box-shadow:var(--neu-inset)!important;
+  padding:2px 8px!important;
+}
+[data-theme="neumorph"] .tabulator-popup-container{
+  background:var(--bg)!important;
+  border:none!important;
+  box-shadow:var(--card-sh-h)!important;
+  border-radius:12px!important;
+}
+[data-theme="neumorph"] .tabulator-edit-list .tabulator-edit-list-item{color:var(--txt)!important}
+[data-theme="neumorph"] .tabulator-edit-list .tabulator-edit-list-item.active{
+  background:rgba(108,99,255,0.10)!important;
+  color:var(--accent)!important;
+}
+[data-theme="neumorph"] .tabulator-row.tabulator-group{
+  background:rgba(0,0,0,0.03)!important;
+  color:var(--txt)!important;
+  border-color:var(--line)!important;
+}
+[data-theme="neumorph"] .footerNote{color:var(--txt2)!important;font-size:12px!important}
+
+/* ========== 13. 二级详情面板 ========== */
+[data-theme="neumorph"] #detailOverlay{
+  background:rgba(0,0,0,0.20)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+[data-theme="neumorph"] #detailPanel{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:24px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="neumorph"] #detailPanelHead{
+  border-bottom:1px solid var(--line)!important;
+  padding:20px 24px 16px!important;
+}
+[data-theme="neumorph"] #detailPanelTitle{
+  font-size:18px!important;
+  font-weight:600!important;
+}
+[data-theme="neumorph"] #detailPanelTitle::before{
+  background:var(--accent)!important;
+  border-radius:2px!important;
+}
+[data-theme="neumorph"] #btnDetailClose{
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .2s ease, color .2s ease!important;
+}
+[data-theme="neumorph"] #btnDetailClose:hover{
+  color:var(--bad)!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .detailChip{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:14px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] .detailChip .dc-label{
+  color:var(--txt2)!important;
+  font-size:11px!important;
+}
+[data-theme="neumorph"] .detailChip .dc-value{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+}
+[data-theme="neumorph"] #detailChartBox{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:14px!important;
+  box-shadow:var(--neu-inset)!important;
+}
+
+/* 多维度切换器 → 新拟态切换器 */
+[data-theme="neumorph"] .dimBtn{
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  font-weight:500!important;
+  border-radius:999px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease!important;
+}
+[data-theme="neumorph"] .dimBtn:hover{
+  color:var(--accent)!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .dimBtn.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  font-weight:600!important;
+  box-shadow:var(--card-sh)!important;
+}
+
+/* 分类筛选芯片 */
+[data-theme="neumorph"] .catFilter{
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:12px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease, color .18s ease!important;
+}
+[data-theme="neumorph"] .catFilter:hover{
+  color:var(--txt)!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .catFilter.active{
+  color:var(--txt)!important;
+  font-weight:600!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .catFilter.active::before{
+  box-shadow:0 0 0 3px rgba(108,99,255,0.20)!important;
+  opacity:1!important;
+}
+[data-theme="neumorph"] #detailTableBox h4{
+  font-size:13px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:8px!important;
+}
+
+/* ========== 14. 布局工具栏 & 选择器 ========== */
+[data-theme="neumorph"] #layoutSelect,
+[data-theme="neumorph"] #themeSelect{
+  cursor:pointer!important;
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt)!important;
+  border-radius:var(--btn-r)!important;
+  padding:7px 12px!important;
+  font-size:13px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .25s ease!important;
+  max-width:200px!important;
+}
+[data-theme="neumorph"] #layoutSelect:hover,
+[data-theme="neumorph"] #themeSelect:hover{
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] #layoutSelect:focus,
+[data-theme="neumorph"] #themeSelect:focus{
+  outline:none!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] #layoutSelect option,
+[data-theme="neumorph"] #themeSelect option{
+  background:#fff!important;
+  color:#333!important;
+}
+
+/* ========== 15. 模块化卡片 ========== */
+[data-theme="neumorph"] .cardSlot{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:box-shadow .3s ease!important;
+}
+[data-theme="neumorph"] .cardSlot:hover{
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="neumorph"] .cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:3px!important;
+}
+[data-theme="neumorph"] .cardTitle{
+  font-size:13px!important;
+  font-weight:600!important;
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+  padding-left:7px!important;
+}
+[data-theme="neumorph"] .cardRemove{
+  border:none!important;
+  background:var(--bg)!important;
+  box-shadow:var(--card-sh)!important;
+  border-radius:6px!important;
+  transition:box-shadow .2s ease, color .2s ease!important;
+}
+[data-theme="neumorph"] .cardRemove:hover{
+  color:var(--bad)!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] .cardBody .kpiValue{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+  color:var(--txt)!important;
+}
+[data-theme="neumorph"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="neumorph"] .cardBody .ac-count{
+  font-weight:700!important;
+  font-family:"Segoe UI",monospace!important;
+}
+
+/* ========== 16. 加载遮罩 ========== */
+[data-theme="neumorph"] #loadingOverlay{
+  background:rgba(224,229,236,0.70)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+[data-theme="neumorph"] .loadingCard{
+  background:var(--bg)!important;
+  border:none!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="neumorph"] .spinner{
+  border-color:rgba(108,99,255,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+[data-theme="neumorph"] #loadingText{
+  color:var(--txt)!important;
+  font-weight:500!important;
+}
+[data-theme="neumorph"] .progressTrack{
+  background:var(--bg)!important;
+  border-radius:999px!important;
+  box-shadow:var(--neu-inset)!important;
+}
+[data-theme="neumorph"] #progressBar{
+  background:var(--accent)!important;
+  border-radius:999px!important;
+}
+
+/* ========== 17. 性能模式标签 ========== */
+[data-theme="neumorph"] #perfTag{
+  border:none!important;
+  background:var(--bg)!important;
+  color:var(--txt2)!important;
+  border-radius:999px!important;
+  font-weight:500!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="neumorph"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 18. 低性能模式适配 ========== */
+[data-theme="neumorph"] body.perf-lite{background:var(--bg)!important}
+[data-theme="neumorph"] body.perf-lite #bg-source{display:none!important}
+[data-theme="neumorph"] body.perf-lite #topbar,
+[data-theme="neumorph"] body.perf-lite #liveFeed,
+[data-theme="neumorph"] body.perf-lite #dropzone,
+[data-theme="neumorph"] body.perf-lite .kpi,
+[data-theme="neumorph"] body.perf-lite .chartCard,
+[data-theme="neumorph"] body.perf-lite .analyzeCard,
+[data-theme="neumorph"] body.perf-lite #detailCard,
+[data-theme="neumorph"] body.perf-lite .loadingCard,
+[data-theme="neumorph"] body.perf-lite #detailPanel,
+[data-theme="neumorph"] body.perf-lite #loadingOverlay,
+[data-theme="neumorph"] body.perf-lite .cardSlot,
+[data-theme="neumorph"] body.perf-lite .detailChip,
+[data-theme="neumorph"] body.perf-lite .dimBtn,
+[data-theme="neumorph"] body.perf-lite .catFilter,
+[data-theme="neumorph"] body.perf-lite button{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="neumorph"] body.perf-lite .chartCard:hover,
+[data-theme="neumorph"] body.perf-lite .kpi:hover,
+[data-theme="neumorph"] body.perf-lite .analyzeCard:hover{
+  transform:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="neumorph"] body.perf-lite #loadingOverlay{background:rgba(224,229,236,0.92)!important}
+[data-theme="neumorph"] body.perf-lite #detailOverlay{background:rgba(0,0,0,0.20)!important}
+
+/* ========== 19. 滚动条（新拟态风格） ========== */
+[data-theme="neumorph"]::-webkit-scrollbar{width:10px;height:10px}
+[data-theme="neumorph"]::-webkit-scrollbar-track{background:transparent}
+[data-theme="neumorph"]::-webkit-scrollbar-thumb{
+  background:var(--bg);
+  border-radius:5px;
+  border:2px solid transparent;
+  box-shadow:inset 2px 2px 5px rgba(0,0,0,0.10), inset -2px -2px 5px rgba(255,255,255,0.60);
+}
+[data-theme="neumorph"]::-webkit-scrollbar-thumb:hover{
+  box-shadow:inset 2px 2px 5px rgba(0,0,0,0.15), inset -2px -2px 5px rgba(255,255,255,0.70);
+}
+
+/* ========== 20. 深色模式数字可读性修复 ========== */
+[data-theme="neumorph"][data-mode="dark"] .kpi .value,
+[data-theme="neumorph"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="neumorph"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="neumorph"][data-mode="dark"] .detailChip .dc-value{
+  color:#e8ecf4!important;
+  opacity:1!important;
+}
+/* 深色模式下 KPI 子标题也提亮 */
+[data-theme="neumorph"][data-mode="dark"] .kpi .kpiSub,
+[data-theme="neumorph"][data-mode="dark"] .cardBody .kpiSub{
+  color:rgba(232,236,244,0.65)!important;
+}
+/* 深色模式 detailChartBox 凹陷阴影提亮 */
+[data-theme="neumorph"][data-mode="dark"] #detailChartBox{
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,0.25), inset -3px -3px 8px rgba(255,255,255,0.04)!important;
+}

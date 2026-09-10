@@ -1,0 +1,832 @@
+/* ==========================================================================
+   Swiss Minimal 瑞士极简主题覆盖文件
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="swiss" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-swiss.css">
+   特点：零圆角、无阴影、细边框、网格排版、Helvetica 字体感
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="swiss"][data-mode="light"]{
+  --bg:#ffffff;
+  --bg2:#ffffff;
+  --bg3:#f8f8f8;
+  --surface:rgba(255,255,255,0.70);
+  --surface2:rgba(248,248,248,0.50);
+  --surface-h:rgba(255,255,255,0.82);
+  --border-theme:rgba(0,0,0,0.12);
+  --border-theme2:rgba(0,0,0,0.06);
+  --line:rgba(0,0,0,0.12);
+  --txt:#000000;
+  --txt2:rgba(0,0,0,0.50);
+  --accent:#d62828;
+  --accent2:#003da5;
+  --ok:#007a33;
+  --bad:#d62828;
+  --warn:#f77f00;
+  --purple:#5c2d91;
+  --cyan:#008575;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:0px;
+  --card-sh:none;
+  --card-sh-h:none;
+  --card-bd:1px solid rgba(0,0,0,0.15);
+  --btn-r:0px;
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="swiss"][data-mode="dark"]{
+  --bg:#0a0a0a;
+  --bg2:#111111;
+  --bg3:#0a0a0a;
+  --surface:rgba(255,255,255,0.04);
+  --surface2:rgba(255,255,255,0.02);
+  --surface-h:rgba(255,255,255,0.07);
+  --border-theme:rgba(255,255,255,0.12);
+  --border-theme2:rgba(255,255,255,0.06);
+  --line:rgba(255,255,255,0.12);
+  --txt:#f0f0f0;
+  --txt2:rgba(240,240,240,0.55);
+  --accent:#ff4444;
+  --accent2:#4488ff;
+  --ok:#44bb77;
+  --bad:#ff4444;
+  --warn:#ffaa33;
+  --purple:#8844cc;
+  --cyan:#44bbaa;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:0px;
+  --card-sh:none;
+  --card-sh-h:none;
+  --card-bd:1px solid rgba(255,255,255,0.12);
+  --btn-r:0px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="swiss"] html,
+[data-theme="swiss"]{
+  background:var(--bg)!important;
+}
+[data-theme="swiss"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="swiss"] h1{
+  font-size:24px!important;
+  font-weight:700!important;
+  letter-spacing:-0.5px!important;
+}
+[data-theme="swiss"] .sub{
+  color:var(--txt2)!important;
+  font-size:12px!important;
+  letter-spacing:0.5px!important;
+}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，瑞士极简风格使用 clean 背景模式） */
+[data-theme="swiss"] .lg-tint,
+[data-theme="swiss"] .lg-edge{display:none!important}
+
+/* ========== 4. 按钮系统 → 瑞士极简方角按钮 ========== */
+[data-theme="swiss"] button{
+  border-radius:0!important;
+  border:1px solid var(--txt)!important;
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-family:inherit!important;
+  font-weight:700!important;
+  font-size:12px!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  padding:8px 18px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:background .15s ease, color .15s ease!important;
+}
+[data-theme="swiss"] button:hover{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  border-color:var(--txt)!important;
+}
+[data-theme="swiss"] button:active{
+  opacity:0.85!important;
+}
+[data-theme="swiss"] button.primary{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:700!important;
+}
+[data-theme="swiss"] button.primary:hover{
+  background:var(--bg)!important;
+  color:var(--accent)!important;
+  border-color:var(--accent)!important;
+  filter:none!important;
+}
+
+/* ========== 5. 顶栏 → 瑞士极简（底部 2px 黑线，无圆角无阴影） ========== */
+[data-theme="swiss"] #topbar{
+  background:var(--surface)!important;
+  border:none!important;
+  border-bottom:2px solid var(--txt)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  padding:16px 0!important;
+  margin-bottom:16px!important;
+}
+[data-theme="swiss"] #fileMeta b{color:var(--accent)!important;font-weight:700!important}
+
+/* LIVE 徽标 */
+[data-theme="swiss"] #liveBadge{
+  border:1px solid var(--ok)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:var(--ok)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .liveDot{background:var(--ok)!important}
+[data-theme="swiss"] #liveBadge.paused{
+  border-color:var(--warn)!important;
+  color:var(--warn)!important;
+}
+
+/* ========== 6. 实时流入动态栏 ========== */
+[data-theme="swiss"] #liveFeed{
+  background:var(--surface)!important;
+  border:none!important;
+  border-bottom:1px solid var(--line)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] #liveFeed .feedLabel{
+  color:var(--ok)!important;
+  border-right:1px solid var(--line)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+}
+[data-theme="swiss"] .feedItem{
+  background:transparent!important;
+  border:1px solid var(--line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .feedItem b{color:var(--txt)!important;font-weight:700!important}
+[data-theme="swiss"] .feedItem .t,
+[data-theme="swiss"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="swiss"] .st-ok{background:transparent!important;color:var(--ok)!important;border:1px solid var(--ok)!important}
+[data-theme="swiss"] .st-bad{background:transparent!important;color:var(--bad)!important;border:1px solid var(--bad)!important}
+[data-theme="swiss"] .st-warn{background:transparent!important;color:var(--warn)!important;border:1px solid var(--warn)!important}
+[data-theme="swiss"] .st-sp{background:transparent!important;color:var(--purple)!important;border:1px solid var(--purple)!important}
+
+/* ========== 7. 上传区 ========== */
+[data-theme="swiss"] #dropzone{
+  border:2px solid var(--txt)!important;
+  border-radius:0!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:border-color .15s ease!important;
+}
+[data-theme="swiss"] #dropzone.over{
+  border-color:var(--accent)!important;
+}
+[data-theme="swiss"] #dropzone .big{font-size:40px!important}
+[data-theme="swiss"] #dropzone p{color:var(--txt2)!important;line-height:1.9!important}
+[data-theme="swiss"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 8. 错误面板 ========== */
+[data-theme="swiss"] #errPanel{
+  border:1px solid var(--bad)!important;
+  background:transparent!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] #errPanel h3{
+  color:var(--bad)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+}
+[data-theme="swiss"] #errPanel li{color:var(--bad)!important}
+
+/* ========== 9. KPI 卡片 → 瑞士网格卡（顶部 2px 实线边框） ========== */
+[data-theme="swiss"] .kpi{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  padding:16px!important;
+  transition:none!important;
+}
+/* .kpi::before 改为 2px 实线顶部边框（瑞士网格风格） */
+[data-theme="swiss"] .kpi::before,
+[data-theme="swiss"] .cardSlot::before{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  bottom:auto!important;
+  width:100%!important;
+  height:2px!important;
+  background:var(--kc,var(--accent))!important;
+  z-index:4!important;
+  border-radius:0!important;
+}
+[data-theme="swiss"] .kpi .label,
+[data-theme="swiss"] .cardBody .kpiLabel{
+  color:var(--txt2)!important;
+  font-size:10px!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  margin-bottom:8px!important;
+}
+[data-theme="swiss"] .kpi .value,
+[data-theme="swiss"] .cardBody .kpiValue{
+  font-size:30px!important;
+  font-weight:700!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  color:var(--txt)!important;
+  letter-spacing:-0.5px!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="swiss"] .kpi .kpiSub,
+[data-theme="swiss"] .cardBody .kpiSub{
+  color:var(--txt2)!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  font-variant-numeric:tabular-nums!important;
+  font-size:12px!important;
+}
+[data-theme="swiss"] .kpi .kpiSub b,
+[data-theme="swiss"] .cardBody .kpiSub b{color:var(--accent)!important;font-weight:700!important}
+[data-theme="swiss"] .kpi .clickHint,
+[data-theme="swiss"] .cardBody .clickHint{color:var(--txt2)!important;opacity:.55!important}
+[data-theme="swiss"] .kpi:hover,
+[data-theme="swiss"] .cardSlot:hover{
+  transform:none!important;
+  background:var(--bg3)!important;
+  box-shadow:none!important;
+}
+
+/* ========== 10. 图表卡片 ========== */
+[data-theme="swiss"] .chartCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  padding:14px!important;
+  transition:none!important;
+}
+/* .chartCard h3 无左边框，用大写 + letter-spacing */
+[data-theme="swiss"] .chartCard h3{
+  font-size:12px!important;
+  font-weight:700!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  border-left:none!important;
+  padding-left:0!important;
+  margin-bottom:8px!important;
+  padding-bottom:6px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+[data-theme="swiss"] .chartCard:hover{
+  transform:none!important;
+  background:var(--surface-h)!important;
+  box-shadow:none!important;
+}
+
+/* ========== 11. 专项分析卡片 ========== */
+[data-theme="swiss"] .analyzeCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  padding:14px!important;
+  transition:none!important;
+}
+[data-theme="swiss"] .analyzeCard h3{
+  font-size:12px!important;
+  font-weight:700!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  border-left:none!important;
+  padding-left:0!important;
+  padding-bottom:6px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+[data-theme="swiss"] .analyzeCard .ac-count{
+  font-size:28px!important;
+  font-weight:700!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  color:var(--ac,var(--warn))!important;
+  letter-spacing:-0.5px!important;
+}
+[data-theme="swiss"] .analyzeCard .ac-desc{color:var(--txt2)!important;font-size:12px!important;line-height:1.6!important}
+[data-theme="swiss"] .analyzeCard .ac-more{
+  color:var(--accent)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+}
+[data-theme="swiss"] .analyzeCard .ac-empty{color:var(--txt2)!important}
+[data-theme="swiss"] .analyzeCard:hover{
+  transform:none!important;
+  background:var(--surface-h)!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .ac-tag{
+  border-radius:0!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:10px!important;
+}
+
+/* ========== 12. 明细表 ========== */
+[data-theme="swiss"] #detailCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  padding:14px!important;
+}
+[data-theme="swiss"] #detailCard h3{
+  font-size:12px!important;
+  font-weight:700!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  border-left:none!important;
+  padding-left:0!important;
+  padding-bottom:6px!important;
+  border-bottom:1px solid var(--line)!important;
+  margin-bottom:10px!important;
+}
+[data-theme="swiss"] .tabulator{
+  background:var(--bg)!important;
+  border:1px solid var(--line)!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-header{
+  background:var(--bg3)!important;
+  border-bottom:2px solid var(--txt)!important;
+  color:var(--txt)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-header .tabulator-col{
+  background:transparent!important;
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-row{
+  background:transparent!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-row.tabulator-row-even{
+  background:var(--bg3)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-row:hover{
+  background:rgba(214,40,40,0.04)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-cell{
+  border-right:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-footer{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:transparent!important;
+  border:1px solid var(--txt)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:4px 10px!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-page.active{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  border-color:var(--txt)!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-page:hover{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+}
+[data-theme="swiss"] .tabulator .tabulator-header .tabulator-header-filter input{
+  background:var(--bg)!important;
+  border:1px solid var(--line)!important;
+  border-radius:0!important;
+  color:var(--txt)!important;
+  box-shadow:none!important;
+  padding:2px 6px!important;
+}
+[data-theme="swiss"] .tabulator-popup-container{
+  background:var(--bg)!important;
+  border:1px solid var(--txt)!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+}
+[data-theme="swiss"] .tabulator-edit-list .tabulator-edit-list-item{color:var(--txt)!important}
+[data-theme="swiss"] .tabulator-edit-list .tabulator-edit-list-item.active{
+  background:var(--bg3)!important;
+  color:var(--accent)!important;
+}
+[data-theme="swiss"] .tabulator-row.tabulator-group{
+  background:var(--bg3)!important;
+  color:var(--txt)!important;
+  border-color:var(--line)!important;
+  font-weight:700!important;
+}
+[data-theme="swiss"] .footerNote{
+  color:var(--txt2)!important;
+  font-size:11px!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+}
+
+/* ========== 13. 二级详情面板 ========== */
+[data-theme="swiss"] #detailOverlay{
+  background:rgba(0,0,0,0.40)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="swiss"] #detailPanel{
+  background:var(--bg)!important;
+  border:2px solid var(--txt)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] #detailPanelHead{
+  border-bottom:2px solid var(--txt)!important;
+  padding:20px 24px 16px!important;
+}
+[data-theme="swiss"] #detailPanelTitle{
+  font-size:20px!important;
+  font-weight:700!important;
+  letter-spacing:-0.5px!important;
+}
+[data-theme="swiss"] #detailPanelTitle::before{
+  background:var(--accent)!important;
+  border-radius:0!important;
+}
+[data-theme="swiss"] #btnDetailClose{
+  border:1px solid var(--txt)!important;
+  background:transparent!important;
+  color:var(--txt)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  transition:background .15s ease, color .15s ease!important;
+}
+[data-theme="swiss"] #btnDetailClose:hover{
+  background:var(--bad)!important;
+  color:#fff!important;
+  border-color:var(--bad)!important;
+}
+[data-theme="swiss"] .detailChip{
+  background:var(--bg)!important;
+  border:1px solid var(--line)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .detailChip .dc-label{
+  color:var(--txt2)!important;
+  font-size:10px!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+}
+[data-theme="swiss"] .detailChip .dc-value{
+  font-weight:700!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  letter-spacing:-0.5px!important;
+}
+[data-theme="swiss"] #detailChartBox{
+  background:var(--bg3)!important;
+  border:1px solid var(--line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* 多维度切换器 → 瑞士极简切换器 */
+[data-theme="swiss"] .dimBtn{
+  border:1px solid var(--line)!important;
+  background:transparent!important;
+  color:var(--txt2)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:background .15s ease, color .15s ease!important;
+}
+[data-theme="swiss"] .dimBtn:hover{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  border-color:var(--txt)!important;
+}
+[data-theme="swiss"] .dimBtn.active{
+  background:var(--accent)!important;
+  border-color:var(--accent)!important;
+  color:#fff!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+
+/* 分类筛选芯片 */
+[data-theme="swiss"] .catFilter{
+  border:1px solid var(--line)!important;
+  background:transparent!important;
+  color:var(--txt2)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:background .15s ease, color .15s ease!important;
+  font-size:11px!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+}
+[data-theme="swiss"] .catFilter::before{
+  border-radius:0!important;
+}
+[data-theme="swiss"] .catFilter:hover{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  border-color:var(--txt)!important;
+}
+[data-theme="swiss"] .catFilter.active{
+  background:var(--bg3)!important;
+  color:var(--txt)!important;
+  font-weight:700!important;
+  border-color:var(--cc,var(--accent))!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .catFilter.active::before{
+  opacity:1!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] #detailTableBox h4{
+  font-size:11px!important;
+  font-weight:700!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  border-left:none!important;
+  padding-left:0!important;
+  padding-bottom:4px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+
+/* ========== 14. 布局工具栏 & 选择器 ========== */
+[data-theme="swiss"] #layoutSelect,
+[data-theme="swiss"] #themeSelect{
+  cursor:pointer!important;
+  border:1px solid var(--txt)!important;
+  background:transparent!important;
+  color:var(--txt)!important;
+  border-radius:0!important;
+  padding:6px 10px!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:background .15s ease, color .15s ease!important;
+  max-width:200px!important;
+}
+[data-theme="swiss"] #layoutSelect:hover,
+[data-theme="swiss"] #themeSelect:hover{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+}
+[data-theme="swiss"] #layoutSelect:focus,
+[data-theme="swiss"] #themeSelect:focus{
+  outline:none!important;
+}
+[data-theme="swiss"] #layoutSelect option,
+[data-theme="swiss"] #themeSelect option{
+  background:#fff!important;
+  color:#000!important;
+}
+
+/* ========== 15. 模块化卡片 ========== */
+[data-theme="swiss"] .cardSlot{
+  background:var(--bg)!important;
+  border:var(--card-bd)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:none!important;
+}
+[data-theme="swiss"] .cardSlot:hover{
+  background:var(--bg3)!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .cardSlot.drag-over{
+  outline:2px solid var(--accent)!important;
+  outline-offset:0!important;
+}
+[data-theme="swiss"] .cardTitle{
+  font-size:11px!important;
+  font-weight:700!important;
+  color:var(--txt)!important;
+  text-transform:uppercase!important;
+  letter-spacing:2px!important;
+  border-left:none!important;
+  padding-left:0!important;
+  padding-bottom:4px!important;
+  border-bottom:1px solid var(--line)!important;
+}
+[data-theme="swiss"] .cardRemove{
+  border:1px solid var(--line)!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+  font-size:13px!important;
+  transition:background .15s ease, color .15s ease!important;
+}
+[data-theme="swiss"] .cardRemove:hover{
+  background:var(--bad)!important;
+  color:#fff!important;
+  border-color:var(--bad)!important;
+}
+[data-theme="swiss"] .cardBody .kpiValue{
+  font-weight:700!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  color:var(--txt)!important;
+  letter-spacing:-0.5px!important;
+}
+[data-theme="swiss"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="swiss"] .cardBody .ac-count{
+  font-weight:700!important;
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif!important;
+  letter-spacing:-0.5px!important;
+}
+
+/* ========== 16. 加载遮罩 ========== */
+[data-theme="swiss"] #loadingOverlay{
+  background:rgba(255,255,255,0.85)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="swiss"] .loadingCard{
+  background:var(--bg)!important;
+  border:2px solid var(--txt)!important;
+  border-radius:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] .spinner{
+  border-color:rgba(214,40,40,0.15)!important;
+  border-top-color:var(--accent)!important;
+  border-radius:0!important;
+}
+[data-theme="swiss"] #loadingText{
+  color:var(--txt)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:11px!important;
+}
+[data-theme="swiss"] .progressTrack{
+  background:var(--bg3)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  border:1px solid var(--line)!important;
+}
+[data-theme="swiss"] #progressBar{
+  background:var(--accent)!important;
+  border-radius:0!important;
+}
+
+/* ========== 17. 性能模式标签 ========== */
+[data-theme="swiss"] #perfTag{
+  border:1px solid var(--line)!important;
+  background:transparent!important;
+  color:var(--txt2)!important;
+  border-radius:0!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:1px!important;
+  font-size:10px!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="swiss"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 18. 低性能模式适配 ========== */
+[data-theme="swiss"] body.perf-lite{background:var(--bg)!important}
+[data-theme="swiss"] body.perf-lite #bg-source{display:none!important}
+[data-theme="swiss"] body.perf-lite #topbar,
+[data-theme="swiss"] body.perf-lite #liveFeed,
+[data-theme="swiss"] body.perf-lite #dropzone,
+[data-theme="swiss"] body.perf-lite .kpi,
+[data-theme="swiss"] body.perf-lite .chartCard,
+[data-theme="swiss"] body.perf-lite .analyzeCard,
+[data-theme="swiss"] body.perf-lite #detailCard,
+[data-theme="swiss"] body.perf-lite .loadingCard,
+[data-theme="swiss"] body.perf-lite #detailPanel,
+[data-theme="swiss"] body.perf-lite #loadingOverlay,
+[data-theme="swiss"] body.perf-lite .cardSlot,
+[data-theme="swiss"] body.perf-lite .detailChip,
+[data-theme="swiss"] body.perf-lite .dimBtn,
+[data-theme="swiss"] body.perf-lite .catFilter,
+[data-theme="swiss"] body.perf-lite button{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] body.perf-lite .chartCard:hover,
+[data-theme="swiss"] body.perf-lite .kpi:hover,
+[data-theme="swiss"] body.perf-lite .analyzeCard:hover{
+  transform:none!important;
+  box-shadow:none!important;
+}
+[data-theme="swiss"] body.perf-lite #loadingOverlay{background:rgba(255,255,255,0.92)!important}
+[data-theme="swiss"] body.perf-lite #detailOverlay{background:rgba(0,0,0,0.40)!important}
+
+/* ========== 19. 滚动条（瑞士极简） ========== */
+[data-theme="swiss"]::-webkit-scrollbar{width:8px;height:8px}
+[data-theme="swiss"]::-webkit-scrollbar-track{background:var(--bg3)}
+[data-theme="swiss"]::-webkit-scrollbar-thumb{
+  background:var(--txt2);
+  border-radius:0;
+  border:none;
+}
+[data-theme="swiss"]::-webkit-scrollbar-thumb:hover{
+  background:var(--txt);
+}
+
+/* ========== 20. 深色模式数字可读性修复 ========== */
+[data-theme="swiss"][data-mode="dark"] .kpi .value,
+[data-theme="swiss"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="swiss"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="swiss"][data-mode="dark"] .detailChip .dc-value{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+/* 深色模式下 KPI 子标题也提亮 */
+[data-theme="swiss"][data-mode="dark"] .kpi .kpiSub,
+[data-theme="swiss"][data-mode="dark"] .cardBody .kpiSub{
+  color:rgba(255,255,255,0.65)!important;
+}
+/* 深色模式 loadingOverlay 背景 */
+[data-theme="swiss"][data-mode="dark"] #loadingOverlay{
+  background:rgba(10,10,10,0.85)!important;
+}
+[data-theme="swiss"][data-mode="dark"] #layoutSelect option,
+[data-theme="swiss"][data-mode="dark"] #themeSelect option{
+  background:#0a0a0a!important;
+  color:#f0f0f0!important;
+}

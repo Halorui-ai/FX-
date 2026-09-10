@@ -1,0 +1,627 @@
+/* ==========================================================================
+   主题 5：Material 3 谷歌 (material)
+   适用：dashboard-release-monitor-v5.5.html（data-theme + data-mode 属性系统）
+   用法：在 <head> 中、现有 <style> 之后添加：
+   <link rel="stylesheet" href="./style/theme-material.css">
+   ========================================================================== */
+
+/* ========== 1. CSS 变量：Light 模式 ========== */
+[data-theme="material"][data-mode="light"]{
+  --bg:#fef7ff;
+  --bg2:#fff8fd;
+  --bg3:#f5eeff;
+  --surface:rgba(234,220,255,0.45);
+  --surface2:rgba(234,220,255,0.30);
+  --surface-h:rgba(234,220,255,0.60);
+  --border-theme:rgba(170,120,255,0.15);
+  --border-theme2:rgba(170,120,255,0.08);
+  --line:rgba(103,80,164,0.12);
+  --txt:#1d192b;
+  --txt2:rgba(29,25,43,0.55);
+  --accent:#6750a4;
+  --accent2:#7d5260;
+  --ok:#386a20;
+  --bad:#b3261e;
+  --warn:#7d5700;
+  --purple:#6750a4;
+  --cyan:#006874;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:28px;
+  --card-sh:0 2px 8px rgba(103,80,164,0.10), 0 6px 20px rgba(103,80,164,0.06);
+  --card-sh-h:0 4px 12px rgba(103,80,164,0.16), 0 8px 28px rgba(103,80,164,0.10);
+  --card-bd:none;
+  --btn-r:980px;
+}
+
+/* ========== 2. CSS 变量：Dark 模式 ========== */
+[data-theme="material"][data-mode="dark"]{
+  --bg:#141218;
+  --bg2:#1d1b20;
+  --bg3:#141218;
+  --surface:rgba(103,80,164,0.12);
+  --surface2:rgba(103,80,164,0.08);
+  --surface-h:rgba(103,80,164,0.20);
+  --border-theme:rgba(103,80,164,0.20);
+  --border-theme2:rgba(103,80,164,0.10);
+  --line:rgba(255,255,255,0.10);
+  --txt:#e6e0e9;
+  --txt2:rgba(230,224,233,0.55);
+  --accent:#d0bcff;
+  --accent2:#efb8c8;
+  --ok:#7cd464;
+  --bad:#f2b8b5;
+  --warn:#e8ca4e;
+  --purple:#d0bcff;
+  --cyan:#4fd8eb;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:28px;
+  --card-sh:0 2px 8px rgba(208,188,255,0.12), 0 6px 20px rgba(208,188,255,0.08);
+  --card-sh-h:0 4px 12px rgba(208,188,255,0.18), 0 8px 28px rgba(208,188,255,0.12);
+  --card-bd:none;
+  --btn-r:980px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="material"]{
+  font-family:"Google Sans","Product Sans","Roboto",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="material"] html,
+[data-theme="material"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+}
+[data-theme="material"] h1{font-weight:500!important;letter-spacing:0!important}
+[data-theme="material"] .sub{color:var(--txt2)!important}
+
+/* ========== 4. 隐藏玻璃折射层（M3 不用毛玻璃，但保留 canvas 动态背景） ========== */
+[data-theme="material"] .lg-tint,
+[data-theme="material"] .lg-edge{display:none!important}
+
+/* ========== 5. KPI 卡片 ========== */
+[data-theme="material"] .kpi{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s cubic-bezier(0.2,0,0,1), box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="material"] .kpi::before,
+[data-theme="material"] .cardSlot::before{
+  border-radius:var(--card-r) 0 0 var(--card-r)!important;
+}
+[data-theme="material"] .kpi .label,
+[data-theme="material"] .cardBody .kpiLabel{color:var(--txt2)!important}
+[data-theme="material"] .kpi .value,
+[data-theme="material"] .cardBody .kpiValue{
+  font-weight:500!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="material"] .kpi .kpiSub,
+[data-theme="material"] .cardBody .kpiSub{color:var(--txt2)!important;font-variant-numeric:tabular-nums!important}
+[data-theme="material"] .kpi .kpiSub b,
+[data-theme="material"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="material"] .kpi:hover,
+[data-theme="material"] .cardSlot:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 6. 图表卡片 ========== */
+[data-theme="material"] .chartCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s cubic-bezier(0.2,0,0,1), box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="material"] .chartCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="material"] .chartCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* ========== 7. 专项分析卡片 ========== */
+[data-theme="material"] .analyzeCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .2s cubic-bezier(0.2,0,0,1), box-shadow .2s ease, background .2s ease!important;
+}
+[data-theme="material"] .analyzeCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--ac,var(--warn))!important;
+}
+[data-theme="material"] .analyzeCard .ac-count{
+  font-weight:500!important;
+  color:var(--ac,var(--warn))!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="material"] .analyzeCard .ac-desc{color:var(--txt2)!important}
+[data-theme="material"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:500!important}
+[data-theme="material"] .analyzeCard:hover{
+  transform:translateY(-2px)!important;
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="material"] .ac-tag{border-radius:8px!important;font-weight:500!important}
+
+/* ========== 8. 明细表卡片 ========== */
+[data-theme="material"] #detailCard{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="material"] #detailCard h3{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 9. Tabulator 表格 ========== */
+[data-theme="material"] .tabulator{
+  border:1px solid var(--line)!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+}
+[data-theme="material"] .tabulator .tabulator-header{
+  background:var(--surface2)!important;
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="material"] .tabulator .tabulator-header .tabulator-col{
+  border-right:1px solid var(--line)!important;
+}
+[data-theme="material"] .tabulator .tabulator-row{
+  border-bottom:1px solid var(--line)!important;
+  color:var(--txt)!important;
+}
+[data-theme="material"] .tabulator .tabulator-row.tabulator-row-even{
+  background:var(--surface2)!important;
+}
+[data-theme="material"] .tabulator .tabulator-row:hover{
+  background:rgba(103,80,164,0.08)!important;
+}
+[data-theme="material"][data-mode="dark"] .tabulator .tabulator-row:hover{
+  background:rgba(208,188,255,0.10)!important;
+}
+[data-theme="material"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="material"] .tabulator .tabulator-page{
+  color:var(--txt)!important;
+  background:var(--surface)!important;
+  border:1px solid var(--line)!important;
+  border-radius:980px!important;
+}
+[data-theme="material"] .tabulator .tabulator-page.active{
+  background:var(--accent)!important;
+  color:#fff!important;
+  border-color:var(--accent)!important;
+}
+[data-theme="material"] .tabulator .tabulator-page:hover{
+  background:rgba(103,80,164,0.10)!important;
+}
+[data-theme="material"][data-mode="dark"] .tabulator .tabulator-page:hover{
+  background:rgba(208,188,255,0.12)!important;
+}
+[data-theme="material"] .tabulator-popup-container{
+  background:var(--surface-h)!important;
+  border:1px solid var(--line)!important;
+  border-radius:16px!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="material"] .footerNote{color:var(--txt2)!important}
+
+/* ========== 10. 顶栏 ========== */
+[data-theme="material"] #topbar{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="material"] #fileMeta b{color:var(--accent)!important;font-weight:500!important}
+
+/* LIVE 徽标 */
+[data-theme="material"] #liveBadge{
+  border:1px solid rgba(56,106,32,0.25)!important;
+  border-radius:980px!important;
+  background:rgba(56,106,32,0.08)!important;
+  color:#386a20!important;
+  font-weight:500!important;
+}
+[data-theme="material"][data-mode="dark"] #liveBadge{
+  color:#7cd464!important;
+  background:rgba(124,212,100,0.10)!important;
+  border-color:rgba(124,212,100,0.25)!important;
+}
+[data-theme="material"] .liveDot{background:var(--ok)!important}
+[data-theme="material"] #liveBadge.paused{
+  border-color:rgba(125,87,0,0.30)!important;
+  background:rgba(125,87,0,0.08)!important;
+  color:#7d5700!important;
+}
+[data-theme="material"][data-mode="dark"] #liveBadge.paused{
+  color:#e8ca4e!important;
+  background:rgba(232,202,78,0.10)!important;
+}
+
+/* ========== 11. 实时流入动态栏 ========== */
+[data-theme="material"] #liveFeed{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+}
+[data-theme="material"] #liveFeed .feedLabel{
+  color:#386a20!important;
+  border-right-color:var(--line)!important;
+  font-weight:500!important;
+}
+[data-theme="material"][data-mode="dark"] #liveFeed .feedLabel{color:#7cd464!important}
+[data-theme="material"] .feedItem{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-theme2)!important;
+  border-radius:980px!important;
+}
+[data-theme="material"] .feedItem b{color:var(--txt)!important;font-weight:500!important}
+[data-theme="material"] .feedItem .t,
+[data-theme="material"] .feedItem .route{color:var(--accent)!important}
+
+/* 状态标签 */
+[data-theme="material"] .st-ok{background:rgba(56,106,32,0.10)!important;color:#386a20!important;border:1px solid rgba(56,106,32,0.25)!important}
+[data-theme="material"] .st-bad{background:rgba(179,38,30,0.10)!important;color:#b3261e!important;border:1px solid rgba(179,38,30,0.25)!important}
+[data-theme="material"] .st-warn{background:rgba(125,87,0,0.10)!important;color:#7d5700!important;border:1px solid rgba(125,87,0,0.25)!important}
+[data-theme="material"] .st-sp{background:rgba(103,80,164,0.10)!important;color:#6750a4!important;border:1px solid rgba(103,80,164,0.25)!important}
+[data-theme="material"][data-mode="dark"] .st-ok{background:rgba(124,212,100,0.12)!important;color:#7cd464!important;border-color:rgba(124,212,100,0.25)!important}
+[data-theme="material"][data-mode="dark"] .st-bad{background:rgba(242,184,181,0.12)!important;color:#f2b8b5!important;border-color:rgba(242,184,181,0.25)!important}
+[data-theme="material"][data-mode="dark"] .st-warn{background:rgba(232,202,78,0.12)!important;color:#e8ca4e!important;border-color:rgba(232,202,78,0.25)!important}
+[data-theme="material"][data-mode="dark"] .st-sp{background:rgba(208,188,255,0.12)!important;color:#d0bcff!important;border-color:rgba(208,188,255,0.25)!important}
+
+/* ========== 12. 上传区 ========== */
+[data-theme="material"] #dropzone{
+  border:2px dashed var(--border-theme)!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:all .2s cubic-bezier(0.2,0,0,1)!important;
+}
+[data-theme="material"] #dropzone.over{
+  border-color:var(--accent)!important;
+  background:rgba(103,80,164,0.06)!important;
+}
+[data-theme="material"][data-mode="dark"] #dropzone.over{
+  background:rgba(208,188,255,0.08)!important;
+}
+[data-theme="material"] #dropzone p{color:var(--txt2)!important}
+[data-theme="material"] #dropzone p b{color:var(--txt)!important}
+
+/* ========== 13. 错误面板 ========== */
+[data-theme="material"] #errPanel{
+  border:1px solid rgba(179,38,30,0.25)!important;
+  background:rgba(179,38,30,0.05)!important;
+  border-radius:var(--card-r)!important;
+}
+[data-theme="material"] #errPanel h3{color:var(--bad)!important;font-weight:500!important}
+[data-theme="material"][data-mode="dark"] #errPanel{
+  border-color:rgba(242,184,181,0.30)!important;
+  background:rgba(242,184,181,0.06)!important;
+}
+
+/* ========== 14. 按钮（M3 胶囊按钮） ========== */
+[data-theme="material"] button{
+  border-radius:var(--btn-r)!important;
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt)!important;
+  font-weight:500!important;
+  font-size:13px!important;
+  padding:8px 20px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  transition:all .2s cubic-bezier(0.2,0,0,1)!important;
+}
+[data-theme="material"] button:hover{
+  background:var(--surface-h)!important;
+  color:var(--txt)!important;
+}
+[data-theme="material"] button:active{transform:scale(0.97)!important}
+[data-theme="material"] button.primary{
+  background:var(--accent)!important;
+  border:none!important;
+  color:#fff!important;
+  font-weight:500!important;
+}
+[data-theme="material"][data-mode="dark"] button.primary{color:#141218!important}
+[data-theme="material"] button.primary:hover{
+  background:var(--accent2)!important;
+  color:#fff!important;
+  box-shadow:0 2px 8px rgba(103,80,164,0.25)!important;
+}
+[data-theme="material"][data-mode="dark"] button.primary:hover{
+  color:#141218!important;
+  box-shadow:0 2px 8px rgba(208,188,255,0.25)!important;
+}
+
+/* ========== 15. 二级详情面板 ========== */
+[data-theme="material"] #detailOverlay{
+  background:rgba(0,0,0,0.20)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="material"][data-mode="dark"] #detailOverlay{
+  background:rgba(0,0,0,0.50)!important;
+}
+[data-theme="material"] #detailPanel{
+  background:var(--bg2)!important;
+  border:var(--card-bd)!important;
+  border-radius:28px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.15)!important;
+}
+[data-theme="material"][data-mode="dark"] #detailPanel{
+  box-shadow:0 24px 80px rgba(0,0,0,0.50)!important;
+}
+[data-theme="material"] #detailPanelHead{border-bottom:1px solid var(--line)!important}
+[data-theme="material"] #detailPanelTitle{color:var(--txt)!important;font-weight:500!important}
+[data-theme="material"] #detailPanelTitle::before{background:var(--accent)!important}
+[data-theme="material"] #btnDetailClose{
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt2)!important;
+  border-radius:50%!important;
+}
+[data-theme="material"] #btnDetailClose:hover{
+  background:rgba(179,38,30,0.10)!important;
+  color:var(--bad)!important;
+}
+[data-theme="material"] .detailChip{
+  background:var(--surface2)!important;
+  border:none!important;
+  border-radius:16px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="material"] .detailChip .dc-label{color:var(--txt2)!important}
+[data-theme="material"] .detailChip .dc-value{
+  font-weight:500!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="material"] #detailChartBox{
+  background:var(--surface2)!important;
+  border:none!important;
+  border-radius:16px!important;
+}
+
+/* 多维度切换器 */
+[data-theme="material"] .dimBtn{
+  border-radius:980px!important;
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt2)!important;
+  font-weight:500!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:all .2s cubic-bezier(0.2,0,0,1)!important;
+}
+[data-theme="material"] .dimBtn:hover{
+  color:var(--accent)!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="material"] .dimBtn.active{
+  background:var(--accent)!important;
+  border:none!important;
+  color:#fff!important;
+  font-weight:500!important;
+  box-shadow:0 2px 8px rgba(103,80,164,0.25)!important;
+}
+[data-theme="material"][data-mode="dark"] .dimBtn.active{
+  color:#141218!important;
+  box-shadow:0 2px 8px rgba(208,188,255,0.25)!important;
+}
+
+/* 分类筛选芯片 */
+[data-theme="material"] .catFilter{
+  border-radius:980px!important;
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt2)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:all .18s ease!important;
+}
+[data-theme="material"] .catFilter:hover{
+  color:var(--txt)!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="material"] .catFilter.active{
+  color:var(--txt)!important;
+  font-weight:500!important;
+  background:var(--surface-h)!important;
+}
+[data-theme="material"] #detailTableBox h4{
+  color:var(--txt)!important;
+  border-left:3px solid var(--accent)!important;
+}
+
+/* ========== 16. 模块化卡片 ========== */
+[data-theme="material"] .cardSlot{
+  background:var(--surface)!important;
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:background .2s ease, box-shadow .2s ease!important;
+}
+[data-theme="material"] .cardSlot:hover{
+  background:var(--surface-h)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+[data-theme="material"] .cardSlot.drag-over{
+  outline:2px dashed var(--accent)!important;
+  outline-offset:3px!important;
+}
+[data-theme="material"] .cardTitle{
+  color:var(--txt)!important;
+  font-weight:500!important;
+  border-left:3px solid var(--accent)!important;
+}
+[data-theme="material"] .cardRemove{
+  border:none!important;
+  background:transparent!important;
+  border-radius:50%!important;
+}
+[data-theme="material"] .cardRemove:hover{
+  background:rgba(179,38,30,0.10)!important;
+  color:var(--bad)!important;
+}
+[data-theme="material"] .cardBody .kpiValue{
+  font-weight:500!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="material"] .cardBody .kpiSub b{color:var(--accent)!important}
+[data-theme="material"] .cardBody .ac-count{
+  font-weight:500!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="material"] .cardBody .ac-desc{color:var(--txt2)!important}
+
+/* ========== 17. 加载遮罩 ========== */
+[data-theme="material"] #loadingOverlay{
+  background:rgba(254,247,255,0.70)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="material"][data-mode="dark"] #loadingOverlay{
+  background:rgba(20,18,24,0.75)!important;
+}
+[data-theme="material"] .loadingCard{
+  background:var(--bg2)!important;
+  border:none!important;
+  border-radius:28px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 12px 48px rgba(0,0,0,0.12)!important;
+}
+[data-theme="material"][data-mode="dark"] .loadingCard{
+  box-shadow:0 12px 48px rgba(0,0,0,0.50)!important;
+}
+[data-theme="material"] .spinner{
+  border-color:rgba(103,80,164,0.15)!important;
+  border-top-color:var(--accent)!important;
+}
+[data-theme="material"] #loadingText{color:var(--txt)!important;font-weight:500!important}
+[data-theme="material"] .progressTrack{background:rgba(103,80,164,0.10)!important;border-radius:980px!important}
+[data-theme="material"][data-mode="dark"] .progressTrack{background:rgba(208,188,255,0.12)!important}
+[data-theme="material"] #progressBar{background:linear-gradient(90deg,var(--accent),var(--cyan))!important;border-radius:980px!important}
+
+/* ========== 18. 性能模式标签 ========== */
+[data-theme="material"] #perfTag{
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt2)!important;
+  border-radius:980px!important;
+  font-weight:500!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+[data-theme="material"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="material"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 19. 主题/布局选择器 ========== */
+[data-theme="material"] #themeSelect,
+[data-theme="material"] #layoutSelect{
+  border:none!important;
+  background:var(--surface2)!important;
+  color:var(--txt)!important;
+  border-radius:980px!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  padding:6px 14px!important;
+}
+[data-theme="material"] #themeSelect:hover,
+[data-theme="material"] #layoutSelect:hover{
+  background:var(--surface-h)!important;
+}
+[data-theme="material"] #themeSelect:focus,
+[data-theme="material"] #layoutSelect:focus{
+  outline:none!important;
+  box-shadow:0 0 0 2px rgba(103,80,164,0.20)!important;
+}
+[data-theme="material"][data-mode="dark"] #themeSelect:focus,
+[data-theme="material"][data-mode="dark"] #layoutSelect:focus{
+  box-shadow:0 0 0 2px rgba(208,188,255,0.25)!important;
+}
+[data-theme="material"] #themeSelect option,
+[data-theme="material"] #layoutSelect option{background:#fff;color:var(--txt)}
+[data-theme="material"][data-mode="dark"] #themeSelect option,
+[data-theme="material"][data-mode="dark"] #layoutSelect option{background:#1d1b20;color:var(--txt)}
+
+/* ========== 20. 低性能模式适配 ========== */
+[data-theme="material"] body.perf-lite{background:var(--bg)!important}
+[data-theme="material"][data-mode="light"] body.perf-lite .kpi,
+[data-theme="material"][data-mode="light"] body.perf-lite .chartCard,
+[data-theme="material"][data-mode="light"] body.perf-lite .analyzeCard,
+[data-theme="material"][data-mode="light"] body.perf-lite #detailCard,
+[data-theme="material"][data-mode="light"] body.perf-lite .cardSlot{
+  background:rgba(234,220,255,0.75)!important;
+}
+[data-theme="material"][data-mode="dark"] body.perf-lite .kpi,
+[data-theme="material"][data-mode="dark"] body.perf-lite .chartCard,
+[data-theme="material"][data-mode="dark"] body.perf-lite .analyzeCard,
+[data-theme="material"][data-mode="dark"] body.perf-lite #detailCard,
+[data-theme="material"][data-mode="dark"] body.perf-lite .cardSlot{
+  background:rgba(29,27,32,0.92)!important;
+}
+
+/* ========== 21. 滚动条（M3 风格） ========== */
+[data-theme="material"][data-mode="light"] ::-webkit-scrollbar{width:8px;height:8px}
+[data-theme="material"][data-mode="light"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="material"][data-mode="light"] ::-webkit-scrollbar-thumb{background:rgba(103,80,164,0.20);border-radius:4px}
+[data-theme="material"][data-mode="light"] ::-webkit-scrollbar-thumb:hover{background:rgba(103,80,164,0.35)}
+[data-theme="material"][data-mode="dark"] ::-webkit-scrollbar{width:8px;height:8px}
+[data-theme="material"][data-mode="dark"] ::-webkit-scrollbar-track{background:transparent}
+[data-theme="material"][data-mode="dark"] ::-webkit-scrollbar-thumb{background:rgba(208,188,255,0.20);border-radius:4px}
+[data-theme="material"][data-mode="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(208,188,255,0.35)}
+
+/* ========== 22. 深色模式数字可读性修复 ========== */
+[data-theme="material"][data-mode="dark"] .kpi .value,
+[data-theme="material"][data-mode="dark"] .cardBody .kpiValue{
+  color:#f5f0f7!important;
+  opacity:1!important;
+}
+[data-theme="material"][data-mode="dark"] .analyzeCard .ac-count{
+  color:var(--ac,#f5f0f7)!important;
+  opacity:1!important;
+}
+[data-theme="material"][data-mode="dark"] .detailChip .dc-value{
+  color:#f5f0f7!important;
+  opacity:1!important;
+}

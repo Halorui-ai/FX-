@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>物品放行监控数据看板 v5.5（主题/视图插件化）</title>
 
-<link rel="stylesheet" href="./lib/tabulator_midnight.min.css">
-<link rel="stylesheet" href="./lib/toastify.css">
-<link rel="stylesheet" href="./lib/gridstack.min.css">
+<link rel="stylesheet" href="../../../lib/tabulator_midnight.min.css">
+<link rel="stylesheet" href="../../../lib/toastify.css">
+<link rel="stylesheet" href="../../../lib/gridstack.min.css">
 <style>
 /* ========== 全局样式（液态玻璃风） ========== */
 :root{
@@ -520,18 +520,18 @@ body.perf-lite .cardSlot:hover{transform:none!important}
 <div class="footerNote">本页面所有计算均在本地完成 · 物品放行监控看板 v5.5（主题/视图插件化）</div>
 
 <!-- ========== 离线依赖库（全部本地引用，file:// 直接可用） ========== -->
-<script src="./lib/echarts.min.js"></script>
-<script src="./lib/echarts-liquidfill.min.js"></script>
-<script src="./lib/xlsx.full.min.js"></script>
-<script src="./lib/papaparse.min.js"></script>
-<script src="./lib/dayjs.min.js"></script>
-<script src="./lib/lodash.min.js"></script>
-<script src="./lib/countUp.umd.js"></script>
-<script src="./lib/tabulator.min.js"></script>
-<script src="./lib/toastify.js"></script>
-<script src="./lib/html2canvas.min.js"></script>
-<script src="./lib/FileSaver.min.js"></script>
-<script src="./lib/gridstack-all.min.js"></script>
+<script src="../../../lib/echarts.min.js"></script>
+<script src="../../../lib/echarts-liquidfill.min.js"></script>
+<script src="../../../lib/xlsx.full.min.js"></script>
+<script src="../../../lib/papaparse.min.js"></script>
+<script src="../../../lib/dayjs.min.js"></script>
+<script src="../../../lib/lodash.min.js"></script>
+<script src="../../../lib/countUp.umd.js"></script>
+<script src="../../../lib/tabulator.min.js"></script>
+<script src="../../../lib/toastify.js"></script>
+<script src="../../../lib/html2canvas.min.js"></script>
+<script src="../../../lib/FileSaver.min.js"></script>
+<script src="../../../lib/gridstack-all.min.js"></script>
 
 <script>
 /* =====================================================================
@@ -899,7 +899,7 @@ function parseViaWorker(buf) {
     setLoadingProgress(15, "正在后台解析工作表（主线程不冻结）…");
     const aliases = []; Object.values(CONFIG.字段映射).forEach(a => a.forEach(x => aliases.push(x)));
     // Worker 内 importScripts 加载外部库：file:// 下不可用（当前默认禁用 Worker，见 __workerDisabled）
-    const xlsxUrl = new URL("./lib/xlsx.full.min.js", location.href).href;
+    const xlsxUrl = new URL("../../../lib/xlsx.full.min.js", location.href).href;
     w.postMessage({ buf: buf, xlsxUrl: xlsxUrl, aliases: aliases });
   });
 }
@@ -1759,13 +1759,13 @@ function refreshLibState() { if ($("cardLibOverlay").classList.contains("open"))
 
 // —— 外部主题注册表（id → 文件路径；css 必填，js 可选用于图表配色）——
 const THEME_REGISTRY = [
-  { id: "Material3", css: "./style/theme-material3.css", js: "./style/theme-material3-charts.js" },
+  { id: "Material3", css: "../../../style/theme-material3.css", js: "../../../style/theme-material3-charts.js" },
   // ↑ 模板：新增主题在此追加一行（id 即下拉显示名；js 为图表配色脚本，可省略）
 ];
 
 // —— 外部视图注册表（id → js 文件路径）——
 const VIEW_REGISTRY = [
-  { id: "示例管理层视图", file: "./views/示例管理层视图.js" },
+  { id: "示例管理层视图", file: "../../../views/示例管理层视图.js" },
   // ↑ 模板：新增视图在此追加一行（文件内定义 window.VIEW_PLUGIN）
 ];
 

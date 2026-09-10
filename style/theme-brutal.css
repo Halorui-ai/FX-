@@ -1,0 +1,368 @@
+/* ==========================================================================
+   NeoBrutalism 新粗野主题覆盖文件（v5.2 导航栏 + v5.1 卡片融合）
+   适用：dashboard-release-monitor-v5.5.html
+   适配：data-theme="brutal" + data-mode="light"/"dark"
+   用法：在 <head> 中、现有 <style> 之后加载：
+   <link rel="stylesheet" href="./style/theme-brutal.css">
+   特点：粗黑边框、硬阴影偏移、零模糊、标题色块反白、按下位移
+   ========================================================================== */
+
+/* ========== 1. Light 模式变量 ========== */
+[data-theme="brutal"][data-mode="light"]{
+  --bg:#fffdf0;
+  --bg2:#fffef6;
+  --bg3:#fff8dc;
+  --surface:rgba(255,255,255,0.85);
+  --surface2:rgba(255,254,242,0.72);
+  --surface-h:rgba(255,255,255,0.92);
+  --border-theme:#111111;
+  --border-theme2:#111111;
+  --line:rgba(17,17,17,0.14);
+  --txt:#111111;
+  --txt2:rgba(17,17,17,0.60);
+  --accent:#ff3e00;
+  --accent2:#0040ff;
+  --ok:#00a859;
+  --bad:#e50000;
+  --warn:#ff8800;
+  --purple:#7b00ff;
+  --cyan:#00899e;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:6px;
+  --card-sh:5px 5px 0px #111111;
+  --card-sh-h:8px 8px 0px #111111;
+  --card-bd:2.5px solid #111111;
+  --btn-r:4px;
+}
+
+/* ========== 2. Dark 模式变量 ========== */
+[data-theme="brutal"][data-mode="dark"]{
+  --bg:#141414;
+  --bg2:#1c1c1c;
+  --bg3:#141414;
+  --surface:rgba(30,30,30,0.85);
+  --surface2:rgba(38,38,38,0.72);
+  --surface-h:rgba(44,44,44,0.92);
+  --border-theme:#f0f0f0;
+  --border-theme2:#f0f0f0;
+  --line:rgba(240,240,240,0.14);
+  --txt:#f0f0f0;
+  --txt2:rgba(240,240,240,0.60);
+  --accent:#ff6b35;
+  --accent2:#4dabff;
+  --ok:#4ade80;
+  --bad:#ff6b6b;
+  --warn:#ffc107;
+  --purple:#b366ff;
+  --cyan:#4dd0e1;
+  --glass-blur:0px;
+  --glass-sat:100%;
+  --card-r:6px;
+  --card-sh:5px 5px 0px rgba(255,255,255,0.80);
+  --card-sh-h:8px 8px 0px rgba(255,255,255,0.80);
+  --card-bd:2.5px solid rgba(255,255,255,0.80);
+  --btn-r:4px;
+}
+
+/* ========== 3. 全局背景 & 字体 ========== */
+[data-theme="brutal"] html,
+[data-theme="brutal"]{
+  background:var(--bg)!important;
+}
+[data-theme="brutal"] body{
+  background:transparent!important;
+  color:var(--txt)!important;
+  font-weight:500!important;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif!important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+[data-theme="brutal"] h1{font-weight:900!important;letter-spacing:-0.5px!important}
+[data-theme="brutal"] h1::before{
+  content:"\258C "!important;
+  color:var(--accent)!important;
+  font-weight:900!important;
+}
+[data-theme="brutal"] .sub{color:var(--txt2)!important;font-size:12px!important;font-weight:600!important}
+
+/* 隐藏玻璃折射层（保留 canvas 动态背景，新粗野风格使用 pop 背景模式） */
+[data-theme="brutal"] .lg-tint,
+[data-theme="brutal"] .lg-edge{display:none!important}
+
+/* ========== 4. 卡片 → 粗黑边框 + 硬阴影 ========== */
+[data-theme="brutal"] .kpi,
+[data-theme="brutal"] .chartCard,
+[data-theme="brutal"] .analyzeCard,
+[data-theme="brutal"] #detailCard,
+[data-theme="brutal"] .cardSlot{
+  border:var(--card-bd)!important;
+  border-radius:var(--card-r)!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:var(--card-sh)!important;
+  transition:transform .12s ease, box-shadow .12s ease!important;
+}
+[data-theme="brutal"] .kpi:hover,
+[data-theme="brutal"] .chartCard:hover,
+[data-theme="brutal"] .analyzeCard:hover,
+[data-theme="brutal"] #detailCard:hover,
+[data-theme="brutal"] .cardSlot:hover{
+  transform:translate(-2px,-2px)!important;
+  box-shadow:var(--card-sh-h)!important;
+}
+
+/* KPI 顶部全宽 7px 强调条 */
+[data-theme="brutal"] .kpi::before,
+[data-theme="brutal"] .cardSlot::before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;left:0!important;right:auto!important;bottom:auto!important;
+  width:100%!important;height:7px!important;
+  background:var(--accent)!important;
+  border-radius:0 0 4px 4px!important;
+}
+[data-theme="brutal"] .kpi .label,
+[data-theme="brutal"] .cardBody .kpiLabel{
+  text-transform:uppercase!important;
+  font-weight:800!important;
+  letter-spacing:1.2px!important;
+  font-size:11px!important;
+  color:var(--txt2)!important;
+}
+[data-theme="brutal"] .kpi .value,
+[data-theme="brutal"] .cardBody .kpiValue{
+  font-weight:900!important;
+  font-size:30px!important;
+  letter-spacing:-0.8px!important;
+  color:var(--txt)!important;
+  font-variant-numeric:tabular-nums!important;
+}
+[data-theme="brutal"] .kpi .kpiSub,
+[data-theme="brutal"] .cardBody .kpiSub{color:var(--txt2)!important;font-weight:600!important}
+[data-theme="brutal"] .kpi .kpiSub b,
+[data-theme="brutal"] .cardBody .kpiSub b{color:var(--accent)!important;font-weight:800!important}
+
+/* 标题 → 反白色块标签 */
+[data-theme="brutal"] .chartCard h3,
+[data-theme="brutal"] .analyzeCard h3,
+[data-theme="brutal"] #detailCard h3,
+[data-theme="brutal"] .cardTitle{
+  border:none!important;
+  padding:4px 12px!important;
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  display:inline-block!important;
+  font-weight:800!important;
+  border-radius:2px!important;
+  margin-bottom:8px!important;
+  letter-spacing:-0.2px!important;
+}
+[data-theme="brutal"] .analyzeCard .ac-count{font-weight:900!important;color:var(--ac,var(--warn))!important}
+[data-theme="brutal"] .analyzeCard .ac-more{color:var(--accent)!important;font-weight:800!important}
+
+/* ========== 5. 按钮系统 → 粗野按钮 ========== */
+[data-theme="brutal"] button,
+[data-theme="brutal"] .dimBtn,
+[data-theme="brutal"] .catFilter{
+  border:2px solid var(--txt)!important;
+  border-radius:var(--btn-r)!important;
+  background:var(--surface)!important;
+  color:var(--txt)!important;
+  font-weight:700!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:3px 3px 0 var(--txt)!important;
+  transition:transform .1s ease, box-shadow .1s ease!important;
+}
+[data-theme="brutal"] button:hover,
+[data-theme="brutal"] .dimBtn:hover,
+[data-theme="brutal"] .catFilter:hover{
+  transform:translate(-1px,-1px)!important;
+  box-shadow:4px 4px 0 var(--txt)!important;
+}
+[data-theme="brutal"] button:active,
+[data-theme="brutal"] .dimBtn:active,
+[data-theme="brutal"] .catFilter:active{
+  transform:translate(3px,3px)!important;
+  box-shadow:0 0 0 var(--txt)!important;
+}
+[data-theme="brutal"] button.primary{
+  background:var(--accent)!important;color:#fff!important;border-color:var(--txt)!important;
+}
+[data-theme="brutal"] .dimBtn.active,
+[data-theme="brutal"] .catFilter.active{
+  background:var(--txt)!important;color:var(--bg)!important;border-color:var(--txt)!important;
+}
+
+/* ========== 6. 顶栏 → v5.2 导航栏粗野风 ========== */
+[data-theme="brutal"] #topbar{
+  border:2.5px solid var(--txt)!important;
+  border-radius:10px!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:6px 6px 0 var(--txt)!important;
+}
+[data-theme="brutal"] .tb-editbar{
+  border:2px dashed var(--txt)!important;
+  border-radius:6px!important;
+  background:rgba(255,62,0,0.05)!important;
+}
+[data-theme="brutal"] #fileMeta b{color:var(--accent)!important;font-weight:800!important}
+[data-theme="brutal"] #liveBadge{
+  border:2px solid var(--txt)!important;border-radius:4px!important;background:var(--surface)!important;color:var(--ok)!important;
+  font-weight:800!important;text-transform:uppercase!important;letter-spacing:.5px!important;box-shadow:2px 2px 0 var(--txt)!important;
+}
+[data-theme="brutal"] .liveDot{background:var(--ok)!important}
+
+/* ========== 7. 实时流入动态栏 ========== */
+[data-theme="brutal"] #liveFeed{
+  border:2px solid var(--txt)!important;
+  border-radius:8px!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:4px 4px 0 var(--txt)!important;
+}
+[data-theme="brutal"] #liveFeed .feedLabel{color:var(--ok)!important;border-right:2px solid var(--txt)!important;font-weight:800!important;text-transform:uppercase!important}
+[data-theme="brutal"] .feedItem{
+  border:1.5px solid var(--txt)!important;
+  border-radius:4px!important;
+  background:var(--surface2)!important;
+}
+[data-theme="brutal"] .feedItem b{color:var(--txt)!important;font-weight:800!important}
+[data-theme="brutal"] .feedItem .t,
+[data-theme="brutal"] .feedItem .route{color:var(--accent)!important;font-weight:700!important}
+
+[data-theme="brutal"] .stBadge{
+  border:1.5px solid currentColor!important;
+  border-radius:2px!important;
+  text-transform:uppercase!important;
+  font-weight:800!important;
+  letter-spacing:.5px!important;
+}
+[data-theme="brutal"] .st-ok{color:var(--ok)!important}
+[data-theme="brutal"] .st-bad{color:var(--bad)!important}
+[data-theme="brutal"] .st-warn{color:var(--warn)!important}
+[data-theme="brutal"] .st-sp{color:var(--purple)!important}
+
+/* ========== 8. 上传区 ========== */
+[data-theme="brutal"] #dropzone{
+  border:3px dashed var(--txt)!important;
+  border-radius:10px!important;
+  background:var(--surface)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:6px 6px 0 var(--txt)!important;
+  transition:transform .12s ease, box-shadow .12s ease!important;
+}
+[data-theme="brutal"] #dropzone.over{
+  border-color:var(--accent)!important;
+  box-shadow:6px 6px 0 var(--accent)!important;
+  transform:translate(-2px,-2px)!important;
+}
+[data-theme="brutal"] #dropzone p{color:var(--txt2)!important;font-weight:600!important}
+[data-theme="brutal"] #dropzone p b{color:var(--txt)!important;font-weight:800!important}
+
+/* ========== 9. 明细表 ========== */
+[data-theme="brutal"] .tabulator{
+  border:2px solid var(--txt)!important;
+  border-radius:0!important;
+  background:var(--surface)!important;
+}
+[data-theme="brutal"] .tabulator .tabulator-header{
+  background:var(--txt)!important;
+  color:var(--bg)!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:.5px!important;
+  border-bottom:2px solid var(--txt)!important;
+}
+[data-theme="brutal"] .tabulator .tabulator-header .tabulator-col{
+  background:transparent!important;border-right:1px solid rgba(255,255,255,0.18)!important;
+}
+[data-theme="brutal"] .tabulator .tabulator-row{
+  background:transparent!important;color:var(--txt)!important;border-bottom:1px solid var(--line)!important;
+}
+[data-theme="brutal"] .tabulator .tabulator-row:hover{background:var(--surface-h)!important}
+[data-theme="brutal"] .tabulator .tabulator-cell{color:var(--txt)!important}
+[data-theme="brutal"] .tabulator .tabulator-page{
+  background:var(--surface)!important;border:2px solid var(--txt)!important;color:var(--txt)!important;border-radius:0!important;box-shadow:2px 2px 0 var(--txt)!important;font-weight:700!important;
+}
+[data-theme="brutal"] .tabulator .tabulator-page.active{background:var(--accent)!important;color:#fff!important;border-color:var(--txt)!important}
+
+/* ========== 10. 二级详情面板 ========== */
+[data-theme="brutal"] #detailOverlay{background:rgba(0,0,0,0.5)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+[data-theme="brutal"] #detailPanel{
+  background:var(--surface)!important;border:2.5px solid var(--txt)!important;border-radius:10px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:8px 8px 0 var(--txt)!important;
+}
+[data-theme="brutal"] #detailPanelTitle{font-weight:900!important;letter-spacing:-0.3px!important}
+[data-theme="brutal"] #detailPanelTitle::before{background:var(--accent)!important;border-radius:0!important;width:6px!important}
+[data-theme="brutal"] #btnDetailClose{border:2px solid var(--txt)!important;background:var(--surface)!important;color:var(--txt)!important;border-radius:4px!important;box-shadow:2px 2px 0 var(--txt)!important}
+[data-theme="brutal"] #btnDetailClose:hover{color:var(--bad)!important;border-color:var(--bad)!important;box-shadow:2px 2px 0 var(--bad)!important}
+[data-theme="brutal"] .detailChip{
+  background:var(--surface2)!important;border:2px solid var(--txt)!important;border-radius:4px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:3px 3px 0 var(--txt)!important;
+}
+[data-theme="brutal"] .detailChip .dc-label{color:var(--txt2)!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.5px!important;font-size:11px!important}
+[data-theme="brutal"] .detailChip .dc-value{font-weight:900!important;color:var(--txt)!important}
+
+/* ========== 11. 模块化卡片 / 选择器 ========== */
+[data-theme="brutal"] .cardBody .kpiValue{font-weight:900!important;color:var(--txt)!important}
+[data-theme="brutal"] .cardBody .kpiSub b{color:var(--accent)!important;font-weight:800!important}
+[data-theme="brutal"] .cardRemove{
+  border:2px solid var(--txt)!important;background:var(--surface)!important;border-radius:4px!important;box-shadow:2px 2px 0 var(--txt)!important;
+}
+[data-theme="brutal"] .cardRemove:hover{color:var(--bad)!important;border-color:var(--bad)!important;box-shadow:2px 2px 0 var(--bad)!important}
+
+[data-theme="brutal"] #themeSelect,
+[data-theme="brutal"] #layoutSelect{
+  border:2px solid var(--txt)!important;border-radius:var(--btn-r)!important;background:var(--surface)!important;color:var(--txt)!important;
+  font-weight:700!important;box-shadow:3px 3px 0 var(--txt)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+[data-theme="brutal"] #themeSelect option,
+[data-theme="brutal"] #layoutSelect option{background:var(--surface)!important;color:var(--txt)!important}
+
+/* ========== 12. 加载遮罩 / 性能标签 ========== */
+[data-theme="brutal"] #loadingOverlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+[data-theme="brutal"][data-mode="dark"] #loadingOverlay{background:rgba(20,20,20,0.6)!important}
+[data-theme="brutal"][data-mode="light"] #loadingOverlay{background:rgba(255,253,240,0.65)!important}
+[data-theme="brutal"] .loadingCard{
+  background:var(--surface)!important;border:2.5px solid var(--txt)!important;border-radius:var(--card-r)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:6px 6px 0 var(--txt)!important;
+}
+[data-theme="brutal"] .spinner{border-color:var(--line)!important;border-top-color:var(--accent)!important}
+[data-theme="brutal"] #loadingText{color:var(--txt)!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.5px!important}
+[data-theme="brutal"] #progressBar{background:var(--accent)!important}
+[data-theme="brutal"] #perfTag{
+  background:var(--surface)!important;border:2px solid var(--txt)!important;border-radius:0!important;color:var(--txt2)!important;
+  font-weight:700!important;text-transform:uppercase!important;letter-spacing:.5px!important;box-shadow:2px 2px 0 var(--txt)!important;
+}
+[data-theme="brutal"] #perfTag.lite b{color:var(--warn)!important}
+[data-theme="brutal"] #perfTag.full b{color:var(--ok)!important}
+
+/* ========== 13. 滚动条（方块粗野风） ========== */
+[data-theme="brutal"]::-webkit-scrollbar{width:12px;height:12px}
+[data-theme="brutal"]::-webkit-scrollbar-track{background:var(--bg2)}
+[data-theme="brutal"]::-webkit-scrollbar-thumb{background:var(--txt);border:2px solid var(--bg2);border-radius:0}
+[data-theme="brutal"]::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* ========== 14. 深色模式数字可读性修复 ========== */
+[data-theme="brutal"][data-mode="dark"] .kpi .value,
+[data-theme="brutal"][data-mode="dark"] .cardBody .kpiValue,
+[data-theme="brutal"][data-mode="dark"] .analyzeCard .ac-count,
+[data-theme="brutal"][data-mode="dark"] .detailChip .dc-value{
+  color:var(--txt)!important;
+  opacity:1!important;
+}
+/* 粗野暗色：KPI 数字用纯白确保最高对比度 */
+[data-theme="brutal"][data-mode="dark"] .kpi .value,
+[data-theme="brutal"][data-mode="dark"] .cardBody .kpiValue{
+  color:#ffffff!important;
+}
+[data-theme="brutal"][data-mode="dark"] .cardBody .kpiValue{
+  color:#ffffff!important;
+}
