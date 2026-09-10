@@ -7,10 +7,14 @@
 #   4. 特保单物品分类仅「新产品A级物料」「新产品机台」两种；
 #   5. 状态覆盖：正常结案 / 到达超时 / 已接收但接收时超时 / 超时未接收 / 在途超时 / 在途正常。
 import random, datetime, openpyxl
+from pathlib import Path
 
 random.seed(2026080901)
-SRC = r"C:\Users\Ray\OneDrive\文档\液态玻璃看板Qoder\物品放行监控_原备份.xlsx"
-OUT = r"C:\Users\Ray\OneDrive\文档\液态玻璃看板Qoder\物品放行监控_模拟测试.xlsx"
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "物品放行监控_原备份.xlsx"
+OUT = ROOT / "物品放行监控_模拟测试.xlsx"
+if not SRC.exists():
+    raise SystemExit(f"找不到表头模板：{SRC}")
 
 src = openpyxl.load_workbook(SRC)
 headers = [c.value for c in src.active[1]]
@@ -234,5 +238,6 @@ while ws.max_row - 1 < TARGET_ROWS:
         ws.append([row.get(h, "") for h in headers])
 
 wb.save(OUT)
-print("完成. 总行数:", ws.max_row - 1, " 单号数:", bill_count)
+print("完成. 输出:", OUT)
+print("总行数:", ws.max_row - 1, " 单号数:", bill_count)
 print("状态分布:", stat_count)

@@ -88,7 +88,7 @@ gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/ma
 - 应用：`html[data-theme]` + `html[data-mode]`；切走时清理旧 link/script、`_themeCleanup`、恢复 `echarts.init`
 - 记忆：`localStorage.dashTheme` / `dashMode`
 - 现行已注册：Terminal、Aurora、新粗野、液态玻璃、Material3、Fluent、新拟态、粘土、瑞士极简（文件在 `style/`）
-- 另有一份 `theme-material3.*` 是 v5.5 遗留；v5.6 注册的是 `theme-material.*`
+- 另有一份 `style/theme-material3.*`：**仅给归档** `docs/archive/versions/dashboard-release-monitor-v5.5.html` 探测用。现行 v5.6 注册的是 `theme-material.*`。不要按这两个文件头部注释（仍写「与 v4.html 同目录硬链」）去导入。
 
 图表配色脚本约定：拦截 `echarts.init` / `setOption`，监听 `data-mode`，被移除时停止，并提供 `_themeCleanup`。
 

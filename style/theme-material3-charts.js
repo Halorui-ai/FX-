@@ -1,14 +1,7 @@
 /* ==========================================================================
    Material Design 3 — ECharts 图表主题适配
-   适用：dashboard-release-monitor-v4.html
-   用法：在 </body> 之前、所有业务脚本之后添加：
-   <script src="./theme-material3-charts.js"></script>
-   
-   原理：
-   1. 注册名为 "material3" 的 ECharts 主题
-   2. 拦截 echarts.init，自动套用该主题
-   3. 拦截 setOption，将硬编码的旧配色替换为 Material 3 配色
-   无需修改原文件任何 JS 代码。
+   已废弃作为现行导入方式。v5.6 请用 theme-material-charts.js + THEME_REGISTRY。
+   本文件仅保留给 docs/archive/versions/dashboard-release-monitor-v5.5.html。
    ========================================================================== */
 (function () {
   "use strict";

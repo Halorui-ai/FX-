@@ -1,8 +1,7 @@
 /* ==========================================================================
    Material Design 3 主题覆盖文件
-   适用：dashboard-release-monitor-v4.html
-   用法：在 <head> 中、现有 <style> 之后添加：
-   <link rel="stylesheet" href="./theme-material3.css">
+   已废弃作为现行导入方式。v5.6 请用 theme-material.* + THEME_REGISTRY。
+   本文件仅保留给 docs/archive/versions/dashboard-release-monitor-v5.5.html。
    ========================================================================== */
 
 /* ========== 1. CSS 变量覆盖：液态玻璃 → Material Design 3 ========== */
