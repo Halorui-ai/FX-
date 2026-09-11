@@ -1268,6 +1268,35 @@ function _computeStatsRaw() {
       return buckets;
     })(),
     // 超时+结案率日趋势（按天聚合）
+    // 卡 A：在途滞留 By 流入门岗（订单级）。不含已到达后的超时未接收。
+    gateStuckTop: (() => {
+      const transit = orderList.filter(o => o.在途);
+      const grouped = _.groupBy(transit, o => o.流入门岗 || "（空）");
+      return Object.keys(grouped).map(name => {
+        const arr = grouped[name];
+        const timeout = arr.filter(o => o.在途超时).length;
+        return {
+          name, total: arr.length, timeout,
+          ok: arr.length - timeout,
+          special: arr.filter(o => o.特保).length,
+          value: arr.length
+        };
+      }).sort((a, b) => b.total - a.total).slice(0, 12);
+    })(),
+    // 卡 B：过岗负荷 By 实际放行门岗（记录级 = 过岗次数；去重单数仅作副指标）
+    gateLoadTop: (() => {
+      const hops = rows.filter(r => r.实际放行门岗);
+      const grouped = _.groupBy(hops, r => r.实际放行门岗 || "（空）");
+      return Object.keys(grouped).map(name => {
+        const arr = grouped[name];
+        const nos = new Set(arr.map(r => r.放行单号));
+        return {
+          name, hops: arr.length, orders: nos.size,
+          specialHops: arr.filter(r => r._特保).length,
+          value: arr.length
+        };
+      }).sort((a, b) => b.hops - a.hops).slice(0, 12);
+    })(),
     timeoutTrend: (() => {
       const valid2 = rows.filter(r => r._申请日期);
       if (!valid2.length) return [];
@@ -1417,6 +1446,49 @@ const optionBuilders = {
       { name: "结案率", type: "line", yAxisIndex: 1, data: data.map(d => d.closeRate), smooth: true, symbolSize: 6, lineStyle: { width: 3, color: "#34c759" }, itemStyle: { color: "#34c759" } }
     ]
   }),
+  gateStuck: data => {
+    const names = data.map(d => d.name).reverse();
+    return {
+      tooltip: {
+        trigger: "axis", axisPointer: { type: "shadow" },
+        formatter(p) {
+          const d = data.find(x => x.name === p[0].axisValue);
+          if (!d) return p[0].axisValue;
+          return d.name + "<br/>在途 <b>" + d.total + "</b> 单（超时 " + d.timeout + " / 未超时 " + d.ok + "）<br/>其中特保 " + d.special + " 单";
+        }
+      },
+      legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
+      grid: { left: 10, right: 36, top: 8, bottom: 36, containLabel: true },
+      xAxis: { type: "value", name: "单", ...baseAxis },
+      yAxis: { type: "category", data: names, ...baseAxis,
+        axisLabel: { color: "rgba(0,0,0,0.55)", width: 150, overflow: "truncate" } },
+      series: [
+        { name: "在途未超时", type: "bar", stack: "stuck", data: data.map(d => d.ok).reverse(),
+          barWidth: "55%", itemStyle: { color: "#ff9f0a" } },
+        { name: "在途超时", type: "bar", stack: "stuck", data: data.map(d => d.timeout).reverse(),
+          barWidth: "55%", itemStyle: { color: "#ff3b30", borderRadius: [0, 5, 5, 0] },
+          label: { show: true, position: "right", color: "#1d1d1f",
+            formatter: p => { const d = data.find(x => x.name === (p.axisValue || p.name)); return d ? d.total : ""; } } }
+      ]
+    };
+  },
+  gateLoad: data => ({
+    tooltip: {
+      trigger: "axis", axisPointer: { type: "shadow" },
+      formatter(p) {
+        const d = data.find(x => x.name === p[0].axisValue);
+        if (!d) return p[0].axisValue;
+        return d.name + "<br/>过岗 <b>" + d.hops + "</b> 次（记录）<br/>去重 " + d.orders + " 单 · 特保过岗 " + d.specialHops + " 次";
+      }
+    },
+    grid: { left: 10, right: 40, top: 8, bottom: 10, containLabel: true },
+    xAxis: { type: "value", name: "次", ...baseAxis },
+    yAxis: { type: "category", data: data.map(d => d.name).reverse(), ...baseAxis,
+      axisLabel: { color: "rgba(0,0,0,0.55)", width: 150, overflow: "truncate" } },
+    series: [{ type: "bar", data: data.map(d => d.hops).reverse(), barWidth: "55%",
+      itemStyle: { color: "#00b8d4", borderRadius: [0, 5, 5, 0] },
+      label: { show: true, position: "right", color: "#1d1d1f" } }]
+  }),
   gdmsCatPie: data => ({
     tooltip: { trigger: "item" },
     legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
@@ -1545,6 +1617,34 @@ const CARD_DEFS = {
     id: "chart_cat", title: "物品分类分布", icon: "📦", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_cat", body.firstChild).setOption(catOption(ctx.S), true); },
     update(body, ctx) { if (liveCharts.chart_cat) liveCharts.chart_cat.setOption(catOption(ctx.S)); }
+  },
+  chart_gate_stuck: {
+    id: "chart_gate_stuck", title: "在途滞留 By 流入门岗（单）", icon: "🚧", cat: "异常监控", w: 6, h: 4, minW: 3, maxW: 12, minH: 3, maxH: 8, detailKey: "gateStuck",
+    render(body, ctx) {
+      const data = ctx.S.gateStuckTop;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无在途单据</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("chart_gate_stuck", body.firstChild).setOption(optionBuilders.gateStuck(data), true);
+    },
+    update(body, ctx) {
+      const ch = liveCharts.chart_gate_stuck;
+      if (!ch || !ctx.S.gateStuckTop.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gateStuck(ctx.S.gateStuckTop));
+    }
+  },
+  chart_gate_load: {
+    id: "chart_gate_load", title: "过岗负荷 By 实际放行门岗（次数）", icon: "🚪", cat: "分布分析", w: 6, h: 4, minW: 3, maxW: 12, minH: 3, maxH: 8, detailKey: "gateLoad",
+    render(body, ctx) {
+      const data = ctx.S.gateLoadTop;
+      if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无实际放行记录</div>'; return; }
+      body.innerHTML = '<div class="chart"></div>';
+      cardChart("chart_gate_load", body.firstChild).setOption(optionBuilders.gateLoad(data), true);
+    },
+    update(body, ctx) {
+      const ch = liveCharts.chart_gate_load;
+      if (!ch || !ctx.S.gateLoadTop.length) { this.render(body, ctx); return; }
+      ch.setOption(optionBuilders.gateLoad(ctx.S.gateLoadTop));
+    }
   },
   chart_route: {
     id: "chart_route", title: "门岗流转方向 TOP10（流出 → 流入）", icon: "🔄", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
@@ -1694,8 +1794,9 @@ const BUILTIN_LAYOUTS = {
     { id: "chart_type", x: 0, y: 2, w: 4, h: 3 }, { id: "chart_trend", x: 4, y: 2, w: 8, h: 3 },
     { id: "alert_transit", x: 0, y: 5, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 5, w: 6, h: 3 },
     { id: "chart_dept", x: 0, y: 8, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 8, w: 6, h: 3 },
-    { id: "chart_route", x: 0, y: 11, w: 6, h: 3 }, { id: "chart_status", x: 6, y: 11, w: 6, h: 3 },
-    { id: "chart_deptCat", x: 0, y: 14, w: 12, h: 4 }, { id: "table_detail", x: 0, y: 18, w: 12, h: 5 }
+    { id: "chart_gate_stuck", x: 0, y: 11, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 11, w: 6, h: 4 },
+    { id: "chart_route", x: 0, y: 15, w: 6, h: 3 }, { id: "chart_status", x: 6, y: 15, w: 6, h: 3 },
+    { id: "chart_deptCat", x: 0, y: 18, w: 12, h: 4 }, { id: "table_detail", x: 0, y: 22, w: 12, h: 5 }
   ],
   "管理层视图": [
     { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }, { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
@@ -1708,13 +1809,15 @@ const BUILTIN_LAYOUTS = {
     { id: "kpi_transit", x: 0, y: 0, w: 4, h: 2 }, { id: "kpi_receive", x: 4, y: 0, w: 4, h: 2 },
     { id: "kpi_special", x: 8, y: 0, w: 4, h: 2 },
     { id: "alert_transit", x: 0, y: 2, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 2, w: 6, h: 3 },
-    { id: "chart_status", x: 0, y: 5, w: 12, h: 3 }, { id: "table_detail", x: 0, y: 8, w: 12, h: 5 }
+    { id: "chart_gate_stuck", x: 0, y: 5, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 5, w: 6, h: 4 },
+    { id: "chart_status", x: 0, y: 9, w: 12, h: 3 }, { id: "table_detail", x: 0, y: 12, w: 12, h: 5 }
   ],
   "运维视图": [
     { id: "kpi_overview", x: 0, y: 0, w: 12, h: 2 },
     { id: "chart_dept", x: 0, y: 2, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 2, w: 6, h: 3 },
-    { id: "chart_route", x: 0, y: 5, w: 12, h: 3 }, { id: "chart_deptCat", x: 0, y: 8, w: 12, h: 4 },
-    { id: "table_detail", x: 0, y: 12, w: 12, h: 5 }
+    { id: "chart_gate_stuck", x: 0, y: 5, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 5, w: 6, h: 4 },
+    { id: "chart_route", x: 0, y: 9, w: 12, h: 3 }, { id: "chart_deptCat", x: 0, y: 12, w: 12, h: 4 },
+    { id: "table_detail", x: 0, y: 16, w: 12, h: 5 }
   ],
   "GDMS超时管控": [
     // —— 顶部：5 张 KPI 指标卡（v5.2 起从底部上移，一眼掌握全局） ——
@@ -1729,7 +1832,9 @@ const BUILTIN_LAYOUTS = {
     { id: "gdms_timeout_dept", x: 0, y: 7, w: 6, h: 3 },
     { id: "gdms_receive_dept", x: 6, y: 7, w: 6, h: 3 },
     { id: "gdms_timeout_duration", x: 0, y: 10, w: 6, h: 3 },
-    { id: "gdms_unclosed", x: 6, y: 10, w: 6, h: 4 }
+    { id: "gdms_unclosed", x: 6, y: 10, w: 6, h: 4 },
+    { id: "chart_gate_stuck", x: 0, y: 14, w: 6, h: 4 },
+    { id: "chart_gate_load", x: 6, y: 14, w: 6, h: 4 }
   ]
 };
 let layoutState = { active: "默认视图", custom: {} };
@@ -2309,6 +2414,43 @@ const KPI_DETAIL = {
     },
     tableTitle: "特级安保单记录", filter(r) { return r._特保; }
   },
+  gateStuck: {
+    title: "🚧 在途滞留 · 按流入门岗 · 详情",
+    chips(S) {
+      const timeoutN = S.transitTimeoutOrders.length;
+      const transit = timeoutN + S.inTransitNotTimeout;
+      const top = S.gateStuckTop[0];
+      return [
+        ["在途单", transit, "var(--warn)"],
+        ["其中超时", timeoutN, "var(--bad)"],
+        ["TOP门岗数", S.gateStuckTop.length, "var(--txt2)"],
+        ["最高堆积(单)", top ? top.total : 0, "var(--txt)"]
+      ];
+    },
+    chart(S) {
+      return optionBuilders.gateStuck(S.gateStuckTop);
+    },
+    tableTitle: "在途单据（按流入门岗滞留，订单对应记录）",
+    filter(r) { const o = orders[r.放行单号]; return o && o.在途; }
+  },
+  gateLoad: {
+    title: "🚪 过岗负荷 · 按实际放行门岗 · 详情",
+    chips(S) {
+      const hops = rows.filter(r => r.实际放行门岗).length;
+      const top = S.gateLoadTop[0];
+      return [
+        ["过岗次数(记录)", hops, "var(--accent)"],
+        ["TOP门岗数", S.gateLoadTop.length, "var(--txt2)"],
+        ["最忙岗过岗次数", top ? top.hops : 0, "var(--cyan)"],
+        ["最忙岗去重单", top ? top.orders : 0, "var(--txt)"]
+      ];
+    },
+    chart(S) {
+      return optionBuilders.gateLoad(S.gateLoadTop);
+    },
+    tableTitle: "实际放行记录（过岗次数，记录级）",
+    filter(r) { return !!r.实际放行门岗; }
+  },
   transitTimeout: {
     title: "🚧 在途超时 · 流入门岗未放行 · 详情",
     chips(S) {
@@ -2390,6 +2532,10 @@ const DETAIL_COL_SETS = {
   special: ["放行单号", "申请日期", "申请部门", "物品类型", "物品分类", "放行物品名称", "放行数量",
     "流出门岗", "流入门岗", "实际放行门岗", "实际放行时间", "放行状态", "放行超时"],
   // 在途超时：关注门岗流转与超时标记
+  gateStuck: ["放行单号", "申请日期", "申请部门", "流入门岗", "实际放行门岗", "实际放行时间",
+    "放行状态", "放行超时", "物品分类", "放行物品名称", "放行数量"],
+  gateLoad: ["放行单号", "申请日期", "申请部门", "流出门岗", "流入门岗", "实际放行门岗", "实际放行时间",
+    "放行人", "放行状态", "放行超时", "物品分类", "放行物品名称", "放行数量"],
   transitTimeout: ["放行单号", "申请日期", "申请部门", "流入门岗", "实际放行门岗", "实际放行时间",
     "放行状态", "放行超时", "物品分类", "放行物品名称", "放行数量"],
   // 超时未接收：关注接收责任主体（接收人/部门）

@@ -15,6 +15,12 @@
 
 ---
 
+## 2026-09-12
+
+- 新增卡 A `chart_gate_stuck`（在途滞留 By 流入门岗，订单级堆叠超时/未超时）与卡 B `chart_gate_load`（过岗负荷 By 实际放行门岗，记录级次数）。默认/一线/运维/GDMS 视图已放入。
+- 新增 `gen_gate_pressure_data.py` → `物品放行监控_门岗压力演示.xlsx`（16 岗，中码头/物流门倾斜）。口径脚本验收：滞留 TOP1 中码头 106 单、TOP2 合计 74.5%；过岗 TOP 中码头 480 次。100k 仍只作解析压测。
+- D-21：滞留与过货两种门岗角色不得混柱。卡 A 明确为「目的地将到未到」，不是最后盖章岗。
+
 ## 2026-09-11
 
 - 文档中枢：README 短入口 + AGENT / CONTEXT / ARCHITECTURE / DECISIONS；旧 README 与历史 HTML/脚本进 `docs/archive/`。

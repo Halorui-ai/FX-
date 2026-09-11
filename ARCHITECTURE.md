@@ -70,7 +70,7 @@
 
 gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
 
-内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。
+内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维、GDMS，不在管理层精简视图里。
 
 ### 顶栏壳（v5.6）
 
