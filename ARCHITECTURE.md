@@ -45,7 +45,7 @@
 | 区块 | 内容 |
 |------|------|
 | `<style>` | 默认液态玻璃 + 深色 `[data-mode="dark"]` |
-| `<body>` | 顶栏 / 上传 / 卡片网格 / 卡片库 / 二级详情 |
+| `<body>` | 顶栏（状态 + 右侧功能抽屉）/ 上传 / 卡片网格 / 卡片库 / 二级详情 |
 | `CONFIG` | 字段映射、特保前缀、超时标记、性能阈值（**改业务规则只动这里**） |
 | 解析 | `handleFile` / `findHeaderRow` / `firstNonEmptySheet` / `sheetToRowsChunked` |
 | Worker（保留未启用） | `PARSER_WORKER_SRC` / `parseViaWorker` |
@@ -53,7 +53,7 @@
 | 计算 | `computeOrders` / `computeStats` |
 | 卡片 | `CARD_DEFS` / `optionBuilders` / `BUILTIN_LAYOUTS` |
 | 详情 | `KPI_DETAIL` / `openDetail` |
-| 主题 | `THEME_REGISTRY` / `probeThemes` / `applyTheme` / `toggleDarkMode` |
+| 主题 | `THEME_REGISTRY` / `probeThemes` / `applyTheme` / `toggleDarkMode` / `setDrawerOpen` |
 | 视图插件 | `VIEW_REGISTRY` / `loadViewPlugins` |
 | 演示 | `makeDemoOrder` / `liveTick`（新开单 / 推进门岗 / 到达 / 接收） |
 | 背景 | `animBg` / PERF 降级 |
@@ -71,6 +71,21 @@
 gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
 
 内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。
+
+### 顶栏壳（v5.6）
+
+默认**只显示状态**，不铺一排按钮（D-18）。
+
+| 区域 | 内容 |
+|------|------|
+| 左 `.tb-identity` | 标题、说明、状态芯片（画质 / 文件信息 / LIVE），芯片同一行同一高度 |
+| 右 `#btnDrawer` | 仅圆形箭头；默认收起。点开后箭头旋转，`#toolDrawer` 用 `grid-template-rows: 0fr→1fr` + `cubic-bezier(0.22, 1, 0.36, 1)` 展开 |
+| 抽屉内 `.tb-drawer-toolbar` | 深浅色滑块、流畅模式滑块、主题下拉、视图下拉，与暂停刷新 / 导出 / 编辑布局**同一行** |
+| 编辑态 | `#editBar` 仍在抽屉内，仅编辑模式显示 |
+
+深浅色 / 性能是 iOS 式 `role="switch"`（`#swDark` / `#swPerf`），打开 = 深色、打开 = 流畅（lite）。标题与顶栏 `#perfTag` 同步。`Esc` 关抽屉。
+
+`#btnDrawer` **不要写死黑底**。空闲态必须跟当前主题的普通按钮走（`html[data-theme=x] button.tb-drawer-btn` 写在各 `style/theme-*.css` 末尾）；悬停略提亮；仅 `aria-expanded="true"` 才用强调色填充。只留图标，不要加「功能」文字。不要改成常驻左侧栏。
 
 ---
 
@@ -107,7 +122,7 @@ gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/ma
 - 派生字段 `_` 前缀，导出前 `stripPrivate()` 剥离。
 - 新图表动画走 `withAnim()` / `animOpt()`，大数据与 lite 自动降级。
 
-常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；卡顿 → 顶栏切流畅模式。
+常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
 
 ---
 
@@ -154,6 +169,7 @@ CARD_DEFS.my_newCard = {
 2. 可选 `style/theme-<key>-charts.js`：按现有 aurora 等脚本的拦截 / 清理约定。
 3. 在 `THEME_REGISTRY` **追加一行**（`id`、`theme`、`css`、`js`）。
 4. 不要把主题 CSS 内联进主 HTML，不要再复制一份 `dashboard-release-monitor-v5.x-themes.html`。
+5. 在该主题 css **末尾**覆盖 `html[data-theme="<key>"] button.tb-drawer-btn` 的空闲 / 悬停 / 展开三态，使圆形箭头跟本主题按钮一致，禁止再写死黑底。
 
 ### 7.5 新视图
 
