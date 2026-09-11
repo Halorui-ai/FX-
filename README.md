@@ -22,9 +22,10 @@
 
 | 文件 | 给谁 | 回答什么 |
 |------|------|----------|
-| [AGENT.md](AGENT.md) | 所有 AI agent | 准许 / 禁止、开工顺序 |
+| [AGENT.md](AGENT.md) | 所有 AI agent | 准许 / 禁止、开工与**提交前**检查 |
+| [CHANGELOG.md](CHANGELOG.md) | 人 / 下一班 agent | **先看「进行中」**；这次和近日改了什么 |
 | [CONTEXT.md](CONTEXT.md) | 改业务 / 对数字 | 记录 vs 单、口径、卡片、数据格式 |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 改结构 / 加功能 | 数据流、分区、插件；末章如何扩展 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 改结构 / 加功能 | 数据流、分区、插件、顶栏壳；末章如何扩展 |
 | [DECISIONS.md](DECISIONS.md) | 改口径或机制前 | 过往决策与踩坑（只追加） |
 
 归档（只读，索引见 [`docs/archive/README.md`](docs/archive/README.md)）：
@@ -46,3 +47,4 @@
 | 新卡片 / 主题 / 视图怎么加 | ARCHITECTURE.md 末章 |
 | 能不能另开目录改 | AGENT.md |
 | 这件事以前定过没有 | DECISIONS.md |
+| 上次做到哪、这次改了什么 | CHANGELOG.md |
