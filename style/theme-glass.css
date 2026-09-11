@@ -665,3 +665,14 @@
   color:#f0f6fc!important;
   opacity:1!important;
 }
+
+html[data-theme="glass"] button.tb-drawer-btn{
+  background:var(--surface)!important;color:var(--txt)!important;
+  border:1px solid var(--border-theme)!important;border-radius:50%!important;
+  box-shadow:var(--card-sh)!important;
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important}
+html[data-theme="glass"] button.tb-drawer-btn:hover{
+  background:var(--surface-h)!important;border-color:var(--accent)!important;color:var(--txt)!important}
+html[data-theme="glass"] button.tb-drawer-btn[aria-expanded="true"]{
+  background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}

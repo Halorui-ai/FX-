@@ -703,3 +703,13 @@
 [data-theme="neumorph"][data-mode="dark"] #detailChartBox{
   box-shadow:inset 3px 3px 8px rgba(0,0,0,0.25), inset -3px -3px 8px rgba(255,255,255,0.04)!important;
 }
+
+html[data-theme="neumorph"] button.tb-drawer-btn{
+  background:var(--bg)!important;color:var(--txt)!important;
+  border:none!important;border-radius:50%!important;
+  box-shadow:var(--card-sh)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-theme="neumorph"] button.tb-drawer-btn:hover{
+  background:var(--bg)!important;color:var(--accent)!important;border:none!important;
+  box-shadow:var(--neu-inset)!important}
+html[data-theme="neumorph"] button.tb-drawer-btn[aria-expanded="true"]{
+  background:var(--accent)!important;color:#fff!important;box-shadow:var(--card-sh)!important}

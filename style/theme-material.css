@@ -625,3 +625,12 @@
   color:#f5f0f7!important;
   opacity:1!important;
 }
+
+html[data-theme="material"] button.tb-drawer-btn{
+  background:var(--surface2)!important;color:var(--txt)!important;
+  border:none!important;border-radius:50%!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-theme="material"] button.tb-drawer-btn:hover{
+  background:var(--surface-h)!important;color:var(--txt)!important;border:none!important}
+html[data-theme="material"] button.tb-drawer-btn[aria-expanded="true"]{
+  background:var(--accent)!important;color:#fff!important}

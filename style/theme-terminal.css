@@ -334,3 +334,12 @@
 [data-theme="terminal"][data-mode="light"] .cardBody .kpiValue{
   text-shadow:none!important;
 }
+
+html[data-theme="terminal"] button.tb-drawer-btn{
+  background:transparent!important;color:var(--txt)!important;
+  border:1px solid var(--border-theme)!important;border-radius:0!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-theme="terminal"] button.tb-drawer-btn:hover{
+  background:transparent!important;border-color:var(--accent)!important;color:var(--accent)!important}
+html[data-theme="terminal"] button.tb-drawer-btn[aria-expanded="true"]{
+  background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}

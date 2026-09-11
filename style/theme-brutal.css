@@ -366,3 +366,14 @@
 [data-theme="brutal"][data-mode="dark"] .cardBody .kpiValue{
   color:#ffffff!important;
 }
+
+html[data-theme="brutal"] button.tb-drawer-btn{
+  background:var(--surface)!important;color:var(--txt)!important;
+  border:2px solid var(--txt)!important;border-radius:var(--btn-r)!important;
+  box-shadow:3px 3px 0 var(--txt)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html[data-theme="brutal"] button.tb-drawer-btn:hover{
+  background:var(--surface)!important;color:var(--txt)!important;border-color:var(--txt)!important;
+  transform:translate(-1px,-1px)!important;box-shadow:4px 4px 0 var(--txt)!important}
+html[data-theme="brutal"] button.tb-drawer-btn[aria-expanded="true"]{
+  background:var(--accent)!important;color:#fff!important;border-color:var(--txt)!important;
+  box-shadow:3px 3px 0 var(--txt)!important}
