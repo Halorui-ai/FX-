@@ -16,7 +16,7 @@
  *   id: "myview",              // 唯一 id（英文）
  *   name: "我的视图",           // 下拉显示名
  *   layout: [                   // 布局数组（gridstack x/y/w/h）
- *     { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 },
+ *     { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 },  // 网格 24 列；旧 12 列文件会自动 ×2
  *     ...
  *   ]
  * };

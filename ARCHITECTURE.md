@@ -68,15 +68,17 @@
 
 ## 4. 布局
 
-gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
+gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对旧 12 列 × 95px：横向、竖向步进都细一倍。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`（默认 KPI 为 `4×4`，视觉约等于旧 `2×2`）。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
+
+旧布局（`x+w ≤ 12`）经 `ensureLayoutV24` 自动把 `x/y/w/h` ×2；`localStorage.dashLayouts` 带 `gridCols: 24`，只迁移一次。
 
 四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档，**档变才换模板**（`resizestop` → `applyKpiDensityForItem`）。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率仍走原 compact 水球 + 旧 cozy/expanded。
 
-| 档 | 条件 | 卡片内 |
+| 档 | 条件（24 列） | 卡片内 |
 |----|------|--------|
-| S compact | 默认 `2×2` | 现状：标题区 + 单个核心数字（不动） |
-| M cozy | `h≥3` 或 `w≥4` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA |
-| L expanded | `w≥6` 且 `h≥4` | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录；点空白/「全部 N 条」打开现有二级详情 |
+| S compact | 默认 `4×4`（宽&lt;10 且 高&lt;6） | 现状：标题区 + 单个核心数字（不动） |
+| M cozy | `h≥6`，或 `w≥10` 且 `h≥5` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA |
+| L expanded | `w≥12` 且 `h≥8`（半宽，一行可并排两张） | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录；点空白/「全部 N 条」打开现有二级详情 |
 
 点 `.kpi-seg` 不打开详情。规格见 `kpi-card-redesign/HANDOFF.md`。
 
@@ -158,8 +160,8 @@ CARD_DEFS.my_newCard = {
   title: "新指标名称",
   icon: "📈",
   cat: "分布分析",          // KPI指标 / 分布分析 / 趋势分析 / 异常监控 / 明细数据 / GDMS超时管控
-  w: 6, h: 3,
-  minW: 3, maxW: 12, minH: 2, maxH: 6,
+  w: 12, h: 6,
+  minW: 6, maxW: 24, minH: 4, maxH: 12,
   detailKey: "xxx",          // 可选，对应 KPI_DETAIL
   render(body, ctx) {        // ctx = { S, rows, orders }
     body.innerHTML = '<div class="chart"></div>';
@@ -192,7 +194,7 @@ window.VIEW_PLUGIN = {
   id: "myview",
   name: "我的视图",
   layout: [
-    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }
+    { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 }
   ]
 };
 ```

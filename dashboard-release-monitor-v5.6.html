@@ -518,7 +518,7 @@ body.editing .cardRemove{display:flex}
 .kpi-seg button.on{background:rgba(255,255,255,.9);color:var(--brand);box-shadow:0 2px 8px rgba(28,45,74,.12)}
 [data-mode="dark"] .kpi-seg button.on{background:rgba(255,255,255,.1);color:var(--brand)}
 [data-mode="dark"] .tbl tbody tr:hover{background:rgba(255,255,255,.06)}
-@container (max-width: 920px){
+@container (max-width: 560px){
   .l-body{grid-template-columns:1fr;gap:16px}
   .l-mid{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0}
 }
@@ -557,6 +557,8 @@ body.editing .cardRemove{display:flex}
 .libItem.added:hover{border-color:var(--line);background:rgba(255,255,255,0.7)}
 
 /* ========== gridstack 布局引擎样式覆盖 ========== */
+/* 24 列宽度/位置（vendor CSS 仅含 gs-12） */.gs-24>.grid-stack-item{width:4.166667%}.gs-24>.grid-stack-item[gs-x="1"]{left:4.166667%}.gs-24>.grid-stack-item[gs-w="2"]{width:8.333333%}.gs-24>.grid-stack-item[gs-x="2"]{left:8.333333%}.gs-24>.grid-stack-item[gs-w="3"]{width:12.5%}.gs-24>.grid-stack-item[gs-x="3"]{left:12.5%}.gs-24>.grid-stack-item[gs-w="4"]{width:16.666667%}.gs-24>.grid-stack-item[gs-x="4"]{left:16.666667%}.gs-24>.grid-stack-item[gs-w="5"]{width:20.833333%}.gs-24>.grid-stack-item[gs-x="5"]{left:20.833333%}.gs-24>.grid-stack-item[gs-w="6"]{width:25%}.gs-24>.grid-stack-item[gs-x="6"]{left:25%}.gs-24>.grid-stack-item[gs-w="7"]{width:29.166667%}.gs-24>.grid-stack-item[gs-x="7"]{left:29.166667%}.gs-24>.grid-stack-item[gs-w="8"]{width:33.333333%}.gs-24>.grid-stack-item[gs-x="8"]{left:33.333333%}.gs-24>.grid-stack-item[gs-w="9"]{width:37.5%}.gs-24>.grid-stack-item[gs-x="9"]{left:37.5%}.gs-24>.grid-stack-item[gs-w="10"]{width:41.666667%}.gs-24>.grid-stack-item[gs-x="10"]{left:41.666667%}.gs-24>.grid-stack-item[gs-w="11"]{width:45.833333%}.gs-24>.grid-stack-item[gs-x="11"]{left:45.833333%}.gs-24>.grid-stack-item[gs-w="12"]{width:50%}.gs-24>.grid-stack-item[gs-x="12"]{left:50%}.gs-24>.grid-stack-item[gs-w="13"]{width:54.166667%}.gs-24>.grid-stack-item[gs-x="13"]{left:54.166667%}.gs-24>.grid-stack-item[gs-w="14"]{width:58.333333%}.gs-24>.grid-stack-item[gs-x="14"]{left:58.333333%}.gs-24>.grid-stack-item[gs-w="15"]{width:62.5%}.gs-24>.grid-stack-item[gs-x="15"]{left:62.5%}.gs-24>.grid-stack-item[gs-w="16"]{width:66.666667%}.gs-24>.grid-stack-item[gs-x="16"]{left:66.666667%}.gs-24>.grid-stack-item[gs-w="17"]{width:70.833333%}.gs-24>.grid-stack-item[gs-x="17"]{left:70.833333%}.gs-24>.grid-stack-item[gs-w="18"]{width:75%}.gs-24>.grid-stack-item[gs-x="18"]{left:75%}.gs-24>.grid-stack-item[gs-w="19"]{width:79.166667%}.gs-24>.grid-stack-item[gs-x="19"]{left:79.166667%}.gs-24>.grid-stack-item[gs-w="20"]{width:83.333333%}.gs-24>.grid-stack-item[gs-x="20"]{left:83.333333%}.gs-24>.grid-stack-item[gs-w="21"]{width:87.5%}.gs-24>.grid-stack-item[gs-x="21"]{left:87.5%}.gs-24>.grid-stack-item[gs-w="22"]{width:91.666667%}.gs-24>.grid-stack-item[gs-x="22"]{left:91.666667%}.gs-24>.grid-stack-item[gs-w="23"]{width:95.833333%}.gs-24>.grid-stack-item[gs-x="23"]{left:95.833333%}.gs-24>.grid-stack-item[gs-w="24"]{width:100%}
+
 #cardGrid.grid-stack{min-height:200px}
 .grid-stack-item{transition:left .3s,top .3s,width .3s,height .3s}
 /* 拖拽占位符 */
@@ -1658,17 +1660,18 @@ function buildDetailTable() {
 
 // ---------- KPI 按网格尺寸分档（仅 5 张 KPI；图表卡仍靠 echarts.resize） ----------
 function kpiDensity(w, h, id) {
-  w = Number(w) || 2; h = Number(h) || 2;
-  if (w >= 6 && h >= 4) return "expanded";
-  // 结案率默认 4×2 仍用水球；其它 KPI 宽到 4 列即左右分栏，避免同行里有的已分栏、有的还是小卡
-  if (id === "kpi_rate" && h <= 2 && w <= 4) return "compact";
-  if (h >= 3 || w >= 4) return "cozy";
+  w = Number(w) || 4; h = Number(h) || 4;
+  if (w >= 12 && h >= 8) return "expanded";
+  // 结案率默认 8×4 仍用水球
+  if (id === "kpi_rate" && h <= 4 && w <= 8) return "compact";
+  // 高≥6 一定中卡；宽≥10 且高≥5 才按宽度进中卡（避免全宽矮条被挤进三段式）
+  if (h >= 6 || (w >= 10 && h >= 5)) return "cozy";
   return "compact";
 }
 function kpiCardSize(id) {
   const def = CARD_DEFS[id];
   const it = (workingLayout || []).find(x => x.id === id);
-  return { w: (it && it.w) || (def && def.w) || 2, h: (it && it.h) || (def && def.h) || 2 };
+  return { w: (it && it.w) || (def && def.w) || 4, h: (it && it.h) || (def && def.h) || 4 };
 }
 function kpiChipsHTML(chips) {
   if (!chips || !chips.length) return "";
@@ -2062,7 +2065,7 @@ function updateKpiAdaptive(body, ctx, spec) {
 // ---------- 卡片注册表 CARD_DEFS（扩展接口） ----------
 const CARD_DEFS = {
   kpi_overview: {
-    id: "kpi_overview", title: "放行单总数", icon: "📋", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "overview", kpiAdaptive: true,
+    id: "kpi_overview", title: "放行单总数", icon: "📋", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "overview", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
         id: "kpi_overview", label: "放行单总数", value: S => S.orderCount,
@@ -2093,7 +2096,7 @@ const CARD_DEFS = {
     }
   },
   kpi_special: {
-    id: "kpi_special", title: "特级安保单", icon: "🛡️", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "special", kpiAdaptive: true,
+    id: "kpi_special", title: "特级安保单", icon: "🛡️", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "special", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
         id: "kpi_special", label: "特级安保单", color: "var(--purple)", value: S => S.specialOrders,
@@ -2118,7 +2121,7 @@ const CARD_DEFS = {
     }
   },
   kpi_transit: {
-    id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "transitTimeout", kpiAdaptive: true,
+    id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "transitTimeout", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
         id: "kpi_transit", label: "在途超时未放行", color: "var(--warn)",
@@ -2145,7 +2148,7 @@ const CARD_DEFS = {
     }
   },
   kpi_receive: {
-    id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "receiveTimeout", kpiAdaptive: true,
+    id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "receiveTimeout", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
         id: "kpi_receive", label: "超时未接收", color: "var(--bad)",
@@ -2172,7 +2175,7 @@ const CARD_DEFS = {
     }
   },
   kpi_rate: {
-    id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 4, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "rate", kpiAdaptive: true,
+    id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 8, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "rate", kpiAdaptive: true,
     render(body, ctx) {
       const { w, h } = kpiCardSize("kpi_rate");
       const dens = kpiDensity(w, h, "kpi_rate");
@@ -2210,12 +2213,12 @@ const CARD_DEFS = {
     }
   },
   chart_type: {
-    id: "chart_type", title: "单据类型分布（特保 / 普通）", icon: "🥧", cat: "分布分析", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_type", title: "单据类型分布（特保 / 普通）", icon: "🥧", cat: "分布分析", w: 8, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_type", body.firstChild).setOption(optionBuilders.type(ctx.S), true); },
     update(body, ctx) { if (liveCharts.chart_type) liveCharts.chart_type.setOption(optionBuilders.type(ctx.S)); }
   },
   chart_trend: {
-    id: "chart_trend", title: "申请量时间趋势", icon: "📈", cat: "趋势分析", w: 8, h: 3, minW: 4, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_trend", title: "申请量时间趋势", icon: "📈", cat: "趋势分析", w: 16, h: 6, minW: 8, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       if (!ctx.S.trend.length) { body.innerHTML = '<div class="ac-empty">暂无有效日期数据</div>'; return; }
       body.innerHTML = '<div class="chart"></div>'; cardChart("chart_trend", body.firstChild).setOption(optionBuilders.trend(ctx.S), true);
@@ -2223,17 +2226,17 @@ const CARD_DEFS = {
     update(body, ctx) { if (liveCharts.chart_trend && ctx.S.trend.length) liveCharts.chart_trend.setOption(optionBuilders.trend(ctx.S)); }
   },
   chart_dept: {
-    id: "chart_dept", title: "申请部门 TOP10", icon: "🏢", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_dept", title: "申请部门 TOP10", icon: "🏢", cat: "分布分析", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_dept", body.firstChild).setOption(hbarOption(ctx.S.deptTop, "#0071e3"), true); },
     update(body, ctx) { if (liveCharts.chart_dept) liveCharts.chart_dept.setOption(hbarOption(ctx.S.deptTop, "#0071e3")); }
   },
   chart_cat: {
-    id: "chart_cat", title: "物品分类分布", icon: "📦", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_cat", title: "物品分类分布", icon: "📦", cat: "分布分析", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_cat", body.firstChild).setOption(catOption(ctx.S), true); },
     update(body, ctx) { if (liveCharts.chart_cat) liveCharts.chart_cat.setOption(catOption(ctx.S)); }
   },
   chart_gate_stuck: {
-    id: "chart_gate_stuck", title: "在途滞留 By 流入门岗（单）", icon: "🚧", cat: "异常监控", w: 6, h: 4, minW: 3, maxW: 12, minH: 3, maxH: 8, detailKey: "gateStuck",
+    id: "chart_gate_stuck", title: "在途滞留 By 流入门岗（单）", icon: "🚧", cat: "异常监控", w: 12, h: 8, minW: 6, maxW: 24, minH: 6, maxH: 16, detailKey: "gateStuck",
     render(body, ctx) {
       const data = ctx.S.gateStuckTop;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无在途单据</div>'; return; }
@@ -2247,7 +2250,7 @@ const CARD_DEFS = {
     }
   },
   chart_gate_load: {
-    id: "chart_gate_load", title: "过岗负荷 By 实际放行门岗（次数）", icon: "🚪", cat: "分布分析", w: 6, h: 4, minW: 3, maxW: 12, minH: 3, maxH: 8, detailKey: "gateLoad",
+    id: "chart_gate_load", title: "过岗负荷 By 实际放行门岗（次数）", icon: "🚪", cat: "分布分析", w: 12, h: 8, minW: 6, maxW: 24, minH: 6, maxH: 16, detailKey: "gateLoad",
     render(body, ctx) {
       const data = ctx.S.gateLoadTop;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无实际放行记录</div>'; return; }
@@ -2261,7 +2264,7 @@ const CARD_DEFS = {
     }
   },
   chart_route: {
-    id: "chart_route", title: "门岗流转方向 TOP10（流出 → 流入）", icon: "🔄", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_route", title: "门岗流转方向 TOP10（流出 → 流入）", icon: "🔄", cat: "分布分析", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       if (!ctx.S.routeTop.length) { body.innerHTML = '<div class="ac-empty">暂无门岗流转数据</div>'; return; }
       body.innerHTML = '<div class="chart"></div>'; cardChart("chart_route", body.firstChild).setOption(hbarOption(ctx.S.routeTop, "#00b8d4"), true);
@@ -2269,34 +2272,34 @@ const CARD_DEFS = {
     update(body, ctx) { if (liveCharts.chart_route && ctx.S.routeTop.length) liveCharts.chart_route.setOption(hbarOption(ctx.S.routeTop, "#00b8d4")); }
   },
   chart_status: {
-    id: "chart_status", title: "放行 / 接收状态分布", icon: "📊", cat: "分布分析", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "chart_status", title: "放行 / 接收状态分布", icon: "📊", cat: "分布分析", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_status", body.firstChild).setOption(optionBuilders.status(ctx.S), true); },
     update(body, ctx) { if (liveCharts.chart_status) liveCharts.chart_status.setOption(optionBuilders.status(ctx.S)); }
   },
   chart_deptCat: {
-    id: "chart_deptCat", title: "部门 × 物品分类 交叉分布", icon: "🧮", cat: "分布分析", w: 12, h: 4, minW: 6, maxW: 12, minH: 3, maxH: 8,
+    id: "chart_deptCat", title: "部门 × 物品分类 交叉分布", icon: "🧮", cat: "分布分析", w: 24, h: 8, minW: 12, maxW: 24, minH: 6, maxH: 16,
     render(body, ctx) { body.innerHTML = '<div class="chart"></div>'; cardChart("chart_deptCat", body.firstChild).setOption(optionBuilders.deptCat(ctx.S), true); },
     update(body, ctx) { if (liveCharts.chart_deptCat) liveCharts.chart_deptCat.setOption(optionBuilders.deptCat(ctx.S)); }
   },
   alert_transit: {
-    id: "alert_transit", title: "在途超时 · 流入门岗未放行", icon: "🚧", cat: "异常监控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6, detailKey: "transitTimeout",
+    id: "alert_transit", title: "在途超时 · 流入门岗未放行", icon: "🚧", cat: "异常监控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12, detailKey: "transitTimeout",
     render(body, ctx) { body.innerHTML = analysisTransitHTML(ctx.S); },
     update(body, ctx) { body.innerHTML = analysisTransitHTML(ctx.S); }
   },
   alert_receive: {
-    id: "alert_receive", title: "超时未接收", icon: "📭", cat: "异常监控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6, detailKey: "receiveTimeout",
+    id: "alert_receive", title: "超时未接收", icon: "📭", cat: "异常监控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12, detailKey: "receiveTimeout",
     render(body, ctx) { body.innerHTML = analysisReceiveHTML(ctx.S); },
     update(body, ctx) { body.innerHTML = analysisReceiveHTML(ctx.S); }
   },
   table_detail: {
-    id: "table_detail", title: "明细数据（可搜索 / 排序 / 导出）", icon: "📄", cat: "明细数据", w: 12, h: 5, minW: 6, maxW: 12, minH: 3, maxH: 10,
+    id: "table_detail", title: "明细数据（可搜索 / 排序 / 导出）", icon: "📄", cat: "明细数据", w: 24, h: 10, minW: 12, maxW: 24, minH: 6, maxH: 20,
     render(body, ctx) { body.innerHTML = '<div id="detailTable"></div>'; buildDetailTable(); },
     update(body, ctx) { /* 明细表由 liveTick 的 addData 增量更新 */ }
   },
 
   // ===== v5.1 新增：GDMS 增强卡片 =====
   gdms_summary: {
-    id: "gdms_summary", title: "放行汇总指标", icon: "📊", cat: "GDMS超时管控", w: 12, h: 2, minW: 6, maxW: 12, minH: 2, maxH: 3,
+    id: "gdms_summary", title: "放行汇总指标", icon: "📊", cat: "GDMS超时管控", w: 24, h: 4, minW: 12, maxW: 24, minH: 4, maxH: 6,
     render(body, ctx) {
       const S = ctx.S, mc = S.materialClass;
       const items = [
@@ -2313,7 +2316,7 @@ const CARD_DEFS = {
     update(body, ctx) { this.render(body, ctx); }
   },
   gdms_timeout_trend: {
-    id: "gdms_timeout_trend", title: "超时 + 结案率日趋势", icon: "📈", cat: "GDMS超时管控", w: 8, h: 3, minW: 4, maxW: 12, minH: 2, maxH: 6,
+    id: "gdms_timeout_trend", title: "超时 + 结案率日趋势", icon: "📈", cat: "GDMS超时管控", w: 16, h: 6, minW: 8, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       const data = ctx.S.timeoutTrend;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无数据</div>'; return; }
@@ -2329,7 +2332,7 @@ const CARD_DEFS = {
     }
   },
   gdms_timeout_cat: {
-    id: "gdms_timeout_cat", title: "放行超时By物品类型分析", icon: "🥧", cat: "GDMS超时管控", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "gdms_timeout_cat", title: "放行超时By物品类型分析", icon: "🥧", cat: "GDMS超时管控", w: 8, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       const data = ctx.S.timeoutByCat;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
@@ -2344,7 +2347,7 @@ const CARD_DEFS = {
     }
   },
   gdms_timeout_duration: {
-    id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       body.innerHTML = '<div class="chart"></div>';
       cardChart("gdms_timeout_duration", body.firstChild).setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration), true);
@@ -2356,7 +2359,7 @@ const CARD_DEFS = {
     }
   },
   gdms_timeout_dept: {
-    id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       const data = ctx.S.timeoutByDept;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
@@ -2366,7 +2369,7 @@ const CARD_DEFS = {
     update(body, ctx) { if (liveCharts.gdms_timeout_dept && ctx.S.timeoutByDept.length) liveCharts.gdms_timeout_dept.setOption(hbarOption(ctx.S.timeoutByDept, "#ff3b30")); }
   },
   gdms_receive_dept: {
-    id: "gdms_receive_dept", title: "接收超时By接收部门分析", icon: "📥", cat: "GDMS超时管控", w: 6, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
+    id: "gdms_receive_dept", title: "接收超时By接收部门分析", icon: "📥", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
     render(body, ctx) {
       const data = ctx.S.receiveTimeoutByDept;
       if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无接收超时单据</div>'; return; }
@@ -2376,7 +2379,7 @@ const CARD_DEFS = {
     update(body, ctx) { if (liveCharts.gdms_receive_dept && ctx.S.receiveTimeoutByDept.length) liveCharts.gdms_receive_dept.setOption(hbarOption(ctx.S.receiveTimeoutByDept, "#ff9f0a")); }
   },
   gdms_unclosed: {
-    id: "gdms_unclosed", title: "超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 6, h: 4, minW: 4, maxW: 12, minH: 3, maxH: 8, detailKey: "transitTimeout",
+    id: "gdms_unclosed", title: "超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 12, h: 8, minW: 8, maxW: 24, minH: 6, maxH: 16, detailKey: "transitTimeout",
     render(body, ctx) {
       const list = ctx.S.transitTimeoutOrders;
       if (!list.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时未结案件</div>'; return; }
@@ -2402,53 +2405,53 @@ const CARD_DEFS = {
 // ---------- 布局状态 + 预设 + 持久化（v5: gridstack x/y/w/h 格式） ----------
 const BUILTIN_LAYOUTS = {
   "默认视图": [
-    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }, { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
-    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 }, { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
-    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
-    { id: "chart_type", x: 0, y: 2, w: 4, h: 3 }, { id: "chart_trend", x: 4, y: 2, w: 8, h: 3 },
-    { id: "alert_transit", x: 0, y: 5, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 5, w: 6, h: 3 },
-    { id: "chart_dept", x: 0, y: 8, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 8, w: 6, h: 3 },
-    { id: "chart_gate_stuck", x: 0, y: 11, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 11, w: 6, h: 4 },
-    { id: "chart_route", x: 0, y: 15, w: 6, h: 3 }, { id: "chart_status", x: 6, y: 15, w: 6, h: 3 },
-    { id: "chart_deptCat", x: 0, y: 18, w: 12, h: 4 }, { id: "table_detail", x: 0, y: 22, w: 12, h: 5 }
+    { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 }, { id: "kpi_special", x: 4, y: 0, w: 4, h: 4 },
+    { id: "kpi_transit", x: 8, y: 0, w: 4, h: 4 }, { id: "kpi_receive", x: 12, y: 0, w: 4, h: 4 },
+    { id: "kpi_rate", x: 16, y: 0, w: 8, h: 4 },
+    { id: "chart_type", x: 0, y: 4, w: 8, h: 6 }, { id: "chart_trend", x: 8, y: 4, w: 16, h: 6 },
+    { id: "alert_transit", x: 0, y: 10, w: 12, h: 6 }, { id: "alert_receive", x: 12, y: 10, w: 12, h: 6 },
+    { id: "chart_dept", x: 0, y: 16, w: 12, h: 6 }, { id: "chart_cat", x: 12, y: 16, w: 12, h: 6 },
+    { id: "chart_gate_stuck", x: 0, y: 22, w: 12, h: 8 }, { id: "chart_gate_load", x: 12, y: 22, w: 12, h: 8 },
+    { id: "chart_route", x: 0, y: 30, w: 12, h: 6 }, { id: "chart_status", x: 12, y: 30, w: 12, h: 6 },
+    { id: "chart_deptCat", x: 0, y: 36, w: 24, h: 8 }, { id: "table_detail", x: 0, y: 44, w: 24, h: 10 }
   ],
   "管理层视图": [
-    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 }, { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
-    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 }, { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
-    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
-    { id: "chart_type", x: 0, y: 2, w: 4, h: 3 }, { id: "chart_trend", x: 4, y: 2, w: 8, h: 3 },
-    { id: "chart_status", x: 0, y: 5, w: 12, h: 3 }
+    { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 }, { id: "kpi_special", x: 4, y: 0, w: 4, h: 4 },
+    { id: "kpi_transit", x: 8, y: 0, w: 4, h: 4 }, { id: "kpi_receive", x: 12, y: 0, w: 4, h: 4 },
+    { id: "kpi_rate", x: 16, y: 0, w: 8, h: 4 },
+    { id: "chart_type", x: 0, y: 4, w: 8, h: 6 }, { id: "chart_trend", x: 8, y: 4, w: 16, h: 6 },
+    { id: "chart_status", x: 0, y: 10, w: 24, h: 6 }
   ],
   "一线视图": [
-    { id: "kpi_transit", x: 0, y: 0, w: 4, h: 2 }, { id: "kpi_receive", x: 4, y: 0, w: 4, h: 2 },
-    { id: "kpi_special", x: 8, y: 0, w: 4, h: 2 },
-    { id: "alert_transit", x: 0, y: 2, w: 6, h: 3 }, { id: "alert_receive", x: 6, y: 2, w: 6, h: 3 },
-    { id: "chart_gate_stuck", x: 0, y: 5, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 5, w: 6, h: 4 },
-    { id: "chart_status", x: 0, y: 9, w: 12, h: 3 }, { id: "table_detail", x: 0, y: 12, w: 12, h: 5 }
+    { id: "kpi_transit", x: 0, y: 0, w: 8, h: 4 }, { id: "kpi_receive", x: 8, y: 0, w: 8, h: 4 },
+    { id: "kpi_special", x: 16, y: 0, w: 8, h: 4 },
+    { id: "alert_transit", x: 0, y: 4, w: 12, h: 6 }, { id: "alert_receive", x: 12, y: 4, w: 12, h: 6 },
+    { id: "chart_gate_stuck", x: 0, y: 10, w: 12, h: 8 }, { id: "chart_gate_load", x: 12, y: 10, w: 12, h: 8 },
+    { id: "chart_status", x: 0, y: 18, w: 24, h: 6 }, { id: "table_detail", x: 0, y: 24, w: 24, h: 10 }
   ],
   "运维视图": [
-    { id: "kpi_overview", x: 0, y: 0, w: 12, h: 2 },
-    { id: "chart_dept", x: 0, y: 2, w: 6, h: 3 }, { id: "chart_cat", x: 6, y: 2, w: 6, h: 3 },
-    { id: "chart_gate_stuck", x: 0, y: 5, w: 6, h: 4 }, { id: "chart_gate_load", x: 6, y: 5, w: 6, h: 4 },
-    { id: "chart_route", x: 0, y: 9, w: 12, h: 3 }, { id: "chart_deptCat", x: 0, y: 12, w: 12, h: 4 },
-    { id: "table_detail", x: 0, y: 16, w: 12, h: 5 }
+    { id: "kpi_overview", x: 0, y: 0, w: 24, h: 4 },
+    { id: "chart_dept", x: 0, y: 4, w: 12, h: 6 }, { id: "chart_cat", x: 12, y: 4, w: 12, h: 6 },
+    { id: "chart_gate_stuck", x: 0, y: 10, w: 12, h: 8 }, { id: "chart_gate_load", x: 12, y: 10, w: 12, h: 8 },
+    { id: "chart_route", x: 0, y: 18, w: 24, h: 6 }, { id: "chart_deptCat", x: 0, y: 24, w: 24, h: 8 },
+    { id: "table_detail", x: 0, y: 32, w: 24, h: 10 }
   ],
   "GDMS超时管控": [
     // —— 顶部：5 张 KPI 指标卡（v5.2 起从底部上移，一眼掌握全局） ——
-    { id: "kpi_overview", x: 0, y: 0, w: 2, h: 2 },
-    { id: "kpi_special", x: 2, y: 0, w: 2, h: 2 },
-    { id: "kpi_transit", x: 4, y: 0, w: 2, h: 2 },
-    { id: "kpi_receive", x: 6, y: 0, w: 2, h: 2 },
-    { id: "kpi_rate", x: 8, y: 0, w: 4, h: 2 },
-    { id: "gdms_summary", x: 0, y: 2, w: 12, h: 2 },
-    { id: "gdms_timeout_trend", x: 0, y: 4, w: 8, h: 3 },
-    { id: "gdms_timeout_cat", x: 8, y: 4, w: 4, h: 3 },
-    { id: "gdms_timeout_dept", x: 0, y: 7, w: 6, h: 3 },
-    { id: "gdms_receive_dept", x: 6, y: 7, w: 6, h: 3 },
-    { id: "gdms_timeout_duration", x: 0, y: 10, w: 6, h: 3 },
-    { id: "gdms_unclosed", x: 6, y: 10, w: 6, h: 4 },
-    { id: "chart_gate_stuck", x: 0, y: 14, w: 6, h: 4 },
-    { id: "chart_gate_load", x: 6, y: 14, w: 6, h: 4 }
+    { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 },
+    { id: "kpi_special", x: 4, y: 0, w: 4, h: 4 },
+    { id: "kpi_transit", x: 8, y: 0, w: 4, h: 4 },
+    { id: "kpi_receive", x: 12, y: 0, w: 4, h: 4 },
+    { id: "kpi_rate", x: 16, y: 0, w: 8, h: 4 },
+    { id: "gdms_summary", x: 0, y: 4, w: 24, h: 4 },
+    { id: "gdms_timeout_trend", x: 0, y: 8, w: 16, h: 6 },
+    { id: "gdms_timeout_cat", x: 16, y: 8, w: 8, h: 6 },
+    { id: "gdms_timeout_dept", x: 0, y: 14, w: 12, h: 6 },
+    { id: "gdms_receive_dept", x: 12, y: 14, w: 12, h: 6 },
+    { id: "gdms_timeout_duration", x: 0, y: 20, w: 12, h: 6 },
+    { id: "gdms_unclosed", x: 12, y: 20, w: 12, h: 8 },
+    { id: "chart_gate_stuck", x: 0, y: 28, w: 12, h: 8 },
+    { id: "chart_gate_load", x: 12, y: 28, w: 12, h: 8 }
   ]
 };
 let layoutState = { active: "默认视图", custom: {} };
@@ -2472,12 +2475,32 @@ function setEditMode(on) {
   if (!on) syncLayoutFromGrid();   // 退出编辑时捕获最终布局
 }
 
+const GRID_COLS = 24;
+const GRID_CELL_H = 48;
+function scaleLayout12to24(lay) {
+  if (!Array.isArray(lay)) return lay;
+  return lay.map(it => ({
+    ...it,
+    x: (it.x || 0) * 2, y: (it.y || 0) * 2,
+    w: (it.w || 2) * 2, h: (it.h || 2) * 2
+  }));
+}
+function layoutLooksV12(lay) {
+  if (!Array.isArray(lay) || !lay.length) return false;
+  let right = 0;
+  lay.forEach(it => { right = Math.max(right, (it.x || 0) + (it.w || 0)); });
+  return right > 0 && right <= 12;
+}
+function ensureLayoutV24(lay) {
+  if (!lay) return lay;
+  return (layoutLooksV12(lay) ? scaleLayout12to24(lay) : lay).map(it => ({ ...it }));
+}
 function isNewFormat(lay) { return Array.isArray(lay) && lay.length && lay[0] && typeof lay[0] === "object" && lay[0].id; }
 function getLayoutByName(name) {
   // 查找顺序：自定义视图 → 外部视图插件 → 内置预设
   let lay = (layoutState.custom && layoutState.custom[name]) || externalViews[name] || BUILTIN_LAYOUTS[name] || null;
   if (lay && !isNewFormat(lay)) lay = null;   // v4 旧格式（字符串数组）不兼容 → 回退默认
-  return lay ? lay.map(it => ({ ...it })) : null;
+  return lay ? ensureLayoutV24(lay) : null;
 }
 function loadLayoutState() {
   try {
@@ -2485,6 +2508,13 @@ function loadLayoutState() {
     if (s) { const p = JSON.parse(s); if (p && p.active) layoutState = p; }
   } catch (e) { }
   if (!layoutState.custom) layoutState.custom = {};
+  if (layoutState.gridCols !== 24) {
+    Object.keys(layoutState.custom).forEach(k => {
+      layoutState.custom[k] = ensureLayoutV24(layoutState.custom[k]);
+    });
+    layoutState.gridCols = 24;
+    saveLayoutState();
+  }
   workingLayout = getLayoutByName(layoutState.active) || BUILTIN_LAYOUTS["默认视图"].map(it => ({ ...it }));
 }
 function saveLayoutState() { try { localStorage.setItem("dashLayouts", JSON.stringify(layoutState)); } catch (e) { } }
@@ -2563,10 +2593,12 @@ function renderDashboard() {
   if (grid) { try { grid.destroy(false); } catch (e) { } grid = null; }
   gridEl.innerHTML = "";
   grid = GridStack.init({
-    column: 12, cellHeight: 95, margin: 8, float: false, animate: true,
+    column: GRID_COLS, cellHeight: GRID_CELL_H, margin: 8, float: false, animate: true,
     draggable: { handle: ".cardHead" },   // 编辑模式下整条卡片头部为拖动区（非编辑模式 enableMove=false 自动禁用）
     resizable: { handles: "all" }
   }, gridEl);
+  // vendor CSS 只有 .gs-12；JS 开 24 列时必须挂 .gs-24，否则卡片宽度塌成一条
+  if (grid && grid.el) { grid.el.classList.add("gs-24"); grid.el.classList.remove("gs-12"); }
   const ctx = { S: computeStats(), rows, orders };
   workingLayout.forEach(it => {
     const def = CARD_DEFS[it.id]; if (!def) return;
@@ -2856,7 +2888,7 @@ function loadViewPlugins(done) {
       const p = window.VIEW_PLUGIN;
       window.VIEW_PLUGIN = null;
       if (p && p.id && Array.isArray(p.layout) && p.layout.length) {
-        externalViews[p.id] = p.layout;
+        externalViews[p.id] = ensureLayoutV24(p.layout);
       }
       finishOne();
     };
@@ -2902,7 +2934,7 @@ function saveViewPlugin(name) {
     // 外部视图加载完成后：若上次激活的是外部视图且存在，则应用它（loadLayoutState 在插件加载前已跑）
     const active = layoutState.active;
     if (externalViews[active]) {
-      workingLayout = externalViews[active].map(it => ({ ...it }));
+      workingLayout = ensureLayoutV24(externalViews[active]);
     }
     renderLayoutSelect();
   });
