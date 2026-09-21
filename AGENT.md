@@ -1,6 +1,21 @@
 # Agent 准则
 
-你好，Agent。开始任何修改前读完本文件。规则只维护在这里；`AGENTS.md` / `CLAUDE.md` 只是指针。
+你好，Agent。开始任何修改前读完本文件。规则只维护在这里；`AGENTS.md` / `CLAUDE.md` 只是指针（Trae 若只自动读复数的 `AGENTS.md`，仍要再打开本文件）。
+
+## Agent 角色分工
+
+多个工具串行协作，不要同时改同一批主文件行。工作树只有本仓库（D-15）；设计沙盒是唯一允许的新目录例外（D-24）。
+
+| 角色 | 默认工具 | 允许改 | 禁止改 |
+|--------|----------|----------|----------|
+| 设计 | Trae Design / SOLO | 仅 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`） | 主 HTML、`CONFIG`、`computeStats` / `buildKpiProps`、`CONTEXT` 口径、`lib/`、`style/`、`views/` |
+| 审核 | 用户 | 把 HANDOFF 的 `status` 改成 `approved`，写 freeze | — |
+| 实现 | Grok Build | 主文件、`style/`、`views/`；按对照表改 CONTEXT / ARCHITECTURE / DECISIONS / CHANGELOG | 改已批准视觉方向；再复制一份主 HTML；`status` 不是 `approved` 时改对应卡片 |
+| 测试 | 实现 Agent + 用户 | CHANGELOG、HANDOFF 验收勾 | 把 Playwright 等测试脚本当交付物入库 |
+
+开工闸门是文件里的 `status: approved`，不是 GitHub Issue 标签。Issue / PR 可选，不卡死 `file://` 本机流程。
+
+已交付样板：`kpi-card-redesign/`（D-22）。新原型只进 `docs/prototypes/`。
 
 ## 开工顺序
 
@@ -9,15 +24,17 @@
 3. 按任务再读：
    - 改统计 / 口径 / 新 KPI → [CONTEXT.md](CONTEXT.md)
    - 改解析、性能、布局、主题、顶栏壳，或加卡片/主题/视图 → [ARCHITECTURE.md](ARCHITECTURE.md)
+   - 新卡片布局 / 改 KPI 中卡大卡视觉 → [docs/prototypes/](docs/prototypes/README.md)；四张业务 KPI 的 M/L 以 [kpi-card-redesign/HANDOFF.md](kpi-card-redesign/HANDOFF.md) 为规格
 4. 改口径、解析路径、主题机制、工作目录、壳层方案之前，先搜 [DECISIONS.md](DECISIONS.md)。
-5. 不确定 → 停，不要另开目录「先试」。
+5. 不确定 → 停。不要另开看板副本「先试」。设计试做只能写在 `docs/prototypes/<slug>/`。
 
 ## 硬禁令
 
 - **唯一工作树**：只在本仓库改。禁止在 `液态玻璃看板Qoder` 或任何新副本里平行改业务。
-- **唯一主文件**：以 README 顶部为准（现为根目录 `dashboard-release-monitor-v5.6.html`）。不要把 `docs/archive/` 里的旧 HTML 当成现行交付物。
+- **唯一主文件**：以 README 顶部为准（现为根目录 `dashboard-release-monitor-v5.6.html`）。不要把 `docs/archive/` 里的旧 HTML 当成现行交付物。`docs/prototypes/` 不是交付物。
 - **禁止 CDN**。新依赖下载到 `./lib/`，相对路径引用。
 - **禁止再复制一份 HTML 当新皮肤**（不要再做 `v5.x-themes.html` / 把主题烤进单文件）。新主题走 `style/` + `THEME_REGISTRY`，见 ARCHITECTURE 末章。
+- **无 `approved` 不准改主文件对应卡**。设计阶段禁止改 `dashboard-release-monitor-*.html`。
 - **版本号不得复用不同含义**（已有事故：两边的「v5.2」各指一件事）。
 - **统计数字默认订单级**（按放行单号聚合）。记录级必须在 UI 上写明「记录」。
 - **特保只认** `放行单号` 前缀 `WF9897`。禁止用 WF8888 或物品类型关键词。
@@ -41,6 +58,7 @@
 | 顶栏 / 抽屉 / 开关 / 编辑态等**壳与交互** | ARCHITECTURE 现行壳 + 若否定备选则 DECISIONS + CHANGELOG |
 | 主题机制、注册表、抽屉按钮三态 | ARCHITECTURE §5 / §7.4 + 各主题 css 约定 + CHANGELOG |
 | 加卡片 / 主题 / 视图 | ARCHITECTURE 末章；登记表同步 + CHANGELOG |
+| 新布局原型 / HANDOFF 流程 / Agent 角色 | AGENT 角色节 + `docs/prototypes/` + 必要时 DECISIONS + CHANGELOG |
 | 生成器、测试用 xlsx/csv | CONTEXT 测试数据段 + CHANGELOG |
 | 归档 / 移动 / 删除仓库文件 | README 归档索引 + CHANGELOG |
 | `localStorage` 键、依赖 `lib/` | ARCHITECTURE + CHANGELOG |
@@ -58,6 +76,16 @@
 3. 主文件 `<title>`、页脚、README 顶部三个版本字符串相同。
 4. 点「载入示例数据预览」：卡片能出来；点顶栏右侧圆形箭头打开功能抽屉，切一次主题、点开一个 KPI 下钻；控制台无报错。（若本次只改文档、未改看板，本条可跳过。）
 5. 改了解析 / 口径 / 主题机制时：用根目录 `物品放行监控_生成_100k.xlsx` 拖入加载，应能完成解析；特保须按 WF9897 识别。
+
+## 推荐提示词（可复制）
+
+**Trae / 设计**
+
+> 只在 `docs/prototypes/<slug>/` 写自包含 `index.html` 和 `HANDOFF.md`（先拷 `_template`）。先读 AGENT.md、ARCHITECTURE §4/§7.3、CONTEXT 里相关口径。禁止改 `dashboard-release-monitor-v5.6.html`，禁止复制主文件，禁止改特保/超时公式。数字用演示值，但 HANDOFF 必须写出对应的 `computeStats` / `buildKpiProps` 字段名。
+
+**Grok Build / 实现**
+
+> 读 AGENT.md、CHANGELOG「进行中」、指定 HANDOFF。仅当 `status: approved` 才改主文件。视觉按 HANDOFF，数据只走 `buildKpiProps`，禁止写死原型数字。先出计划：要动的 `CARD_DEFS` / render / update。用户确认后再改代码。收工按 AGENT 对照表改 CHANGELOG（以及需要的 ARCHITECTURE/CONTEXT/DECISIONS）。
 
 ## 推荐、不强制
 
