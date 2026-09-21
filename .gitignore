@@ -26,6 +26,5 @@ Thumbs.db
 .qoder/
 .workbuddy/
 
-# 本地 e2e（playwright-core），不随离线看板分发
-tests/node_modules/
-tests/package-lock.json
+# 本地 e2e（Playwright），不随离线看板分发、不入库
+tests/
