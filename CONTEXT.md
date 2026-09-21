@@ -104,6 +104,8 @@
 
 ### KPI（5）
 
+四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格分 S/M/L，规格与字段映射见 `kpi-card-redesign/HANDOFF.md`。小卡单数字；中卡主数字+微图形+底栏 3 指标（超时未接收为 CTA）；大卡左进度条、中 Tab 环图、右最新 4 条。数值只从 `buildKpiProps` ← `computeStats()` / `orders` 取。点空白或「全部 N 条」打开二级详情。结案率不在这四张里，仍用水球。档位阈值见 ARCHITECTURE。
+
 | ID | 名称 | 层级 | 公式 |
 |----|------|------|------|
 | `kpi_overview` | 放行单总数 | 订单 + 记录 | 主数字 = 去重单数；副标题 = `rows.length` |

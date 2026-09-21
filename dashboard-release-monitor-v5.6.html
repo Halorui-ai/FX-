@@ -16,6 +16,11 @@
   --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
   --accent:#0071e3; --accent2:#2997ff;
   --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a; --purple:#5e5ce6; --cyan:#00b8d4;
+  --brand:#2f7cf6; --cat-purple:#7a63f5; --danger:#f04d3e;
+  --brand-soft:rgba(47,124,246,.1); --purple-soft:rgba(122,99,245,.1);
+  --warn-soft:rgba(245,154,38,.12); --danger-soft:rgba(240,77,62,.12); --ok-soft:rgba(30,166,114,.12);
+  --card-face:rgba(255,255,255,.74); --panel:rgba(255,255,255,.56); --track:rgba(31,41,55,.08);
+  --muted:#748093; --faint:#9aa5b5;
 }
 /* 默认主题深色模式变量（外部主题各自定义深色变量，此处仅默认主题用） */
 [data-mode="dark"]{
@@ -24,6 +29,11 @@
   --txt:#e6edf3; --txt2:rgba(255,255,255,0.55);
   --accent:#58a6ff; --accent2:#79c0ff;
   --ok:#3fb950; --bad:#f85149; --warn:#d29922; --purple:#bc8cff; --cyan:#39d2e0;
+  --brand:#5b9bff; --cat-purple:#9a86ff; --danger:#f46a5d;
+  --brand-soft:rgba(91,155,255,.16); --purple-soft:rgba(154,134,255,.16);
+  --warn-soft:rgba(210,153,34,.16); --danger-soft:rgba(248,81,73,.16); --ok-soft:rgba(63,185,80,.16);
+  --card-face:rgba(23,32,50,.66); --panel:rgba(255,255,255,.05); --track:rgba(220,230,245,.12);
+  --muted:#9aa8bd; --faint:#6d7b90;
 }
 [data-mode="dark"] html{background:var(--bg)}
 [data-mode="dark"] body{background:none;color:var(--txt)}
@@ -385,7 +395,7 @@ body.perf-lite .lg-tint,body.perf-lite .lg-edge{display:none!important}
 #layoutSelect option, #themeSelect option{background:#fff;color:var(--txt)}
 
 #cardGrid{position:relative;min-height:200px}
-.cardSlot{isolation:isolate;display:flex;flex-direction:column;box-sizing:border-box;
+.cardSlot{isolation:isolate;display:flex;flex-direction:column;box-sizing:border-box;container-type:inline-size;
   background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.40);border-radius:16px;padding:12px;
   backdrop-filter:blur(3px) saturate(140%);-webkit-backdrop-filter:blur(3px) saturate(140%);
   box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);
@@ -413,6 +423,108 @@ body.editing .cardRemove{display:flex}
 .cardBody .kpiSub b{color:var(--cyan);font-weight:600}
 .cardBody .clickHint{font-size:11px;color:var(--txt2);opacity:.55;margin-top:6px}
 .cardSlot.clickable .cardBody{cursor:pointer}
+.kpiShell{display:flex;flex-direction:column;height:100%;min-height:0;gap:8px}
+.kpiShell[data-dens="cozy"],
+.kpiShell[data-dens="expanded"]{flex-direction:row;align-items:center;gap:14px}
+.kpiShell[data-dens="expanded"]{align-items:stretch}
+.kpiHero{flex:none}
+.kpiShell[data-dens="cozy"] .kpiHero,
+.kpiShell[data-dens="expanded"] .kpiHero{min-width:92px;display:flex;flex-direction:column;justify-content:center}
+.kpiShell[data-dens="cozy"] .kpiValue{font-size:32px;letter-spacing:-0.03em}
+.kpiShell[data-dens="expanded"] .kpiValue{font-size:36px;letter-spacing:-0.03em}
+.kpiSide{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.kpiChips{display:flex;flex-wrap:wrap;align-items:stretch;justify-content:flex-start;gap:0;overflow:visible}
+.kpiChip{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:2px 12px;
+  border:none;border-left:1px solid var(--line);background:transparent;border-radius:0;flex:1 1 4.5em;min-width:4.5em}
+.kpiChip:first-child{border-left:none;padding-left:4px}
+.kpiChip i{font-style:normal;font-size:11px;color:var(--txt2);line-height:1.2;white-space:nowrap}
+.kpiChip b{font-size:16px;font-family:"Segoe UI",monospace;font-weight:700;line-height:1.15}
+[data-mode="dark"] .kpiChip{background:transparent;border-left-color:var(--line)}
+.kpiMini{flex:1;min-height:0;width:100%;position:relative}
+.kpiMini .chart{width:100%;height:100%}
+.kpiMiniFill{flex:1}
+.cardSlot.v-brand{--v:var(--brand)} .cardSlot.v-purple{--v:var(--cat-purple)}
+.cardSlot.v-warn{--v:var(--warn)} .cardSlot.v-danger{--v:var(--danger)}
+.cardSlot.v-brand .cardTitle,.cardSlot.v-purple .cardTitle,
+.cardSlot.v-warn .cardTitle,.cardSlot.v-danger .cardTitle{border-left-width:4px;border-left-color:var(--v)}
+.m-main{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:4px 0 8px;height:100%;min-height:0}
+.m-main-col{display:flex;flex-direction:column;justify-content:space-between;height:100%;min-height:0}
+.hero-num{font-weight:700;font-size:38px;line-height:1.05;color:var(--v);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-family:"Segoe UI","Inter",monospace}
+.hero-num .unit{font-size:13px;font-weight:500;color:var(--txt2);margin-left:5px;letter-spacing:0}
+.cardSlot.v-brand .hero-num{color:var(--txt)}
+.hero-sub{margin-top:6px;font-size:12px;line-height:18px;color:var(--txt2)}
+.hero-sub b{color:var(--cyan);font-weight:600}
+.m-visual{flex:none;width:118px;display:flex;align-items:center;justify-content:center}
+.m-visual svg{width:104px;height:104px;display:block}
+.m-stat{padding:10px 0 0;border-top:1px solid var(--line);display:flex;align-items:stretch;flex:none}
+.m-stat .cell{flex:1;padding:0 12px;display:flex;flex-direction:column;gap:3px;min-width:0;border-left:1px solid var(--line)}
+.m-stat .cell:first-child{padding-left:0;border-left:0}
+.cell-name{font-size:12px;line-height:16px;color:var(--txt2);display:flex;align-items:center;gap:5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:7px;height:7px;border-radius:999px;background:var(--dc,var(--brand));flex:none}
+.cell-val{font-size:18px;line-height:22px;font-weight:700;color:var(--dc,var(--txt));font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace}
+.cell-val small{font-size:11px;font-weight:500;color:var(--txt2);margin-left:2px}
+.stack-wrap{width:100%}
+.stackbar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--track)}
+.stackbar i{display:block;height:100%}
+.stack-lg{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.stack-lg span{display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px;color:var(--txt2);font-variant-numeric:tabular-nums}
+.stack-lg b{color:var(--txt);font-family:"Segoe UI",monospace}
+.medallion{width:84px;height:84px;border-radius:16px;background:var(--danger-soft);display:flex;align-items:center;justify-content:center;color:var(--danger)}
+.m-cta{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:500;color:var(--danger);background:0;border:0;width:100%;cursor:pointer;font-family:inherit}
+.m-cta .arr{transition:transform .15s}
+.m-cta:hover .arr{transform:translateX(3px)}
+.l-body{margin-top:4px;display:grid;grid-template-columns:238px 290px minmax(0,1fr);gap:24px;align-items:stretch;height:100%;min-height:0}
+.l-hero{padding-bottom:16px}
+.l-hero .hero-num{font-size:52px}
+.lrows{display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid var(--line)}
+.lrow-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.lrow-name{font-size:13px;line-height:18px;color:var(--txt);display:flex;align-items:center;gap:7px}
+.lrow-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace}
+.ltrack{height:5px;border-radius:999px;background:var(--track);overflow:hidden}
+.ltrack i{display:block;height:100%;border-radius:999px;transition:width .4s ease}
+.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 20px;min-width:0}
+.donut{width:228px;max-width:100%;height:228px;overflow:visible}
+.donut svg{overflow:visible;display:block}
+.donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--txt2);
+  background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
+.lg-pill b{color:var(--txt);font-family:"Segoe UI",monospace}
+.l-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 14px 8px;display:flex;flex-direction:column;min-width:0;min-height:0}
+.lp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+.lp-title{font-size:14px;font-weight:600}
+.lp-link{font-size:12px;color:var(--brand);font-weight:500;white-space:nowrap;cursor:pointer}
+.lp-link:hover{text-decoration:underline}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.tbl th{font-size:12px;line-height:18px;color:var(--txt2);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{font-size:12.5px;line-height:18px;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{transition:background .12s}
+.tbl tbody tr:hover{background:rgba(255,255,255,.5)}
+.mono{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12px}
+.t-time{color:var(--txt2);font-variant-numeric:tabular-nums}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:16px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.tag::before{content:"";width:5px;height:5px;border-radius:999px;background:currentColor}
+.tag-bad{color:var(--danger);background:var(--danger-soft)}
+.tag-ok{color:var(--ok);background:var(--ok-soft)}
+.lp-foot{margin-top:auto;padding:10px 0 4px;text-align:center;font-size:12px;color:var(--brand);font-weight:500;cursor:pointer}
+.cardSlot.kpi-large .cardHead{gap:10px;margin-bottom:16px}
+.cardSlot.kpi-large .cardTitle{flex:none;max-width:40%}
+.kpi-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);margin-left:auto;flex:none}
+.kpi-seg button{border:0;background:transparent;font-size:13px;line-height:18px;color:var(--txt2);padding:6px 16px;border-radius:999px;cursor:pointer;font-weight:500;white-space:nowrap}
+.kpi-seg button.on{background:rgba(255,255,255,.9);color:var(--brand);box-shadow:0 2px 8px rgba(28,45,74,.12)}
+[data-mode="dark"] .kpi-seg button.on{background:rgba(255,255,255,.1);color:var(--brand)}
+[data-mode="dark"] .tbl tbody tr:hover{background:rgba(255,255,255,.06)}
+@container (max-width: 920px){
+  .l-body{grid-template-columns:1fr;gap:16px}
+  .l-mid{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  .donut circle,.ltrack i,.m-cta .arr{transition:none!important}
+}
 /* 分析卡内容 */
 .cardBody .ac-count{font-size:22px;font-weight:700;font-family:"Segoe UI",monospace}
 .cardBody .ac-desc{font-size:12px;color:var(--txt2);margin:6px 0 8px;line-height:1.6}
@@ -1544,56 +1656,558 @@ function buildDetailTable() {
   });
 }
 
+// ---------- KPI 按网格尺寸分档（仅 5 张 KPI；图表卡仍靠 echarts.resize） ----------
+function kpiDensity(w, h, id) {
+  w = Number(w) || 2; h = Number(h) || 2;
+  if (w >= 6 && h >= 4) return "expanded";
+  // 结案率默认 4×2 仍用水球；其它 KPI 宽到 4 列即左右分栏，避免同行里有的已分栏、有的还是小卡
+  if (id === "kpi_rate" && h <= 2 && w <= 4) return "compact";
+  if (h >= 3 || w >= 4) return "cozy";
+  return "compact";
+}
+function kpiCardSize(id) {
+  const def = CARD_DEFS[id];
+  const it = (workingLayout || []).find(x => x.id === id);
+  return { w: (it && it.w) || (def && def.w) || 2, h: (it && it.h) || (def && def.h) || 2 };
+}
+function kpiChipsHTML(chips) {
+  if (!chips || !chips.length) return "";
+  const clean = s => String(s ?? "").replace(/[<>]/g, "");
+  return '<div class="kpiChips">' + chips.map(c =>
+    '<span class="kpiChip"><i>' + clean(c[0]) + '</i><b style="color:' + (c[2] || "var(--txt)") + '">' + clean(c[1]) + "</b></span>"
+  ).join("") + "</div>";
+}
+function startCount(id, n, fmt) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (fmt === "pct") { el.textContent = (Number(n) * 100).toFixed(1) + "%"; return; }
+  try {
+    counters[id] = new countUp.CountUp(id, n, { separator: ",", duration: 0.9 });
+    if (counters[id].error) el.textContent = n; else counters[id].start();
+  } catch (e) { el.textContent = n; }
+}
+function mountKpiMini(cardId, miniEl, option) {
+  if (!miniEl || !option) return;
+  miniEl.innerHTML = '<div class="chart"></div>';
+  miniEl.addEventListener("click", e => e.stopPropagation());
+  cardChart(cardId, miniEl.firstChild).setOption(option, true);
+}
+function kpiPct(n, d, digits) {
+  const x = digits == null ? 1 : digits;
+  if (!d) return (0).toFixed(x) + "%";
+  return (n / d * 100).toFixed(x) + "%";
+}
+function kpiEsc(s) { return String(s ?? "").replace(/[<>]/g, ""); }
+function kpiTone(body, tone) {
+  const slot = body.closest(".cardSlot");
+  if (!slot) return;
+  slot.classList.remove("v-brand", "v-purple", "v-warn", "v-danger");
+  if (tone) slot.classList.add(tone);
+}
+function parseKpiTime(v) {
+  if (!v) return 0;
+  const t = Date.parse(String(v).replace(/-/g, "/"));
+  return isNaN(t) ? 0 : t;
+}
+function fmtKpiTime(v) {
+  const t = parseKpiTime(v);
+  if (!t) return "—";
+  const d = new Date(t);
+  const p = n => (n < 10 ? "0" : "") + n;
+  return p(d.getMonth() + 1) + "/" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+function kpiLatestRows(pred, n) {
+  return rows.filter(pred).sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
+}
+function kpiWaitHours(r) {
+  const t = parseKpiTime(r.实际放行时间 || r.申请日期);
+  if (!t) return 0;
+  return Math.max(0, (Date.now() - t) / 3600000);
+}
+function buildKpiProps(id, S) {
+  const total = S.orderCount || 0;
+  const special = S.specialOrders || 0;
+  const normal = Math.max(0, total - special);
+  const overtime = (S.transitTimeoutOrders || []).length;
+  const inOk = S.inTransitNotTimeout || 0;
+  const transit = overtime + inOk;
+  const receive = (S.receiveTimeoutOrders || []).length;
+  const specialRec = rows.filter(r => r._特保).length;
+  const overtimeSp = (S.transitTimeoutOrders || []).filter(o => o.特保).length;
+  const arrived = Math.max(0, total - transit);
+  const relTo = Object.values(orders).filter(o => o.放行超时).length;
+  const relOk = Math.max(0, total - relTo);
+  const recDepts = new Set((S.receiveTimeoutOrders || []).map(o => o.申请部门).filter(Boolean)).size;
+  const recRows = rows.filter(r => { const o = orders[r.放行单号]; return o && o.超时未接收; });
+  let b1 = 0, b2 = 0, b3 = 0;
+  recRows.forEach(r => { const h = kpiWaitHours(r); if (h < 1) b1++; else if (h <= 4) b2++; else b3++; });
+  const common = { total, special, normal, overtime, inOk, transit, receive, specialRec, overtimeSp, arrived, relTo, relOk, recDepts, records: S.total || 0 };
+  if (id === "kpi_special") {
+    return Object.assign({ tone: "v-purple", tab: "type" }, common, {
+      hero: special, unit: "单", subHtml: '占放行单总数 <b style="color:var(--cat-purple)">' + kpiPct(special, total) + "</b>",
+      visual: "progress",
+      cells: [
+        { name: "特保记录", val: specialRec, unit: "条" },
+        { name: "占总单", val: kpiPct(special, total), dc: "var(--cat-purple)" },
+        { name: "普通单对照", val: normal, dc: "var(--txt2)", dot: "var(--faint)" }
+      ],
+      bars: [
+        { name: "特保记录", val: specialRec, pct: total ? specialRec / Math.max(specialRec, 1) : 0, color: "var(--cat-purple)" },
+        { name: "占总单", val: kpiPct(special, total), pct: special / (total || 1), color: "var(--cat-purple)" },
+        { name: "普通单对照", val: normal, pct: normal / (total || 1), color: "var(--brand)" }
+      ],
+      dims: {
+        type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
+        arrive: { small: { n: "特保在途", v: Object.values(orders).filter(o => o.特保 && o.在途).length, c: "#f59a26" }, big: { n: "特保已到达", v: Object.values(orders).filter(o => o.特保 && o.已到达).length, c: "#2f7cf6" } },
+        overtime: { small: { n: "特保超时", v: overtimeSp, c: "#f04d3e" }, big: { n: "特保未超时", v: Math.max(0, special - overtimeSp), c: "#2f7cf6" } }
+      },
+      recTitle: "最新特保记录", recFilter: r => r._特保, recTag: "安保"
+    });
+  }
+  if (id === "kpi_transit") {
+    return Object.assign({ tone: "v-warn", tab: "overtime" }, common, {
+      hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--warn)">' + transit + "</b> 单",
+      visual: "stack",
+      cells: [
+        { name: "其中特保", val: overtimeSp, dc: "var(--cat-purple)", dot: "var(--cat-purple)" },
+        { name: "在途未超", val: inOk },
+        { name: "占在途", val: kpiPct(overtime, transit), dc: "var(--warn)" }
+      ],
+      bars: [
+        { name: "其中特保", val: overtimeSp, pct: overtime ? overtimeSp / overtime : 0, color: "var(--cat-purple)" },
+        { name: "在途未超", val: inOk, pct: inOk / (transit || 1), color: "var(--brand)" },
+        { name: "占在途", val: kpiPct(overtime, transit), pct: overtime / (transit || 1), color: "var(--warn)" }
+      ],
+      dims: {
+        type: { small: { n: "特保超时", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通超时", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
+        arrive: { small: { n: "在途超时", v: overtime, c: "#f59a26" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } },
+        overtime: { small: { n: "超时未放行", v: overtime, c: "#f59a26" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } }
+      },
+      recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时"
+    });
+  }
+  if (id === "kpi_receive") {
+    return Object.assign({ tone: "v-danger", tab: "overtime", cta: true }, common, {
+      hero: receive, unit: "单", subHtml: "需及时跟进接收",
+      visual: "alert",
+      bars: [
+        { name: "涉及部门", val: recDepts, pct: 1, color: "var(--danger)" },
+        { name: "占总单", val: kpiPct(receive, total), pct: receive / (total || 1), color: "var(--danger)" },
+        { name: ">4h 待接收", val: b3, pct: recRows.length ? b3 / recRows.length : 0, color: "var(--danger)" }
+      ],
+      dims: {
+        type: { small: { n: "<1h", v: b1, c: "#f7b14c" }, big: { n: "≥1h", v: b2 + b3, c: "#f04d3e" } },
+        arrive: { small: { n: "1–4h", v: b2, c: "#f59a26" }, big: { n: "其余", v: b1 + b3, c: "#f04d3e" } },
+        overtime: { small: { n: "<1h", v: b1, c: "#f7b14c" }, big: { n: "1–4h", v: b2, c: "#f59a26" }, extra: { n: ">4h", v: b3, c: "#f04d3e" } }
+      },
+      recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收"
+    });
+  }
+  const specialInTransit = Object.values(orders).filter(o => o.特保 && o.在途).length;
+  return Object.assign({ tone: "v-brand", tab: "type" }, common, {
+    hero: total, unit: "单", subHtml: '放行记录 <b>' + (S.total || 0) + "</b> 条",
+    visual: "donut",
+    cells: [
+      { name: "特保", val: special, dc: "var(--cat-purple)", dot: "var(--cat-purple)" },
+      { name: "普通", val: normal },
+      { name: "在途", val: transit, dc: "var(--warn)", dot: "var(--warn)" }
+    ],
+    bars: [
+      { name: "特级安保单", val: special, pct: special / (total || 1), color: "var(--cat-purple)" },
+      { name: "普通单", val: normal, pct: normal / (total || 1), color: "var(--brand)" },
+      { name: "在途单据", val: transit, pct: transit / (total || 1), color: "var(--warn)" }
+    ],
+    dims: {
+      type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
+      arrive: { small: { n: "在途", v: transit, c: "#f59a26" }, big: { n: "已到达", v: arrived, c: "#2f7cf6" } },
+      overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "正常", v: relOk, c: "#2f7cf6" } }
+    },
+    recTitle: "最新放行记录", recFilter: () => true, recTag: null, specialInTransit
+  });
+}
+function svgDualDonut(ratio, cBig, cSmall, center, sub) {
+  const r = 44, C = 2 * Math.PI * r, GAP = 8;
+  const lenS = Math.max(0, ratio * C - GAP);
+  const lenB = Math.max(0, (1 - ratio) * C - GAP);
+  return '<svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="13"/>' +
+    '<g transform="rotate(-90 55 55)">' +
+    '<circle cx="55" cy="55" r="44" fill="none" stroke="' + cBig + '" stroke-width="13" stroke-dasharray="' + lenB + " " + (C - lenB) + '" stroke-dashoffset="-' + (lenS + GAP) + '"/>' +
+    '<circle cx="55" cy="55" r="44" fill="none" stroke="' + cSmall + '" stroke-width="13" stroke-dasharray="' + lenS + " " + (C - lenS) + '"/>' +
+    "</g><text x=\"55\" y=\"52\" text-anchor=\"middle\" font-size=\"17\" font-weight=\"700\" fill=\"currentColor\">" + kpiEsc(center) + "</text>" +
+    "<text x=\"55\" y=\"68\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--txt2)\">" + kpiEsc(sub) + "</text></svg>";
+}
+function svgProgressDonut(ratio, color, center, sub) {
+  const r = 44, C = 2 * Math.PI * r;
+  const len = Math.max(0, Math.min(1, ratio) * C);
+  return '<svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="10"/>' +
+    '<g transform="rotate(-90 55 55)"><circle cx="55" cy="55" r="44" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + len + " " + C + '"/></g>' +
+    "<text x=\"55\" y=\"52\" text-anchor=\"middle\" font-size=\"17\" font-weight=\"700\" fill=\"" + color + "\">" + kpiEsc(center) + "</text>" +
+    "<text x=\"55\" y=\"68\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"var(--txt2)\">" + kpiEsc(sub) + "</text></svg>";
+}
+function htmlMediumVisual(p) {
+  if (p.visual === "progress") return '<div class="m-visual">' + svgProgressDonut(p.special / (p.total || 1), "var(--cat-purple)", String(p.specialRec), "特保记录") + "</div>";
+  if (p.visual === "stack") {
+    const a = Math.max(p.overtime, 0.01), b = Math.max(p.inOk, 0.01);
+    return '<div class="m-visual" style="width:132px"><div class="stack-wrap"><div class="stackbar">' +
+      '<i style="flex:' + a + ';background:var(--warn)"></i><i style="flex:' + b + ';background:var(--brand)"></i></div>' +
+      '<div class="stack-lg"><span><i class="dot" style="--dc:var(--warn)"></i>超时未放行 <b>' + p.overtime + "</b></span>" +
+      "<span><i class=\"dot\" style=\"--dc:var(--brand)\"></i>在途未超 <b>" + p.inOk + "</b></span></div></div></div>";
+  }
+  if (p.visual === "alert") return '<div class="m-visual"><div class="medallion"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div></div>';
+  return '<div class="m-visual">' + svgDualDonut(p.special / (p.total || 1), "var(--brand)", "var(--cat-purple)", kpiPct(p.special, p.total), "特保占比") + "</div>";
+}
+function htmlCells(cells) {
+  return '<div class="m-stat">' + cells.map(c => {
+    const dc = c.dc ? ' style="--dc:' + c.dc + '"' : "";
+    const dot = c.dot ? '<i class="dot" style="--dc:' + c.dot + '"></i>' : (c.dc ? '<i class="dot" style="--dc:' + c.dc + '"></i>' : '<i class="dot"></i>');
+    const unit = c.unit ? "<small>" + c.unit + "</small>" : "";
+    const val = typeof c.val === "number" ? c.val : kpiEsc(c.val);
+    return '<div class="cell"><span class="cell-name">' + dot + kpiEsc(c.name) + '</span><span class="cell-val"' + dc + ">" + val + unit + "</span></div>";
+  }).join("") + "</div>";
+}
+function htmlKpiMedium(p) {
+  const cta = p.cta ? '<button type="button" class="m-cta">查看超时单据明细 <span class="arr">→</span></button>' : "";
+  const stats = p.cells ? htmlCells(p.cells) : cta;
+  return '<div class="m-main-col"><div class="m-main"><div><div class="hero-num">' + p.hero + '<span class="unit">' + (p.unit || "单") + "</span></div>" +
+    '<div class="hero-sub">' + p.subHtml + "</div></div>" + htmlMediumVisual(p) + "</div>" + stats + "</div>";
+}
+function htmlBars(bars) {
+  return '<div class="lrows">' + bars.map(b => {
+    const w = Math.max(0, Math.min(100, (b.pct || 0) * 100)).toFixed(1);
+    return '<div class="lrow"><div class="lrow-top"><span class="lrow-name"><i class="dot" style="--dc:' + b.color + '"></i>' + kpiEsc(b.name) +
+      '</span><span class="lrow-val" style="color:' + b.color + '">' + kpiEsc(b.val) + "</span></div>" +
+      '<div class="ltrack"><i style="width:' + w + "%;background:" + b.color + '"></i></div></div>';
+  }).join("") + "</div>";
+}
+function htmlRecords(p) {
+  const list = kpiLatestRows(p.recFilter, 4);
+  const col3 = p.recTag === "超时" ? "流出门岗" : p.recTag === "未接收" ? "流入门岗" : "放行物品";
+  const cells = list;
+  const body = cells.map(r => {
+    const abn = /异常|異常/.test(r.放行状态 || "");
+    let tag = '<span class="tag tag-ok">已核驗</span>';
+    if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
+    else if (p.recTag === "未接收") tag = '<span class="tag tag-bad">未接收</span>';
+    else if (p.recTag === "安保") tag = '<span class="tag tag-bad">特保</span>';
+    else if (abn) tag = '<span class="tag tag-bad">門崗異常</span>';
+    const col3v = p.recTag === "超时" ? (r.流出门岗 || "—") : p.recTag === "未接收" ? (r.流入门岗 || "—") : (r.放行物品名称 || r.物品分类 || "—");
+    return "<tr><td class=\"mono\">" + kpiEsc(r.放行单号) + "</td><td class=\"t-time\">" + fmtKpiTime(r.申请日期) + "</td><td>" + kpiEsc(col3v) + "</td><td>" + tag + "</td></tr>";
+  }).join("") || '<tr><td colspan="4" class="t-time">暂无记录</td></tr>';
+  const allN = rows.filter(p.recFilter).length;
+  return '<section class="l-panel"><div class="lp-head"><span class="lp-title">' + kpiEsc(p.recTitle) + '</span><span class="lp-link">全部 ' + allN + " 条 →</span></div>" +
+    '<table class="tbl"><colgroup><col style="width:32%"><col style="width:22%"><col style="width:22%"><col style="width:24%"></colgroup>' +
+    "<thead><tr><th>放行单号</th><th>申请时间</th><th>" + col3 + "</th><th>状态</th></tr></thead><tbody>" + body + "</tbody></table>" +
+    '<div class="lp-foot">点击查看完整明细页 →</div></section>';
+}
+function donutPair(p, tab) {
+  const d = (p.dims && p.dims[tab]) || p.dims.type;
+  const tot = Math.max(1, (d.small.v || 0) + (d.big.v || 0));
+  return { small: d.small, big: d.big, tot, pS: kpiPct(d.small.v, tot, 2), pB: kpiPct(d.big.v, tot, 2) };
+}
+function donutPolar(degFromTop, radius) {
+  const a = (degFromTop - 90) * Math.PI / 180;
+  return { x: 110 + radius * Math.cos(a), y: 110 + radius * Math.sin(a) };
+}
+function htmlDonutLeader(midDeg, name, line2) {
+  const inner = donutPolar(midDeg, 100);
+  const outer = donutPolar(midDeg, 116);
+  const left = midDeg > 92 && midDeg < 268;
+  const lx = left ? outer.x - 10 : outer.x + 10;
+  const anchor = left ? "end" : "start";
+  const y1 = outer.y - 7, y2 = outer.y + 9;
+  return "<g><path d=\"M" + inner.x.toFixed(1) + " " + inner.y.toFixed(1) + " L" + outer.x.toFixed(1) + " " + outer.y.toFixed(1) +
+    "\" fill=\"none\" stroke=\"var(--muted)\" stroke-width=\"1\"/>" +
+    "<text x=\"" + lx.toFixed(1) + "\" y=\"" + y1.toFixed(1) + "\" text-anchor=\"" + anchor + "\" font-size=\"13\" font-weight=\"600\" fill=\"currentColor\">" + kpiEsc(name) + "</text>" +
+    "<text x=\"" + lx.toFixed(1) + "\" y=\"" + y2.toFixed(1) + "\" text-anchor=\"" + anchor + "\" font-size=\"12\" fill=\"var(--txt2)\">" + kpiEsc(line2) + "</text></g>";
+}
+function donutCenterLabel(p, tab) {
+  if (p.id === "kpi_transit") return "在途单";
+  if (p.id === "kpi_receive") return "待接收";
+  if (p.id === "kpi_special" && tab !== "type") return "特保单";
+  return "总单数";
+}
+function htmlLargeDonut(p, tab) {
+  const { small, big, tot, pS, pB } = donutPair(p, tab);
+  const r = 86, C = 2 * Math.PI * r, GAP = 7;
+  const lenS = Math.max(0, small.v / tot * C - GAP);
+  const lenB = Math.max(0, big.v / tot * C - GAP);
+  const midS = (lenS / 2) / C * 360;
+  const midB = (lenS + GAP + lenB / 2) / C * 360;
+  return '<div class="donut"><svg viewBox="-28 -18 276 256" width="100%" height="100%">' +
+    '<circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>' +
+    '<g transform="rotate(-90 110 110)">' +
+    '<circle class="d-small" cx="110" cy="110" r="86" fill="none" stroke="' + small.c + '" stroke-width="27" stroke-dasharray="' + lenS + " " + (C - lenS) + '"/>' +
+    '<circle class="d-big" cx="110" cy="110" r="86" fill="none" stroke="' + big.c + '" stroke-width="27" stroke-dasharray="' + lenB + " " + (C - lenB) + '" stroke-dashoffset="-' + (lenS + GAP) + '"/>' +
+    "</g>" +
+    htmlDonutLeader(midS, small.n, small.v + " 单 (" + pS + ")") +
+    htmlDonutLeader(midB, big.n, big.v + " 单 (" + pB + ")") +
+    '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + tot + "</text>" +
+    '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg></div>" +
+    '<div class="legend"><span class="lg-pill"><i class="dot" style="--dc:' + small.c + '"></i>' + kpiEsc(small.n) + " <b>" + small.v + "</b></span>" +
+    '<span class="lg-pill"><i class="dot" style="--dc:' + big.c + '"></i>' + kpiEsc(big.n) + " <b>" + big.v + "</b></span></div>";
+}
+function htmlKpiLarge(p, tab) {
+  tab = tab || p.tab || "type";
+  const sub = (p.id === "kpi_overview" || !p.id) ? (p.subHtml + " · 实时更新") : p.subHtml;
+  return '<div class="l-body"><section><div class="l-hero"><div class="hero-num">' + p.hero + '<span class="unit">' + (p.unit || "单") + "</span></div>" +
+    '<div class="hero-sub">' + sub + "</div></div>" + htmlBars(p.bars || []) + "</section>" +
+    '<section class="l-mid">' + htmlLargeDonut(p, tab) + "</section>" + htmlRecords(p) + "</div>";
+}
+function clearKpiHeadSeg(body) {
+  const slot = body.closest(".cardSlot");
+  if (!slot) return;
+  slot.classList.remove("kpi-large");
+  slot.querySelectorAll(".cardHead .kpi-seg").forEach(el => el.remove());
+}
+function bindKpiChrome(body, spec, p, dens) {
+  kpiTone(body, p.tone);
+  clearKpiHeadSeg(body);
+  const cta = body.querySelector(".m-cta");
+  if (cta) cta.addEventListener("click", e => { e.stopPropagation(); if (!editMode) openDetail(spec.detailKey); });
+  body.querySelectorAll(".lp-link, .lp-foot").forEach(el => {
+    el.addEventListener("click", e => { e.stopPropagation(); if (!editMode) openDetail(spec.detailKey); });
+  });
+  if (dens !== "expanded") return;
+  const slot = body.closest(".cardSlot");
+  const head = slot && slot.querySelector(".cardHead");
+  if (!head) return;
+  slot.classList.add("kpi-large");
+  const tab = body.dataset.kpiTab || p.tab || "type";
+  const seg = document.createElement("div");
+  seg.className = "kpi-seg";
+  seg.setAttribute("role", "tablist");
+  seg.innerHTML =
+    '<button type="button" data-tab="type"' + (tab === "type" ? ' class="on"' : "") + ">单据类型</button>" +
+    '<button type="button" data-tab="arrive"' + (tab === "arrive" ? ' class="on"' : "") + ">到达状态</button>" +
+    '<button type="button" data-tab="overtime"' + (tab === "overtime" ? ' class="on"' : "") + ">超时状态</button>";
+  const rm = head.querySelector(".cardRemove");
+  head.insertBefore(seg, rm);
+  seg.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const next = btn.dataset.tab;
+      body.dataset.kpiTab = next;
+      const np = buildKpiProps(spec.id, computeStats());
+      np.id = spec.id;
+      const mid = body.querySelector(".l-mid");
+      if (mid) mid.innerHTML = htmlLargeDonut(np, next);
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === btn));
+      if (spec.id === "kpi_overview" && typeof overviewState !== "undefined") {
+        overviewState.dim = next === "arrive" ? 1 : next === "overtime" ? 2 : 0;
+      }
+    });
+  });
+}
+function renderKpiAdaptive(body, ctx, spec) {
+  const { w, h } = kpiCardSize(spec.id);
+  const dens = kpiDensity(w, h, spec.id);
+  body.dataset.kpiDens = dens;
+  if (liveCharts[spec.id] && dens !== "expanded") {
+    try { liveCharts[spec.id].dispose(); } catch (e) { }
+    delete liveCharts[spec.id];
+  }
+  const valId = spec.id + "Val";
+  const colorAttr = spec.color ? ' style="color:' + spec.color + '"' : "";
+  const extra = (dens === "compact" && spec.compactExtra) ? spec.compactExtra(ctx) : "";
+  const hint = dens === "compact" ? '<div class="clickHint">点击查看详情</div>' : "";
+  const label = dens === "compact" ? '<div class="kpiLabel">' + spec.label + "</div>" : "";
+  const hero = '<div class="kpiHero">' + label +
+    '<div class="kpiValue" id="' + valId + '"' + colorAttr + ">0</div>" + extra + hint + "</div>";
+  if (dens === "compact") {
+    kpiTone(body, "");
+    clearKpiHeadSeg(body);
+    body.innerHTML = '<div class="kpiShell" data-dens="compact">' + hero + "</div>";
+    startCount(valId, spec.value(ctx.S), spec.format);
+    if (spec.afterCompact) spec.afterCompact(ctx);
+    return dens;
+  }
+  if (spec.format === "pct") {
+    clearKpiHeadSeg(body);
+    const chips = spec.chips ? kpiChipsHTML(spec.chips(ctx.S)) : "";
+    const mini = dens === "expanded" ? '<div class="kpiMini"></div>' : "";
+    body.innerHTML = '<div class="kpiShell" data-dens="' + dens + '">' + hero +
+      '<div class="kpiSide">' + chips + mini + "</div></div>";
+    startCount(valId, spec.value(ctx.S), spec.format);
+    if (dens === "expanded" && spec.miniOption) mountKpiMini(spec.id, body.querySelector(".kpiMini"), spec.miniOption(ctx.S));
+    return dens;
+  }
+  const p = buildKpiProps(spec.id, ctx.S);
+  p.id = spec.id;
+  const tab = body.dataset.kpiTab || p.tab;
+  body.innerHTML = dens === "expanded" ? htmlKpiLarge(p, tab) : htmlKpiMedium(p);
+  bindKpiChrome(body, spec, p, dens);
+  return dens;
+}
+function updateKpiAdaptive(body, ctx, spec) {
+  const { w, h } = kpiCardSize(spec.id);
+  const dens = kpiDensity(w, h, spec.id);
+  if (body.dataset.kpiDens !== dens) { renderKpiAdaptive(body, ctx, spec); return; }
+  if (dens !== "compact" && spec.format !== "pct") { renderKpiAdaptive(body, ctx, spec); return; }
+  const valId = spec.id + "Val";
+  const n = spec.value(ctx.S);
+  if (spec.format === "pct") {
+    const el = document.getElementById(valId); if (el) el.textContent = (Number(n) * 100).toFixed(1) + "%";
+  } else if (counters[valId]) counters[valId].update(n);
+  else { const el = document.getElementById(valId); if (el) el.textContent = n; }
+  if (spec.afterUpdate) spec.afterUpdate(ctx);
+  if (dens !== "compact" && spec.chips) {
+    const wrap = body.querySelector(".kpiChips");
+    if (wrap) wrap.outerHTML = kpiChipsHTML(spec.chips(ctx.S));
+  }
+  if (dens === "expanded" && spec.miniOption && liveCharts[spec.id]) {
+    liveCharts[spec.id].setOption(spec.miniOption(ctx.S), true);
+  }
+}
+
 // ---------- 卡片注册表 CARD_DEFS（扩展接口） ----------
 const CARD_DEFS = {
   kpi_overview: {
-    id: "kpi_overview", title: "放行单总数", icon: "📋", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "overview",
+    id: "kpi_overview", title: "放行单总数", icon: "📋", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "overview", kpiAdaptive: true,
     render(body, ctx) {
-      body.innerHTML = '<div class="kpiLabel">放行单总数</div><div class="kpiValue" id="kpiOrders">0</div>' +
-        '<div class="kpiSub">记录 <b id="kpiRecordsSub">0</b> 条</div><div class="clickHint">点击查看详情</div>';
-      counters.kpi_overview = new countUp.CountUp("kpiOrders", ctx.S.orderCount, { separator: ",", duration: 0.9 });
-      counters.kpi_records = new countUp.CountUp("kpiRecordsSub", ctx.S.total, { separator: ",", duration: 0.9 });
-      counters.kpi_overview.start(); counters.kpi_records.start();
+      renderKpiAdaptive(body, ctx, {
+        id: "kpi_overview", label: "放行单总数", value: S => S.orderCount,
+        compactExtra: () => '<div class="kpiSub">记录 <b id="kpiRecordsSub">0</b> 条</div>',
+        afterCompact: ctx2 => startCount("kpiRecordsSub", ctx2.S.total),
+        afterUpdate: ctx2 => {
+          if (counters.kpiRecordsSub) counters.kpiRecordsSub.update(ctx2.S.total);
+          else { const el = $("kpiRecordsSub"); if (el) el.textContent = ctx2.S.total; }
+        },
+        chips: S => [["特保", S.specialOrders, "var(--purple)"], ["普通", S.orderCount - S.specialOrders, "var(--accent)"],
+          ["记录", S.total, "var(--txt2)"]],
+        miniOption: S => optionBuilders.type(S)
+      });
     },
     update(body, ctx) {
-      if (counters.kpi_overview) counters.kpi_overview.update(ctx.S.orderCount);
-      if (counters.kpi_records) counters.kpi_records.update(ctx.S.total);
+      updateKpiAdaptive(body, ctx, {
+        id: "kpi_overview", label: "放行单总数", value: S => S.orderCount,
+        compactExtra: () => '<div class="kpiSub">记录 <b id="kpiRecordsSub">0</b> 条</div>',
+        afterCompact: ctx2 => startCount("kpiRecordsSub", ctx2.S.total),
+        afterUpdate: ctx2 => {
+          if (counters.kpiRecordsSub) counters.kpiRecordsSub.update(ctx2.S.total);
+          else { const el = $("kpiRecordsSub"); if (el) el.textContent = ctx2.S.total; }
+        },
+        chips: S => [["特保", S.specialOrders, "var(--purple)"], ["普通", S.orderCount - S.specialOrders, "var(--accent)"],
+          ["记录", S.total, "var(--txt2)"]],
+        miniOption: S => optionBuilders.type(S)
+      });
     }
   },
   kpi_special: {
-    id: "kpi_special", title: "特级安保单", icon: "🛡️", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "special",
+    id: "kpi_special", title: "特级安保单", icon: "🛡️", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "special", kpiAdaptive: true,
     render(body, ctx) {
-      body.innerHTML = '<div class="kpiLabel">特级安保单</div><div class="kpiValue" id="kpiSpecial" style="color:var(--purple)">0</div><div class="clickHint">点击查看详情</div>';
-      counters.kpi_special = new countUp.CountUp("kpiSpecial", ctx.S.specialOrders, { separator: ",", duration: 0.9 });
-      counters.kpi_special.start();
+      renderKpiAdaptive(body, ctx, {
+        id: "kpi_special", label: "特级安保单", color: "var(--purple)", value: S => S.specialOrders,
+        chips: S => {
+          const rec = rows.filter(r => r._特保).length;
+          const pct = S.orderCount ? (S.specialOrders / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["记录", rec, "var(--txt)"], ["占比", pct, "var(--txt2)"]];
+        },
+        miniOption: S => KPI_DETAIL.special.chart(S)
+      });
     },
-    update(body, ctx) { if (counters.kpi_special) counters.kpi_special.update(ctx.S.specialOrders); }
+    update(body, ctx) {
+      updateKpiAdaptive(body, ctx, {
+        id: "kpi_special", label: "特级安保单", color: "var(--purple)", value: S => S.specialOrders,
+        chips: S => {
+          const rec = rows.filter(r => r._特保).length;
+          const pct = S.orderCount ? (S.specialOrders / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["记录", rec, "var(--txt)"], ["占比", pct, "var(--txt2)"]];
+        },
+        miniOption: S => KPI_DETAIL.special.chart(S)
+      });
+    }
   },
   kpi_transit: {
-    id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "transitTimeout",
+    id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "transitTimeout", kpiAdaptive: true,
     render(body, ctx) {
-      body.innerHTML = '<div class="kpiLabel">在途超时未放行</div><div class="kpiValue" id="kpiTransit" style="color:var(--warn)">0</div><div class="clickHint">点击查看详情</div>';
-      counters.kpi_transit = new countUp.CountUp("kpiTransit", ctx.S.transitTimeoutOrders.length, { separator: ",", duration: 0.9 });
-      counters.kpi_transit.start();
+      renderKpiAdaptive(body, ctx, {
+        id: "kpi_transit", label: "在途超时未放行", color: "var(--warn)",
+        value: S => S.transitTimeoutOrders.length,
+        chips: S => {
+          const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
+          const pct = S.orderCount ? (S.transitTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["特保", sp, "var(--purple)"], ["占比", pct, "var(--txt2)"], ["未超时", S.inTransitNotTimeout, "var(--txt)"]];
+        },
+        miniOption: S => KPI_DETAIL.transitTimeout.chart(S)
+      });
     },
-    update(body, ctx) { if (counters.kpi_transit) counters.kpi_transit.update(ctx.S.transitTimeoutOrders.length); }
+    update(body, ctx) {
+      updateKpiAdaptive(body, ctx, {
+        id: "kpi_transit", label: "在途超时未放行", color: "var(--warn)",
+        value: S => S.transitTimeoutOrders.length,
+        chips: S => {
+          const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
+          const pct = S.orderCount ? (S.transitTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["特保", sp, "var(--purple)"], ["占比", pct, "var(--txt2)"], ["未超时", S.inTransitNotTimeout, "var(--txt)"]];
+        },
+        miniOption: S => KPI_DETAIL.transitTimeout.chart(S)
+      });
+    }
   },
   kpi_receive: {
-    id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 3, detailKey: "receiveTimeout",
+    id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 2, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "receiveTimeout", kpiAdaptive: true,
     render(body, ctx) {
-      body.innerHTML = '<div class="kpiLabel">超时未接收</div><div class="kpiValue" id="kpiReceive" style="color:var(--bad)">0</div><div class="clickHint">点击查看详情</div>';
-      counters.kpi_receive = new countUp.CountUp("kpiReceive", ctx.S.receiveTimeoutOrders.length, { separator: ",", duration: 0.9 });
-      counters.kpi_receive.start();
+      renderKpiAdaptive(body, ctx, {
+        id: "kpi_receive", label: "超时未接收", color: "var(--bad)",
+        value: S => S.receiveTimeoutOrders.length,
+        chips: S => {
+          const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
+          const pct = S.orderCount ? (S.receiveTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["部门", depts, "var(--txt)"], ["占比", pct, "var(--txt2)"]];
+        },
+        miniOption: S => KPI_DETAIL.receiveTimeout.chart(S)
+      });
     },
-    update(body, ctx) { if (counters.kpi_receive) counters.kpi_receive.update(ctx.S.receiveTimeoutOrders.length); }
+    update(body, ctx) {
+      updateKpiAdaptive(body, ctx, {
+        id: "kpi_receive", label: "超时未接收", color: "var(--bad)",
+        value: S => S.receiveTimeoutOrders.length,
+        chips: S => {
+          const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
+          const pct = S.orderCount ? (S.receiveTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%";
+          return [["部门", depts, "var(--txt)"], ["占比", pct, "var(--txt2)"]];
+        },
+        miniOption: S => KPI_DETAIL.receiveTimeout.chart(S)
+      });
+    }
   },
   kpi_rate: {
-    id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 4, h: 2, minW: 2, maxW: 6, minH: 2, maxH: 4, detailKey: "rate",
+    id: "kpi_rate", title: "放行结案完成率", icon: "✅", cat: "KPI指标", w: 4, h: 2, minW: 2, maxW: 12, minH: 2, maxH: 6, detailKey: "rate", kpiAdaptive: true,
     render(body, ctx) {
-      body.innerHTML = '<div id="liquidChart" style="width:100%;height:100%"></div>';
-      cardChart("kpi_rate", body.firstChild).setOption(optionBuilders.liquid(ctx.S), true);
+      const { w, h } = kpiCardSize("kpi_rate");
+      const dens = kpiDensity(w, h, "kpi_rate");
+      if (liveCharts.kpi_rate_pie) { try { liveCharts.kpi_rate_pie.dispose(); } catch (e) { } delete liveCharts.kpi_rate_pie; }
+      if (dens === "compact") {
+        body.dataset.kpiDens = dens;
+        body.innerHTML = '<div class="kpiShell" data-dens="compact"><div class="kpiMini kpiMiniFill"><div class="chart"></div></div></div>';
+        cardChart("kpi_rate", body.querySelector(".chart")).setOption(optionBuilders.liquid(ctx.S), true);
+        return;
+      }
+      if (liveCharts.kpi_rate) { try { liveCharts.kpi_rate.dispose(); } catch (e) { } delete liveCharts.kpi_rate; }
+      renderKpiAdaptive(body, ctx, {
+        id: "kpi_rate", label: "放行结案完成率", color: "var(--ok)", format: "pct",
+        value: S => S.closeRate,
+        chips: S => [["完成", S.closedOrders, "var(--ok)"], ["纳入", S.scopedOrders, "var(--accent)"],
+          ["未纳入", S.inTransitNotTimeout, "var(--txt2)"]],
+        miniOption: S => KPI_DETAIL.rate.chart(S)
+      });
     },
-    update(body, ctx) { if (liveCharts.kpi_rate) liveCharts.kpi_rate.setOption(optionBuilders.liquid(ctx.S)); }
+    update(body, ctx) {
+      const { w, h } = kpiCardSize("kpi_rate");
+      const dens = kpiDensity(w, h, "kpi_rate");
+      if (body.dataset.kpiDens !== dens) { this.render(body, ctx); return; }
+      if (dens === "compact") {
+        if (liveCharts.kpi_rate) liveCharts.kpi_rate.setOption(optionBuilders.liquid(ctx.S));
+        return;
+      }
+      updateKpiAdaptive(body, ctx, {
+        id: "kpi_rate", label: "放行结案完成率", color: "var(--ok)", format: "pct",
+        value: S => S.closeRate,
+        chips: S => [["完成", S.closedOrders, "var(--ok)"], ["纳入", S.scopedOrders, "var(--accent)"],
+          ["未纳入", S.inTransitNotTimeout, "var(--txt2)"]],
+        miniOption: S => KPI_DETAIL.rate.chart(S)
+      });
+    }
   },
   chart_type: {
     id: "chart_type", title: "单据类型分布（特保 / 普通）", icon: "🥧", cat: "分布分析", w: 4, h: 3, minW: 3, maxW: 12, minH: 2, maxH: 6,
@@ -1892,11 +2506,54 @@ function buildCardContent(def) {
   // 编辑模式下整条头部为拖动区；✕ 按钮阻止冒泡，避免误触拖动
   head.querySelector(".cardRemove").addEventListener("mousedown", e => e.stopPropagation());
   head.querySelector(".cardRemove").onclick = e => { e.stopPropagation(); removeCard(def.id); };
-  if (def.detailKey) body.addEventListener("click", () => { if (!editMode) openDetail(def.detailKey); });
+  if (def.detailKey) body.addEventListener("click", e => {
+    if (editMode) return;
+    if (e.target.closest(".kpiMini, .kpi-seg, .m-cta, .lp-link, .lp-foot, button")) return;
+    openDetail(def.detailKey);
+  });
   const item = document.createElement("div");   // 外层 .grid-stack-item
   item.appendChild(ce);
   return item;
 }
+
+function applyKpiDensityForItem(el) {
+  const node = (el && el.el) ? el.el : el;
+  if (!node || !node.querySelector) return;
+  const slot = node.querySelector("[data-card]");
+  if (!slot) return;
+  const def = CARD_DEFS[slot.dataset.card];
+  if (!def || !def.kpiAdaptive || !def.render) return;
+  const body = slot.querySelector(".cardBody");
+  if (!body) return;
+  const { w, h } = kpiCardSize(def.id);
+  if (body.dataset.kpiDens === kpiDensity(w, h, def.id)) return;
+  def.render(body, { S: computeStats(), rows, orders });
+}
+
+window.__dashTest = {
+  dens(id) {
+    const b = document.querySelector('[data-card="' + id + '"] .cardBody');
+    return b ? b.dataset.kpiDens : null;
+  },
+  hasChips(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiChips, [data-card="' + id + '"] .m-stat, [data-card="' + id + '"] .m-cta'); },
+  hasMini(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiMini, [data-card="' + id + '"] .l-body'); },
+  detailOpen() { const el = document.getElementById("detailOverlay"); return !!(el && el.classList.contains("open")); },
+  setKpiSize(id, w, h) {
+    const g = window.__dashGrid;
+    const item = [...document.querySelectorAll("#cardGrid .grid-stack-item")].find(el => {
+      const c = el.querySelector("[data-card]");
+      return c && c.dataset.card === id;
+    });
+    if (!g || !item) throw new Error("no grid item " + id);
+    g.update(item, { w, h });
+    item.setAttribute("gs-w", String(w));
+    item.setAttribute("gs-h", String(h));
+    syncLayoutFromGrid();
+    applyKpiDensityForItem(item);
+    const size = kpiCardSize(id);
+    return { dens: this.dens(id), w: size.w, h: size.h };
+  }
+};
 
 function renderDashboard() {
   disposeAllCardCharts();
@@ -1917,7 +2574,13 @@ function renderDashboard() {
     grid.addWidget(item, { id: it.id, x: it.x, y: it.y, w: it.w || def.w, h: it.h || def.h, minW: def.minW, maxW: def.maxW, minH: def.minH, maxH: def.maxH });
     def.render(item.querySelector(".cardBody"), ctx);
   });
-  grid.on("change resizestop dragstop", () => { syncLayoutFromGrid(); resizeAllCardCharts(); });
+  window.__dashGrid = grid;
+  grid.on("resizestop", (ev, el) => {
+    syncLayoutFromGrid();
+    applyKpiDensityForItem(el);
+    resizeAllCardCharts();
+  });
+  grid.on("change dragstop", () => { syncLayoutFromGrid(); resizeAllCardCharts(); });
   applyEditModeToGrid();   // 重建网格后恢复当前编辑模式状态
   setTimeout(() => { syncLayoutFromGrid(); resizeAllCardCharts(); }, 60);
   setTimeout(scheduleRefraction, 90);
@@ -1947,6 +2610,7 @@ function removeCard(id) {
   if (item && grid) {
     // 释放该卡片占用的图表 / 表格实例，避免泄漏
     if (liveCharts[id]) { try { liveCharts[id].dispose(); } catch (e) { } delete liveCharts[id]; }
+    if (id === "kpi_rate" && liveCharts.kpi_rate_pie) { try { liveCharts.kpi_rate_pie.dispose(); } catch (e) { } delete liveCharts.kpi_rate_pie; }
     if (id === "table_detail" && detailTable) { try { detailTable.destroy(); } catch (e) { } detailTable = null; }
     grid.removeWidget(item);   // 同时从网格模型与 DOM 移除（其余卡片不受影响，无闪烁）
     syncLayoutFromGrid();

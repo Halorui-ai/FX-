@@ -25,7 +25,8 @@
 | [AGENT.md](AGENT.md) | 所有 AI agent | 准许 / 禁止、开工与**提交前**检查 |
 | [CHANGELOG.md](CHANGELOG.md) | 人 / 下一班 agent | **先看「进行中」**；这次和近日改了什么 |
 | [CONTEXT.md](CONTEXT.md) | 改业务 / 对数字 | 记录 vs 单、口径、卡片、数据格式 |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 改结构 / 加功能 | 数据流、分区、插件、顶栏壳；末章如何扩展 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 改结构 / 加功能 | 数据流、分区、插件、顶栏壳、KPI 分档；末章如何扩展 |
+| [kpi-card-redesign/HANDOFF.md](kpi-card-redesign/HANDOFF.md) | 改 KPI 中卡/大卡 | 视觉规格；原型 `kpi-card-redesign/index.html` |
 | [DECISIONS.md](DECISIONS.md) | 改口径或机制前 | 过往决策与踩坑（只追加） |
 
 归档（只读，索引见 [`docs/archive/README.md`](docs/archive/README.md)）：

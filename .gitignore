@@ -25,3 +25,7 @@ Thumbs.db
 # 工具/代理内部目录（非项目内容）
 .qoder/
 .workbuddy/
+
+# 本地 e2e（playwright-core），不随离线看板分发
+tests/node_modules/
+tests/package-lock.json

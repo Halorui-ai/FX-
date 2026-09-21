@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI 卡片重设计 · 中卡 / 大卡</title>
+<style>
+/* ============================================================
+   全局设计 Token（实现时请抽成 CSS 变量 / Design Token）
+   ============================================================ */
+:root{
+  color-scheme: light;
+  /* 语义色：蓝=总量  紫=特保  橙=超时预警  红=告警  青=辅助信息  绿=正常 */
+  --brand:#2f7cf6;
+  --cat-purple:#7a63f5;
+  --warn:#f59a26;
+  --danger:#f04d3e;
+  --cyan:#15b3c4;
+  --ok:#1ea672;
+
+  --card:rgba(255,255,255,.74);          /* 毛玻璃卡片底 */
+  --card-strong:rgba(255,255,255,.9);
+  --panel:rgba(255,255,255,.56);         /* 卡片内嵌套面板 */
+  --line:rgba(31,41,55,.09);
+  --track:rgba(31,41,55,.08);            /* 进度条/环图轨道 */
+  --text:#20262e;
+  --muted:#748093;
+  --faint:#9aa5b5;
+
+  --brand-soft:rgba(47,124,246,.1);
+  --purple-soft:rgba(122,99,245,.1);
+  --warn-soft:rgba(245,154,38,.12);
+  --danger-soft:rgba(240,77,62,.12);
+  --ok-soft:rgba(30,166,114,.12);
+
+  --radius:8px;
+  --radius-card:16px;
+  --radius-full:999px;
+  --s4:4px; --s8:8px; --s12:12px; --s16:16px; --s20:20px; --s24:24px;
+  --font-sans:"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-metric:"Inter","SF Pro Text","PingFang SC",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+
+/* 暗色主题（如看板支持暗色，参考以下覆写）
+:root[data-theme="dark"]{
+  --card:rgba(23,32,50,.66); --card-strong:rgba(30,41,63,.92);
+  --panel:rgba(255,255,255,.05); --line:rgba(220,230,245,.1);
+  --track:rgba(220,230,245,.12); --text:#e8edf6; --muted:#9aa8bd; --faint:#6d7b90;
+  --brand:#5b9bff; --cat-purple:#9a86ff; --warn:#f7b14c; --danger:#f46a5d;
+}
+*/
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:var(--font-sans);color:var(--text);
+  min-height:100vh;padding:32px;
+  background:
+   radial-gradient(700px 380px at 10% -10%,#f3f0fc,transparent 70%),
+   radial-gradient(760px 420px at 90% 0%,#e8f5f1,transparent 72%),
+   linear-gradient(135deg,#eef4fb,#e8f5f1);
+}
+.page{max-width:1440px;margin:0 auto;}
+
+/* ============================================================
+   卡片通用外壳
+   ============================================================ */
+.kpi{position:relative;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius-card);padding:var(--s16) var(--s20);
+  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+  box-shadow:0 10px 30px rgba(28,45,74,.08), inset 0 1px 0 rgba(255,255,255,.5);}
+.kpi-head{display:flex;align-items:center;gap:var(--s8);}
+.handle{color:var(--faint);flex:none;display:flex;cursor:grab;}
+.acbar{width:4px;height:18px;border-radius:var(--radius-full);background:var(--v);flex:none;}
+.kico{flex:none;display:flex;color:var(--v);}
+.kpi h3{font-size:15px;line-height:22px;font-weight:600;}
+.xbtn{margin-left:auto;width:26px;height:26px;border:0;background:transparent;color:var(--faint);
+  border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+.xbtn:hover{background:var(--track);color:var(--muted);}
+
+.v-brand{--v:var(--brand);} .v-purple{--v:var(--cat-purple);}
+.v-warn{--v:var(--warn);} .v-danger{--v:var(--danger);}
+
+.sec-label{font-size:12px;line-height:18px;color:var(--muted);font-weight:500;
+  letter-spacing:.08em;margin:0 0 var(--s12);display:flex;align-items:center;gap:var(--s8);}
+.sec-label::after{content:"";flex:1;height:1px;background:var(--line);}
+.l-sec{margin-top:var(--s24);}
+
+/* ============================================================
+   中卡
+   ============================================================ */
+.m-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s16);}
+.m-main{display:flex;align-items:center;justify-content:space-between;gap:var(--s16);
+  padding:var(--s16) 0 var(--s12);}
+.hero-num{font-family:var(--font-metric);font-weight:700;font-size:38px;line-height:1.05;
+  color:var(--v);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.hero-num .unit{font-size:13px;font-weight:500;color:var(--muted);margin-left:5px;letter-spacing:0;}
+.v-brand .hero-num{color:var(--text);}
+.hero-sub{margin-top:6px;font-size:12px;line-height:18px;color:var(--muted);}
+.hero-sub b{color:var(--cyan);font-family:var(--font-metric);font-weight:600;}
+.m-visual{flex:none;width:118px;display:flex;align-items:center;justify-content:center;}
+.m-visual svg{width:104px;height:104px;display:block;}
+.m-stat{padding:var(--s12) 0 0;border-top:1px solid var(--line);display:flex;align-items:stretch;}
+.cell{flex:1;padding:0 var(--s12);display:flex;flex-direction:column;gap:3px;min-width:0;
+  border-left:1px solid var(--line);}
+.cell:first-child{padding-left:0;border-left:0;}
+.cell-name{font-size:12px;line-height:16px;color:var(--muted);display:flex;align-items:center;gap:5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dot{width:7px;height:7px;border-radius:var(--radius-full);background:var(--dc,var(--brand));flex:none;}
+.cell-val{font-family:var(--font-metric);font-size:18px;line-height:22px;font-weight:700;
+  color:var(--dc,var(--text));font-variant-numeric:tabular-nums;}
+.cell-val small{font-size:11px;font-weight:500;color:var(--muted);margin-left:2px;}
+
+.stack-wrap{width:100%;}
+.stackbar{display:flex;height:10px;border-radius:var(--radius-full);overflow:hidden;background:var(--track);}
+.stackbar i{display:block;height:100%;}
+.stack-lg{margin-top:var(--s8);display:flex;flex-direction:column;gap:5px;}
+.stack-lg span{display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px;color:var(--muted);
+  font-variant-numeric:tabular-nums;}
+.stack-lg b{color:var(--text);font-family:var(--font-metric);}
+
+.medallion{width:84px;height:84px;border-radius:var(--radius-card);background:var(--danger-soft);
+  display:flex;align-items:center;justify-content:center;color:var(--danger);}
+.m-cta{margin:var(--s12) 0 0;padding-top:var(--s12);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:500;color:var(--danger);background:0;border:0;
+  width:100%;cursor:pointer;font-family:var(--font-sans);}
+.m-cta .arr{transition:transform .15s;}
+.m-cta:hover .arr{transform:translateX(3px);}
+
+/* ============================================================
+   大卡
+   ============================================================ */
+.l-card{padding:var(--s20) var(--s24);}
+.l-head{display:flex;align-items:center;gap:var(--s12);}
+.seg{margin-left:auto;display:flex;gap:2px;padding:3px;border-radius:var(--radius-full);
+  background:var(--panel);border:1px solid var(--line);}
+.seg button{border:0;background:transparent;font-family:var(--font-sans);font-size:13px;line-height:18px;
+  color:var(--muted);padding:6px 16px;border-radius:var(--radius-full);cursor:pointer;
+  transition:all .15s;font-weight:500;}
+.seg button.on{background:var(--card-strong);color:var(--brand);
+  box-shadow:0 2px 8px rgba(28,45,74,.12);}
+.l-body{margin-top:var(--s20);display:grid;grid-template-columns:238px 290px minmax(0,1fr);
+  gap:var(--s24);align-items:stretch;}
+.l-hero{padding-bottom:var(--s16);}
+.l-hero .hero-num{font-size:52px;}
+.lrows{display:flex;flex-direction:column;gap:var(--s12);
+  padding-top:var(--s16);border-top:1px solid var(--line);}
+.lrow-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;}
+.lrow-name{font-size:13px;line-height:18px;color:var(--text);display:flex;align-items:center;gap:7px;}
+.lrow-val{font-family:var(--font-metric);font-size:15px;font-weight:700;
+  font-variant-numeric:tabular-nums;}
+.ltrack{height:5px;border-radius:var(--radius-full);background:var(--track);overflow:hidden;}
+.ltrack i{display:block;height:100%;border-radius:var(--radius-full);transition:width .4s ease;}
+
+.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s12);
+  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 var(--s20);}
+.donut{width:228px;height:228px;}
+.donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease;}
+.legend{display:flex;gap:var(--s8);}
+.lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--muted);
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-full);
+  padding:4px 12px;font-variant-numeric:tabular-nums;}
+.lg-pill b{color:var(--text);font-family:var(--font-metric);}
+
+.l-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:var(--s16) var(--s16) var(--s8);display:flex;flex-direction:column;min-width:0;}
+.lp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s8);}
+.lp-title{font-size:14px;font-weight:600;}
+.lp-link{font-size:12px;color:var(--brand);text-decoration:none;font-weight:500;white-space:nowrap;}
+.lp-link:hover{text-decoration:underline;}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed;}
+.tbl th{font-size:12px;line-height:18px;color:var(--muted);font-weight:500;text-align:left;
+  padding:6px 8px;border-bottom:1px solid var(--line);}
+.tbl td{font-size:12.5px;line-height:18px;padding:9px 8px;border-bottom:1px solid var(--line);
+  vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tbl tr:last-child td{border-bottom:0;}
+.tbl tbody tr{transition:background .12s;}
+.tbl tbody tr:hover{background:var(--card-strong);}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--text);}
+.t-time{color:var(--muted);font-variant-numeric:tabular-nums;}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;line-height:16px;font-weight:600;
+  padding:2px 9px;border-radius:var(--radius-full);white-space:nowrap;}
+.tag::before{content:"";width:5px;height:5px;border-radius:var(--radius-full);background:currentColor;}
+.tag-bad{color:var(--danger);background:var(--danger-soft);}
+.tag-ok{color:var(--ok);background:var(--ok-soft);}
+.lp-foot{margin-top:auto;padding:10px 0 4px;text-align:center;}
+.lp-foot a{font-size:12px;color:var(--brand);text-decoration:none;font-weight:500;}
+.lp-foot a:hover{text-decoration:underline;}
+
+@media (max-width:1100px){
+  .l-body{grid-template-columns:1fr;}
+  .l-mid{border-left:0;border-right:0;border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);padding:var(--s16) 0;}
+}
+@media (max-width:720px){
+  body{padding:16px;}
+  .m-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ================= 中卡 ×4 ================= -->
+  <p class="sec-label">中卡 · MEDIUM</p>
+  <div class="m-grid">
+
+    <!-- A 放行单总数 -->
+    <article class="kpi v-brand">
+      <div class="kpi-head">
+        <span class="handle"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="4" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="11" cy="12" r="1.3"/></svg></span>
+        <span class="acbar"></span>
+        <span class="kico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 3.5a2 2 0 0 1 4 0V4H9z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg></span>
+        <h3>放行单总数</h3>
+        <button class="xbtn" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      </div>
+      <div class="m-main">
+        <div>
+          <div class="hero-num">202<span class="unit">单</span></div>
+          <div class="hero-sub">放行记录 <b>393</b> 条</div>
+        </div>
+        <div class="m-visual">
+          <svg viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="13"/>
+            <g transform="rotate(-90 55 55)">
+              <circle cx="55" cy="55" r="44" fill="none" stroke="var(--brand)" stroke-width="13"
+                stroke-dasharray="222.5 54.1"/>
+              <circle cx="55" cy="55" r="44" fill="none" stroke="var(--cat-purple)" stroke-width="13"
+                stroke-dasharray="38.2 238.4" stroke-dashoffset="-226.5"/>
+            </g>
+            <text x="55" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="17" font-weight="700" fill="#20262e">16.8%</text>
+            <text x="55" y="68" text-anchor="middle" font-size="10.5" fill="#748093">特保占比</text>
+          </svg>
+        </div>
+      </div>
+      <div class="m-stat">
+        <div class="cell"><span class="cell-name"><i class="dot" style="--dc:var(--cat-purple)"></i>特保</span><span class="cell-val" style="--dc:var(--cat-purple)">34</span></div>
+        <div class="cell"><span class="cell-name"><i class="dot"></i>普通</span><span class="cell-val">168</span></div>
+        <div class="cell"><span class="cell-name"><i class="dot" style="--dc:var(--warn)"></i>在途</span><span class="cell-val" style="--dc:var(--warn)">76</span></div>
+      </div>
+    </article>
+
+    <!-- B 特级安保单 -->
+    <article class="kpi v-purple">
+      <div class="kpi-head">
+        <span class="handle"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="4" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="11" cy="12" r="1.3"/></svg></span>
+        <span class="acbar"></span>
+        <span class="kico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l7 2.8v5.6c0 4.6-3 7.8-7 9.1-4-1.3-7-4.5-7-9.1V5.8z"/><path d="M9.2 11.8l2 2 3.6-3.8" stroke-linecap="round"/></svg></span>
+        <h3>特级安保单</h3>
+        <button class="xbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      </div>
+      <div class="m-main">
+        <div>
+          <div class="hero-num">34<span class="unit">单</span></div>
+          <div class="hero-sub">占放行单总数 <b style="color:var(--cat-purple)">16.8%</b></div>
+        </div>
+        <div class="m-visual">
+          <svg viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="44" fill="none" stroke="var(--track)" stroke-width="10"/>
+            <g transform="rotate(-90 55 55)">
+              <circle cx="55" cy="55" r="44" fill="none" stroke="var(--cat-purple)" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="46.5 230.1"/>
+            </g>
+            <text x="55" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="17" font-weight="700" fill="#7a63f5">70</text>
+            <text x="55" y="68" text-anchor="middle" font-size="10.5" fill="#748093">特保记录</text>
+          </svg>
+        </div>
+      </div>
+      <div class="m-stat">
+        <div class="cell"><span class="cell-name">特保记录</span><span class="cell-val">70<small>条</small></span></div>
+        <div class="cell"><span class="cell-name">占总单</span><span class="cell-val" style="--dc:var(--cat-purple)">16.8<small>%</small></span></div>
+        <div class="cell"><span class="cell-name"><i class="dot" style="--dc:var(--faint)"></i>普通单对照</span><span class="cell-val" style="--dc:var(--muted)">168</span></div>
+      </div>
+    </article>
+
+    <!-- C 在途超时未放行 -->
+    <article class="kpi v-warn">
+      <div class="kpi-head">
+        <span class="handle"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="4" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="11" cy="12" r="1.3"/></svg></span>
+        <span class="acbar"></span>
+        <span class="kico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 4l8.5 15h-17z"/><path d="M12 9.5v4.5" stroke-linecap="round"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></svg></span>
+        <h3>在途超时未放行</h3>
+        <button class="xbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      </div>
+      <div class="m-main">
+        <div>
+          <div class="hero-num">40<span class="unit">单</span></div>
+          <div class="hero-sub">在途单据共 <b style="color:var(--warn)">76</b> 单</div>
+        </div>
+        <div class="m-visual" style="width:132px">
+          <div class="stack-wrap">
+            <div class="stackbar">
+              <i style="flex:40;background:var(--warn)"></i>
+              <i style="flex:36;background:var(--brand)"></i>
+            </div>
+            <div class="stack-lg">
+              <span><i class="dot" style="--dc:var(--warn)"></i>超时未放行 <b>40</b></span>
+              <span><i class="dot" style="--dc:var(--brand)"></i>在途未超 <b>36</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="m-stat">
+        <div class="cell"><span class="cell-name"><i class="dot" style="--dc:var(--cat-purple)"></i>其中特保</span><span class="cell-val" style="--dc:var(--cat-purple)">8</span></div>
+        <div class="cell"><span class="cell-name">在途未超</span><span class="cell-val">36</span></div>
+        <div class="cell"><span class="cell-name">占在途</span><span class="cell-val" style="--dc:var(--warn)">52.6<small>%</small></span></div>
+      </div>
+    </article>
+
+    <!-- D 超时未接收 -->
+    <article class="kpi v-danger">
+      <div class="kpi-head">
+        <span class="handle"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="4" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="11" cy="12" r="1.3"/></svg></span>
+        <span class="acbar"></span>
+        <span class="kico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13.5V19h16v-5.5"/><path d="M4 13.5 6.8 6h10.4L20 13.5"/><path d="M4 13.5h4.8l1.1 2h4.2l1.1-2H20"/></svg></span>
+        <h3>超时未接收</h3>
+        <button class="xbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      </div>
+      <div class="m-main">
+        <div>
+          <div class="hero-num">14<span class="unit">单</span></div>
+          <div class="hero-sub">需及时跟进接收</div>
+        </div>
+        <div class="m-visual">
+          <div class="medallion">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          </div>
+        </div>
+      </div>
+      <button class="m-cta">查看超时单据明细 <span class="arr"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+    </article>
+
+  </div>
+
+  <!-- ================= 大卡（以放行单总数为例，Tab 可切换） ================= -->
+  <p class="sec-label l-sec">大卡 · LARGE（以「放行单总数」为例）</p>
+  <article class="kpi l-card">
+    <div class="l-head">
+      <span class="handle"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.3"/><circle cx="11" cy="4" r="1.3"/><circle cx="5" cy="8" r="1.3"/><circle cx="11" cy="8" r="1.3"/><circle cx="5" cy="12" r="1.3"/><circle cx="11" cy="12" r="1.3"/></svg></span>
+      <span class="acbar" style="background:var(--brand)"></span>
+      <span class="kico" style="color:var(--brand)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 3.5a2 2 0 0 1 4 0V4H9z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg></span>
+      <h3>放行单总数</h3>
+      <div class="seg" role="tablist">
+        <button class="on" data-tab="type" role="tab">单据类型</button>
+        <button data-tab="arrive" role="tab">到达状态</button>
+        <button data-tab="overtime" role="tab">超时状态</button>
+      </div>
+      <button class="xbtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+    </div>
+
+    <div class="l-body">
+      <!-- 左栏：核心指标 + 占比条 -->
+      <section>
+        <div class="l-hero">
+          <div class="hero-num">202<span class="unit">单</span></div>
+          <div class="hero-sub">放行记录 <b>393</b> 条 · 实时更新</div>
+        </div>
+        <div class="lrows">
+          <div class="lrow">
+            <div class="lrow-top"><span class="lrow-name"><i class="dot" style="--dc:var(--cat-purple)"></i>特级安保单</span><span class="lrow-val" style="color:var(--cat-purple)">34</span></div>
+            <div class="ltrack"><i style="width:16.8%;background:var(--cat-purple)"></i></div>
+          </div>
+          <div class="lrow">
+            <div class="lrow-top"><span class="lrow-name"><i class="dot" style="--dc:var(--brand)"></i>普通单</span><span class="lrow-val">168</span></div>
+            <div class="ltrack"><i style="width:83.2%;background:var(--brand)"></i></div>
+          </div>
+          <div class="lrow">
+            <div class="lrow-top"><span class="lrow-name"><i class="dot" style="--dc:var(--warn)"></i>在途单据</span><span class="lrow-val" style="color:var(--warn)">76</span></div>
+            <div class="ltrack"><i style="width:37.6%;background:var(--warn)"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 中栏：维度环图 -->
+      <section class="l-mid">
+        <div class="donut">
+          <svg viewBox="0 0 220 220" width="100%" height="100%">
+            <circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>
+            <g transform="rotate(-90 110 110)">
+              <circle id="d-small" cx="110" cy="110" r="86" fill="none" stroke="var(--cat-purple)" stroke-width="27"
+                stroke-dasharray="84 456.4"/>
+              <circle id="d-big" cx="110" cy="110" r="86" fill="none" stroke="var(--brand)" stroke-width="27"
+                stroke-dasharray="442.4 98" stroke-dashoffset="-91"/>
+            </g>
+            <g id="lbl-small">
+              <path d="M156 30 L148 44" fill="none" stroke="#748093" stroke-width="1"/>
+              <text x="162" y="26" font-size="13" font-weight="600" fill="#20262e">特级安保单</text>
+              <text x="162" y="42" font-size="12" fill="#748093">34 单 (16.83%)</text>
+            </g>
+            <g id="lbl-big">
+              <path d="M60 196 L72 184" fill="none" stroke="#748093" stroke-width="1"/>
+              <text x="56" y="190" text-anchor="end" font-size="13" font-weight="600" fill="#20262e">普通单</text>
+              <text x="56" y="206" text-anchor="end" font-size="12" fill="#748093">168 单 (83.17%)</text>
+            </g>
+            <text x="110" y="104" text-anchor="middle" font-family="Inter,sans-serif" font-size="30" font-weight="700" fill="#20262e">202</text>
+            <text x="110" y="124" text-anchor="middle" font-size="12" fill="#748093">总单数</text>
+          </svg>
+        </div>
+        <div class="legend" id="legend">
+          <span class="lg-pill"><i class="dot" style="--dc:var(--cat-purple)"></i>特级安保单 <b>34</b></span>
+          <span class="lg-pill"><i class="dot" style="--dc:var(--brand)"></i>普通单 <b>168</b></span>
+        </div>
+      </section>
+
+      <!-- 右栏：最新记录预览 -->
+      <section class="l-panel">
+        <div class="lp-head">
+          <span class="lp-title">最新放行记录</span>
+          <a class="lp-link" href="#">全部 393 条 →</a>
+        </div>
+        <table class="tbl">
+          <colgroup><col style="width:32%"><col style="width:22%"><col style="width:22%"><col style="width:24%"></colgroup>
+          <thead><tr><th>放行单号</th><th>申请时间</th><th>放行物品</th><th>门岗核验</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">WF7501260921000002</td>
+              <td class="t-time">09/21 09:42</td>
+              <td>筆電樣機</td>
+              <td><span class="tag tag-bad">門崗異常</span></td>
+            </tr>
+            <tr>
+              <td class="mono">WF7501260917000001</td>
+              <td class="t-time">09/17 11:25</td>
+              <td>包裝耗材</td>
+              <td><span class="tag tag-bad">門崗異常</span></td>
+            </tr>
+            <tr>
+              <td class="mono">WF7501260919000003</td>
+              <td class="t-time">09/19 09:05</td>
+              <td>光學鏡頭</td>
+              <td><span class="tag tag-ok">已核驗</span></td>
+            </tr>
+            <tr>
+              <td class="mono">WF7501260919000011</td>
+              <td class="t-time">09/19 08:47</td>
+              <td>生產物料</td>
+              <td><span class="tag tag-ok">已核驗</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="lp-foot"><a href="#">点击查看完整明细页 →</a></div>
+      </section>
+    </div>
+  </article>
+
+</div>
+
+<script>
+/* 大卡维度切换：生产环境改为由数据驱动渲染（字段见 HANDOFF.md） */
+(function(){
+  var C=2*Math.PI*86, GAP=7;
+  var DATA={
+    type:{big:{n:'普通单',v:168,p:'83.17%',c:'#2f7cf6'},
+           small:{n:'特级安保单',v:34,p:'16.83%',c:'#7a63f5'}},
+    arrive:{big:{n:'已到达',v:126,p:'62.38%',c:'#2f7cf6'},
+            small:{n:'在途',v:76,p:'37.62%',c:'#f59a26'}},
+    overtime:{big:{n:'正常',v:162,p:'80.20%',c:'#2f7cf6'},
+              small:{n:'超时未放行',v:40,p:'19.80%',c:'#f04d3e'}}
+  };
+  var big=document.getElementById('d-big'), small=document.getElementById('d-small');
+  var bt=document.querySelectorAll('#lbl-big text'), st=document.querySelectorAll('#lbl-small text');
+  var legend=document.getElementById('legend');
+  document.querySelectorAll('.seg button').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.seg button').forEach(function(b){b.classList.remove('on');});
+      btn.classList.add('on');
+      var d=DATA[btn.dataset.tab],
+          lenB=d.big.v/202*C-GAP, lenS=d.small.v/202*C-GAP;
+      small.setAttribute('stroke',d.small.c);
+      big.setAttribute('stroke',d.big.c);
+      small.setAttribute('stroke-dasharray',lenS+' '+(C-lenS));
+      small.setAttribute('stroke-dashoffset','0');
+      big.setAttribute('stroke-dasharray',lenB+' '+(C-lenB));
+      big.setAttribute('stroke-dashoffset','-'+(lenS+GAP));
+      st[0].textContent=d.small.n; st[1].textContent=d.small.v+' 单 ('+d.small.p+')';
+      bt[0].textContent=d.big.n;   bt[1].textContent=d.big.v+' 单 ('+d.big.p+')';
+      legend.innerHTML=
+        '<span class="lg-pill"><i class="dot" style="--dc:'+d.small.c+'"></i>'+d.small.n+' <b>'+d.small.v+'</b></span>'+
+        '<span class="lg-pill"><i class="dot" style="--dc:'+d.big.c+'"></i>'+d.big.n+' <b>'+d.big.v+'</b></span>';
+    });
+  });
+})();
+</script>
+</body>
+</html>

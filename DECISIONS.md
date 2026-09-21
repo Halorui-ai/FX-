@@ -243,3 +243,13 @@
 - 结论：卡 A = 目的地（流入门岗）将到未到的在途单，按单计，再拆超时/未超时。卡 B = 该岗已经盖章的过岗次数（记录级），标题写「次数」。已到达后的超时未接收不算门岗滞留。
 - 禁止：流入与实际放行加总成一张「门岗 TOP」；卡 B 主数字用单数却不写明记录级；用 100k 均分门岗集验收高压岗。
 - 现行文档：CONTEXT §4 chart_gate_stuck / chart_gate_load
+
+### D-22  KPI 中卡/大卡以 HANDOFF 为视觉规格；数据走 buildKpiProps
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-09-12）
+- 背景：拉大 KPI 后曾用「数字+芯片」填空，视觉不协调。Trae 产出 `kpi-card-redesign/HANDOFF.md` + `index.html` 作为中卡/大卡基准。
+- 结论：S 小卡保持原数字逻辑。M/L 按 HANDOFF 模板（中卡三段式、大卡三栏+表头 Tab+环图引导线）。数值只从 `buildKpiProps(id, computeStats())` 取，禁止写死原型里的 202/34。结案率不在这四张业务 KPI 里，仍用水球。规格与原型在 `kpi-card-redesign/`。
+- 禁止：中/大卡再退回芯片横条；大卡 Tab 放到内容区右上；环图省略引导线标签；「全部 N 条」用全表行数冒充过滤条数。
+- 现行文档：ARCHITECTURE §4 KPI 分档；CONTEXT §4 KPI；kpi-card-redesign/HANDOFF.md

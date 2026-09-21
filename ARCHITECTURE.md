@@ -70,7 +70,17 @@
 
 gridstack 12 列，行高约 95px。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
 
-内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维、GDMS，不在管理层精简视图里。
+四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档，**档变才换模板**（`resizestop` → `applyKpiDensityForItem`）。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率仍走原 compact 水球 + 旧 cozy/expanded。
+
+| 档 | 条件 | 卡片内 |
+|----|------|--------|
+| S compact | 默认 `2×2` | 现状：标题区 + 单个核心数字（不动） |
+| M cozy | `h≥3` 或 `w≥4` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA |
+| L expanded | `w≥6` 且 `h≥4` | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录；点空白/「全部 N 条」打开现有二级详情 |
+
+点 `.kpi-seg` 不打开详情。规格见 `kpi-card-redesign/HANDOFF.md`。
+
+内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维、GDMS，不在管理层精简视图里。KPI 自适应档位见上一小节。
 
 ### 顶栏壳（v5.6）
 
@@ -162,6 +172,8 @@ CARD_DEFS.my_newCard = {
 ```
 
 图表用 `cardChart(id, el)`（纳入 `liveCharts` 生命周期）。KPI 用 `countUp.CountUp` 存 `counters.*`。容器用 `.chart`（宽高 100%）。希望出现在某预设里，往 `BUILTIN_LAYOUTS` 对应数组加 `{id,x,y,w,h}`。
+
+四张业务 KPI 的 **M/L 模板**不要另起一套口径：改字段只动 `buildKpiProps`；改视觉对照 `kpi-card-redesign/HANDOFF.md` 与 `index.html`。`kpiAdaptive: true` 的卡在 `resizestop` 换档。
 
 ### 7.4 新主题
 
