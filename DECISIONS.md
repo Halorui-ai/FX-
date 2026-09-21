@@ -263,3 +263,13 @@
 - 结论：`GRID_COLS=24`、`GRID_CELL_H=48`。默认 KPI `4×4` 视觉约等于旧 `2×2`。中卡 `h≥6` 或（`w≥10` 且 `h≥5`）；大卡 `w≥12` 且 `h≥8`（半宽，一行两张）。`ensureLayoutV24` 识别 `x+w≤12` 的旧布局并 ×2；`dashLayouts.gridCols=24`。
 - 禁止：新写布局仍按 12 列坐标；迁移函数对已是 24 列的布局再乘一次。
 - 现行文档：ARCHITECTURE §4
+
+### D-24  多 Agent 串行：设计沙盒 → 人批 HANDOFF → 实现进主文件
+
+- 状态：已采纳
+- 类型：流程
+- 日期 / 版本：2026-09-22
+- 背景：Trae 擅长卡片布局，Grok Build 擅长改主文件业务逻辑。`kpi-card-redesign/` 已验证「原型 + HANDOFF」能交接，但是一次性根目录。若再开 `designs/` 或回 Qoder 目录做设计，会重演 D-15 分叉。GitHub Issue 标签与 Actions 自动开工会绑死 `file://` 本机流程。
+- 结论：新原型只写 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`），不是交付物。唯一开工闸门是 HANDOFF 的 `status: approved`（只有用户能改这个字段）。实现 Agent 按 HANDOFF 改主文件，数据走 `buildKpiProps` / `computeStats()`。`kpi-card-redesign/` 作已交付样板留在原处。Issue 标签与 `grok -p` 触发以后再论，不作开工前提。
+- 禁止：设计阶段改主 HTML / `CONFIG` / 口径函数；未 approved 就改对应卡片；在仓库根或 Qoder 目录另开原型树；把原型演示数字写进 `computeStats`；用 Issue 标签替代 HANDOFF 状态。
+- 现行文档：AGENT 角色节；docs/prototypes/README.md；本条

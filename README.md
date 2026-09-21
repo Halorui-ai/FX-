@@ -4,7 +4,7 @@
 
 > **当前版本**：`v5.6.0`（主题插件 + 浅色/深色；顶栏功能抽屉）  
 > **主文件**：`dashboard-release-monitor-v5.6.html`  
-> **工作目录**：本仓库（`DSH_数据看板`）。`液态玻璃看板Qoder` 为另一 agent 的视觉实验归档，**禁止在那边平行改业务**。
+> **工作目录**：本仓库（`DSH_数据看板`）。`液态玻璃看板Qoder` 为另一 agent 的视觉实验归档，**禁止在那边平行改业务**。新布局原型只写 [`docs/prototypes/`](docs/prototypes/README.md)。
 
 ---
 
@@ -22,11 +22,12 @@
 
 | 文件 | 给谁 | 回答什么 |
 |------|------|----------|
-| [AGENT.md](AGENT.md) | 所有 AI agent | 准许 / 禁止、开工与**提交前**检查 |
+| [AGENT.md](AGENT.md) | 所有 AI agent | 准许 / 禁止、角色分工、开工与**提交前**检查 |
 | [CHANGELOG.md](CHANGELOG.md) | 人 / 下一班 agent | **先看「进行中」**；这次和近日改了什么 |
 | [CONTEXT.md](CONTEXT.md) | 改业务 / 对数字 | 记录 vs 单、口径、卡片、数据格式 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 改结构 / 加功能 | 数据流、分区、插件、顶栏壳、KPI 分档；末章如何扩展 |
-| [kpi-card-redesign/HANDOFF.md](kpi-card-redesign/HANDOFF.md) | 改 KPI 中卡/大卡 | 视觉规格；原型 `kpi-card-redesign/index.html` |
+| [docs/prototypes/](docs/prototypes/README.md) | 设计 Agent → 实现 Agent | 新布局原型沙盒；无 `approved` 不准改主文件 |
+| [kpi-card-redesign/HANDOFF.md](kpi-card-redesign/HANDOFF.md) | 改 KPI 中卡/大卡 | 已交付视觉规格；原型 `kpi-card-redesign/index.html` |
 | [DECISIONS.md](DECISIONS.md) | 改口径或机制前 | 过往决策与踩坑（只追加） |
 
 归档（只读，索引见 [`docs/archive/README.md`](docs/archive/README.md)）：
@@ -46,6 +47,7 @@
 | 数字按行还是按单、结案率怎么算 | CONTEXT.md |
 | 解析路径、主题外挂还是内联 | ARCHITECTURE.md |
 | 新卡片 / 主题 / 视图怎么加 | ARCHITECTURE.md 末章 |
+| 新布局先写哪 | docs/prototypes/ + AGENT 角色节 |
 | 能不能另开目录改 | AGENT.md |
 | 这件事以前定过没有 | DECISIONS.md |
 | 上次做到哪、这次改了什么 | CHANGELOG.md |
