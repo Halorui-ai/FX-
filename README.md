@@ -48,6 +48,7 @@
 | 解析路径、主题外挂还是内联 | ARCHITECTURE.md |
 | 新卡片 / 主题 / 视图怎么加 | ARCHITECTURE.md 末章 |
 | 新布局先写哪 | docs/prototypes/ + AGENT 角色节 |
+| 开工不开工看什么 | HANDOFF 的 `status`，不是 Issue 标签 |
 | 能不能另开目录改 | AGENT.md |
 | 这件事以前定过没有 | DECISIONS.md |
 | 上次做到哪、这次改了什么 | CHANGELOG.md |
