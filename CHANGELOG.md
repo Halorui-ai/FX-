@@ -17,8 +17,9 @@
 
 ## 2026-09-22
 
+- D-25：新布局推荐 Issue + `design/<slug>` PR + `feat/<slug>` PR；开工闸门仍是 HANDOFF `approved`，`ready-for-build` 只是信号。小改仍可直推 `main`。
 - D-24：设计只写 `docs/prototypes/<slug>/`；用户把 HANDOFF 标 `approved` 后 Grok 才改主文件。禁止再去 Qoder 目录做设计。`kpi-card-redesign/` 作已交付样板留在原处。
-- AGENT 增加角色表与两段开工提示词；指针文件和 README 索引已对齐。未上 Issue 标签状态机与自动开工。
+- AGENT 增加角色表、推荐卡片流程与两段开工提示词。
 
 - 网格改为 24 列、行高 48px（横竖进步约细一倍）。内置布局与 `CARD_DEFS` 尺寸已 ×2；旧 `localStorage` / 12 列视图插件自动迁移。KPI：中卡 `h≥6` 或（`w≥10` 且 `h≥5`），大卡 `w≥12` 且 `h≥8`（一行可并排两张）。
 - 修复 24 列卡片塌成细条：`gridstack.min.css` 只有 `.gs-12` 宽度规则，已补 `.gs-24` 并在初始化时挂上该类。

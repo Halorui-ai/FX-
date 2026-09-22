@@ -9,13 +9,25 @@
 | 角色 | 默认工具 | 允许改 | 禁止改 |
 |--------|----------|----------|----------|
 | 设计 | Trae Design / SOLO | 仅 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`） | 主 HTML、`CONFIG`、`computeStats` / `buildKpiProps`、`CONTEXT` 口径、`lib/`、`style/`、`views/` |
-| 审核 | 用户 | 把 HANDOFF 的 `status` 改成 `approved`，写 freeze | — |
+| 审核 | 用户 | 把 HANDOFF 的 `status` 改成 `approved`，写 freeze；合并设计 PR / 实现 PR | — |
 | 实现 | Grok Build | 主文件、`style/`、`views/`；按对照表改 CONTEXT / ARCHITECTURE / DECISIONS / CHANGELOG | 改已批准视觉方向；再复制一份主 HTML；`status` 不是 `approved` 时改对应卡片 |
 | 测试 | 实现 Agent + 用户 | CHANGELOG、HANDOFF 验收勾 | 把 Playwright 等测试脚本当交付物入库 |
 
-开工闸门是文件里的 `status: approved`，不是 GitHub Issue 标签。Issue / PR 可选，不卡死 `file://` 本机流程。
+**开工闸门是文件里的 `status: approved`，不是 GitHub 标签。** 没有 `approved`，实现 Agent 必须停。Issue / 分支 / PR 是推荐渠道（D-25），不卡死 `file://` 本机流程；改一句文案仍可直接推 `main`。
 
 已交付样板：`kpi-card-redesign/`（D-22）。新原型只进 `docs/prototypes/`。
+
+## 推荐卡片流程（新布局 / 改主文件）
+
+新布局或要改主 HTML 时按这条走。没开 Issue 不算违禁；没打 `ready-for-build` 不算禁止开工。设计文件只放 `docs/prototypes/<slug>/`。
+
+1. **（推荐）** 开 Issue，标题写清改哪张卡。可选标签 `design/trae`。
+2. **Trae** 从 `main` 开 `design/<slug>`，只提交 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`，`status: draft`）。禁止提 `.trae-html-share-packages/`、`.uploads/`。开 PR 指向 `main`。
+3. **用户** 打开原型。通过：在该 PR 里把 HANDOFF 改成 `approved` 并填 freeze → 合并设计 PR → （可选）Issue 标签改 `ready-for-build`。
+4. **Grok** `git pull origin main`，确认 HANDOFF 已是 `approved`，再开 `feat/<slug>` 改主文件，开工可把 HANDOFF 改 `implementing`，提 PR。
+5. **用户** 审 PR + 本机 `file://` 验收 → 合并 → HANDOFF 改 `shipped` → 关 Issue。
+
+Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR，实现只基于 `main`。
 
 ## 开工顺序
 
@@ -34,7 +46,7 @@
 - **唯一主文件**：以 README 顶部为准（现为根目录 `dashboard-release-monitor-v5.6.html`）。不要把 `docs/archive/` 里的旧 HTML 当成现行交付物。`docs/prototypes/` 不是交付物。
 - **禁止 CDN**。新依赖下载到 `./lib/`，相对路径引用。
 - **禁止再复制一份 HTML 当新皮肤**（不要再做 `v5.x-themes.html` / 把主题烤进单文件）。新主题走 `style/` + `THEME_REGISTRY`，见 ARCHITECTURE 末章。
-- **无 `approved` 不准改主文件对应卡**。设计阶段禁止改 `dashboard-release-monitor-*.html`。
+- **无 `approved` 不准改主文件对应卡**。设计阶段禁止改 `dashboard-release-monitor-*.html`。不要用 Issue 标签替代这一条。
 - **版本号不得复用不同含义**（已有事故：两边的「v5.2」各指一件事）。
 - **统计数字默认订单级**（按放行单号聚合）。记录级必须在 UI 上写明「记录」。
 - **特保只认** `放行单号` 前缀 `WF9897`。禁止用 WF8888 或物品类型关键词。
@@ -81,12 +93,12 @@
 
 **Trae / 设计**
 
-> 只在 `docs/prototypes/<slug>/` 写自包含 `index.html` 和 `HANDOFF.md`（先拷 `_template`）。先读 AGENT.md、ARCHITECTURE §4/§7.3、CONTEXT 里相关口径。禁止改 `dashboard-release-monitor-v5.6.html`，禁止复制主文件，禁止改特保/超时公式。数字用演示值，但 HANDOFF 必须写出对应的 `computeStats` / `buildKpiProps` 字段名。
+> 从 `main` 开分支 `design/<slug>`。只在 `docs/prototypes/<slug>/` 写自包含 `index.html` 和 `HANDOFF.md`（先拷 `_template`，`status: draft`）。先读 AGENT.md、ARCHITECTURE §4/§7.3、CONTEXT 里相关口径。禁止改 `dashboard-release-monitor-v5.6.html`，禁止复制主文件，禁止改特保/超时公式，禁止提交 `.trae-html-share-packages/` 与 `.uploads/`。数字用演示值，但 HANDOFF 必须写出对应的 `computeStats` / `buildKpiProps` 字段名。开 PR 指向 `main`。
 
 **Grok Build / 实现**
 
-> 读 AGENT.md、CHANGELOG「进行中」、指定 HANDOFF。仅当 `status: approved` 才改主文件。视觉按 HANDOFF，数据只走 `buildKpiProps`，禁止写死原型数字。先出计划：要动的 `CARD_DEFS` / render / update。用户确认后再改代码。收工按 AGENT 对照表改 CHANGELOG（以及需要的 ARCHITECTURE/CONTEXT/DECISIONS）。
+> `git pull origin main`。读 AGENT.md、CHANGELOG「进行中」、指定 HANDOFF。仅当 `status: approved` 才改主文件（不要只看 Issue 标签）。从 `main` 开 `feat/<slug>`。视觉按 HANDOFF，数据只走 `buildKpiProps`，禁止写死原型数字。先出计划：要动的 `CARD_DEFS` / render / update。用户确认后再改代码。收工按 AGENT 对照表改 CHANGELOG（以及需要的 ARCHITECTURE/CONTEXT/DECISIONS），开 PR。
 
 ## 推荐、不强制
 
-本机 `file://` 双击交付是正式用法。GitHub PR 鼓励，但不卡死本机流程。PR **不能**代替上表的文档同步。
+本机 `file://` 双击交付是正式用法。新布局走上面的 Issue / PR；小改不卡死本机直推 `main`。PR **不能**代替上表的文档同步。不要用 Actions / `grok -p` 被标签自动开工。
