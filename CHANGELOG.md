@@ -17,6 +17,10 @@
 
 ## 2026-09-23
 
+- 实现 `kpi_rate` 中卡/大卡：按 `docs/prototypes/completion-rate-card/HANDOFF.md`；S 水球不变。M 左水球+右三指标+底注；L 三栏+总览/特保/非特保 Tab+待关注列表。数字来自 `computeStats`/`buildKpiProps`，无写死原型值。
+- `computeStats` 扩展特保/非特保结案分维与 `attentionOrders`（在途超时+到达超时，按时长降序）；特保仍只认 WF9897。
+- HANDOFF `status: implementing`（合并后改 shipped）。
+
 - 新增 `docs/prototypes/completion-rate-card/` 原型：结案率水球图中卡(M)/大卡(L)设计，含总览/特保/非特保 Tab、三栏布局、待关注单据列表。HANDOFF 已 `approved`，S 小卡水球不变。
 - 修复原型水球水位与显示百分比不匹配（按 `水位Y = 球底Y − 百分比×直径` 重算），以及大卡右栏 footer 被裁剪（`.right-column` 补 `min-height:0`）。
 - 原型移除 CDN 依赖（Tailwind/Chart.js 未使用，Lucide 图标改内联 SVG），自包含零外部请求。
