@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-09-23
+
+- 新增 `docs/prototypes/completion-rate-card/` 原型：结案率水球图中卡(M)/大卡(L)设计，含总览/特保/非特保 Tab、三栏布局、待关注单据列表。HANDOFF 已 `approved`，S 小卡水球不变。
+- 修复原型水球水位与显示百分比不匹配（按 `水位Y = 球底Y − 百分比×直径` 重算），以及大卡右栏 footer 被裁剪（`.right-column` 补 `min-height:0`）。
+- 原型移除 CDN 依赖（Tailwind/Chart.js 未使用，Lucide 图标改内联 SVG），自包含零外部请求。
+
+---
+
 ## 2026-09-22
 
 - 无行为变化：更正同日网格说明里的「进步」为「步进」。
