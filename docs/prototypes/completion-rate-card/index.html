@@ -734,7 +734,7 @@ body {
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 4px 0;
+        padding: 0;
         overflow-y: auto;
         overflow-x: hidden;
         min-height: 0;
@@ -742,11 +742,16 @@ body {
 
       .attention-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        padding: 8px 14px;
+        padding: 10px 14px;
         gap: 8px;
         transition: background 0.2s;
+        border-bottom: 1px solid var(--fx-line);
+      }
+
+      .attention-item:last-child {
+        border-bottom: none;
       }
 
       .attention-item:hover {
@@ -927,7 +932,8 @@ body {
         }
 
         .square-list-col .attention-item {
-          padding: 8px 0;
+          padding: 10px 0;
+          align-items: flex-start;
         }
 
         .square-list-col .attention-item:hover {
