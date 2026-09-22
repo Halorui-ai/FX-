@@ -109,35 +109,6 @@ body {
 }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
-    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
-    <style type="text/tailwindcss">
-  @theme inline {
-    --color-background: var(--fx-background);
-    --color-foreground: var(--fx-foreground);
-    --color-card: var(--fx-card);
-    --color-card-foreground: var(--fx-card-foreground);
-    --color-popover: var(--fx-popover);
-    --color-popover-foreground: var(--fx-popover-foreground);
-    --color-primary: var(--fx-primary);
-    --color-primary-foreground: var(--fx-primary-foreground);
-    --color-muted: var(--fx-muted);
-    --color-muted-foreground: var(--fx-muted-foreground);
-    --color-border: var(--fx-border);
-    --color-input: var(--fx-input);
-    --color-ring: var(--fx-ring);
-    --radius-sm: var(--fx-radius-sm);
-    --radius-md: var(--fx-radius-md);
-    --radius-lg: var(--fx-radius-lg);
-    --radius-xl: var(--fx-radius-xl);
-  }
-  @layer base {
-    body { background: var(--fx-background); color: var(--fx-foreground); }
-    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
-    th { @apply whitespace-nowrap; }
-  }
-    </style>
     <style id="semantic-token-fallback">
       .bg-background { background-color: var(--fx-background); }
       .text-background { color: var(--fx-background); }
@@ -1017,7 +988,7 @@ body {
             <div class="card-header">
               <div class="card-title-group">
                 <div class="card-icon">
-                  <i data-lucide="check-circle-2" width="20" height="20"></i>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
                 </div>
                 <span class="card-title">放行结案完成率</span>
               </div>
@@ -1097,7 +1068,7 @@ body {
             <div class="large-card-header">
               <div class="card-title-group">
                 <div class="card-icon">
-                  <i data-lucide="check-circle-2" width="20" height="20"></i>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
                 </div>
                 <span class="card-title">放行结案完成率</span>
               </div>
@@ -1380,7 +1351,7 @@ body {
             <div class="large-card-header">
               <div class="card-title-group">
                 <div class="card-icon">
-                  <i data-lucide="check-circle-2" width="20" height="20"></i>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
                 </div>
                 <span class="card-title">放行结案完成率</span>
               </div>
@@ -1603,9 +1574,6 @@ body {
     </main>
 
     <script>
-      // 初始化 Lucide 图标
-      lucide.createIcons();
-
       // ========== Tab 切换数据 ==========
       const tabData = {
         overview: {
