@@ -444,9 +444,83 @@ body.editing .cardRemove{display:flex}
 .kpiMini .chart{width:100%;height:100%}
 .kpiMiniFill{flex:1}
 .cardSlot.v-brand{--v:var(--brand)} .cardSlot.v-purple{--v:var(--cat-purple)}
-.cardSlot.v-warn{--v:var(--warn)} .cardSlot.v-danger{--v:var(--danger)}
+.cardSlot.v-warn{--v:var(--warn)} .cardSlot.v-danger{--v:var(--danger)} .cardSlot.v-ok{--v:var(--ok)}
 .cardSlot.v-brand .cardTitle,.cardSlot.v-purple .cardTitle,
-.cardSlot.v-warn .cardTitle,.cardSlot.v-danger .cardTitle{border-left-width:4px;border-left-color:var(--v)}
+.cardSlot.v-warn .cardTitle,.cardSlot.v-danger .cardTitle,.cardSlot.v-ok .cardTitle{border-left-width:4px;border-left-color:var(--v)}
+/* —— kpi_rate 中卡/大卡（completion-rate-card） —— */
+.rate-m{display:flex;flex-direction:column;height:100%;min-height:0;gap:0}
+.rate-m-main{display:flex;align-items:center;gap:16px;padding:4px 4px 8px;flex:1;min-height:0}
+.rate-ball{flex:none;position:relative;width:120px;height:120px}
+.rate-ball svg{display:block;width:120px;height:120px}
+.rate-ball-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+.rate-ball-label{font-size:10px;color:var(--muted);line-height:1.2;margin-bottom:2px;white-space:nowrap}
+.rate-ball-val{font-size:22px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.1;font-family:"Segoe UI","Inter",monospace}
+.rate-m-metrics{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.rate-m-row{display:flex;align-items:center;gap:8px}
+.rate-m-row .metric-label{flex:1;font-size:13px;color:var(--muted)}
+.rate-m-row .metric-val{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace;line-height:1.2}
+.rate-m-row .metric-val.ok{color:var(--ok)} .rate-m-row .metric-val.warn{color:var(--warn)} .rate-m-row .metric-val.danger{color:var(--danger)}
+.rate-m-row .metric-val small{font-size:11px;font-weight:400;color:var(--faint);margin-left:2px}
+.rate-m-foot{font-size:12px;color:var(--faint);margin-top:2px;padding-top:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rate-m-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px 2px;border-top:1px solid var(--line);flex:none}
+.rate-m-bar .footer-note{font-size:12px;color:var(--muted)}
+.rate-m-bar .footer-link{font-size:12px;color:var(--brand);font-weight:500;cursor:pointer;white-space:nowrap}
+.rate-m-bar .footer-link:hover{text-decoration:underline}
+.rate-l{display:grid;grid-template-columns:minmax(160px,200px) minmax(200px,280px) minmax(0,1fr);gap:20px;align-items:stretch;height:100%;min-height:0;margin-top:2px}
+.rate-l-left,.rate-l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-width:0;align-self:center}
+.rate-l-mid{border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 16px}
+.rate-l-ball{position:relative;width:160px;height:160px}
+.rate-l-ball svg{display:block;width:160px;height:160px}
+.rate-l-ball .rate-ball-center .rate-ball-val{font-size:28px}
+.rate-l-ball .rate-ball-center .rate-ball-label{font-size:11px}
+.rate-legend{display:flex;flex-direction:column;gap:6px;width:100%;max-width:180px}
+.rate-legend .lg-pill{justify-content:space-between;width:100%;box-sizing:border-box}
+.rate-progress{display:flex;flex-direction:column;gap:14px;width:100%}
+.rate-prog-row{display:flex;flex-direction:column;gap:6px}
+.rate-prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.rate-prog-name{font-size:13px;color:var(--txt);display:flex;align-items:center;gap:7px}
+.rate-prog-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace;display:flex;align-items:baseline;gap:8px}
+.rate-prog-val .pct{font-size:12px;font-weight:500;color:var(--muted)}
+.rate-prog-track{height:6px;border-radius:999px;background:var(--track);overflow:hidden}
+.rate-prog-track>i{display:block;height:100%;border-radius:999px;transition:width .3s ease}
+.rate-prog-track>i.ok{background:var(--ok)} .rate-prog-track>i.warn{background:var(--warn)} .rate-prog-track>i.danger{background:var(--danger)}
+.rate-l-note{font-size:12px;color:var(--faint);margin-top:4px;font-variant-numeric:tabular-nums;text-align:center;width:100%}
+.rate-l-right{min-width:0;min-height:0;display:flex;flex-direction:column;height:100%}
+.rate-attn{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;min-height:0;flex:1;box-shadow:0 4px 14px rgba(28,45,74,.06)}
+.rate-attn-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex:none;height:12px;min-height:18px}
+.rate-attn-title{font-size:13px;font-weight:600;color:var(--txt)}
+.rate-attn-more{font-size:12px;color:var(--brand);font-weight:500;cursor:pointer;white-space:nowrap}
+.rate-attn-more:hover{text-decoration:underline}
+.rate-attn-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:0;padding:4px 0}
+.rate-attn-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 6px;border-bottom:1px solid var(--line)}
+.rate-attn-item:last-child{border-bottom:0}
+.rate-attn-item:hover{background:rgba(255,255,255,.45)}
+[data-mode="dark"] .rate-attn-item:hover{background:rgba(255,255,255,.06)}
+.rate-attn-left{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rate-attn-no{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rate-attn-gate{font-size:11px;color:var(--muted)}
+.rate-attn-right{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.rate-status{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.rate-status.danger{color:var(--danger);background:var(--danger-soft)}
+.rate-status.warn{color:var(--warn);background:var(--warn-soft)}
+.rate-dur{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rate-attn-foot{flex:none;padding:10px 0 2px;text-align:center;font-size:12px;color:var(--brand);font-weight:500;cursor:pointer}
+.rate-attn-foot:hover{text-decoration:underline}
+.cardSlot.kpi-rate-large .cardHead{gap:10px;margin-bottom:12px}
+.cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:36%}
+.kpi-seg.rate-seg{margin-left:auto;margin-right:auto;position:absolute;left:50%;transform:translateX(-50%)}
+.cardSlot.kpi-rate-large .cardHead{position:relative}
+.kpi-seg.rate-seg button.on{color:var(--ok)}
+.cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on{color:var(--cat-purple)}
+.cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on{color:var(--brand)}
+@keyframes rate-wave-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-12px)}}
+.rate-ball .wave-g,.rate-l-ball .wave-g{animation:rate-wave-drift 4.5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.rate-ball .wave-g,.rate-l-ball .wave-g,.rate-prog-track>i{animation:none!important;transition:none!important}}
+@container (max-width: 640px){
+  .rate-l{grid-template-columns:1fr;gap:14px}
+  .rate-l-mid{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+  .rate-l-left,.rate-l-mid{align-self:stretch}
+}
 .m-main{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:4px 0 8px;height:100%;min-height:0}
 .m-main-col{display:flex;flex-direction:column;justify-content:space-between;height:100%;min-height:0}
 .hero-num{font-weight:700;font-size:38px;line-height:1.05;color:var(--v);font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-family:"Segoe UI","Inter",monospace}
@@ -1279,6 +1353,43 @@ function _computeStatsRaw() {
   const inTransitNotTimeout = orderList.filter(o => !o.已到达 && !o.放行超时).length; // 在途未超时（不纳入统计）
   const closeRate = scopedOrders ? closedOrders / scopedOrders : 0;
 
+  // —— 结案率分维（特保 / 非特保）与待关注列表（供 kpi_rate M/L） ——
+  const rateSlice = (pred) => {
+    const closed = orderList.filter(o => pred(o) && o.已到达 && !o.放行超时).length;
+    const arrivedTO = orderList.filter(o => pred(o) && o.已到达 && o.放行超时).length;
+    const transitTO = orderList.filter(o => pred(o) && o.在途超时).length;
+    const scoped = closed + arrivedTO + transitTO;
+    return { closed, arrivedTO, transitTO, scoped, rate: scoped ? closed / scoped : 0 };
+  };
+  const specialSlice = rateSlice(o => o.特保);
+  const normalSlice = rateSlice(o => !o.特保);
+  const specialCloseRate = specialSlice.rate;
+  const normalCloseRate = normalSlice.rate;
+  const specialClosedOrders = specialSlice.closed;
+  const specialArrivedTimeout = specialSlice.arrivedTO;
+  const specialTransitTimeout = specialSlice.transitTO;
+  const specialScopedOrders = specialSlice.scoped;
+  const normalClosedOrders = normalSlice.closed;
+  const normalArrivedTimeout = normalSlice.arrivedTO;
+  const normalTransitTimeout = normalSlice.transitTO;
+  const normalScopedOrders = normalSlice.scoped;
+  const nowTs = Date.now();
+  const attentionOrders = orderList
+    .filter(o => o.在途超时 || (o.已到达 && o.放行超时))
+    .map(o => {
+      const start = o._日期 && o._日期.valueOf ? o._日期.valueOf() : 0;
+      const mins = start ? Math.max(0, Math.round((nowTs - start) / 60000)) : 0;
+      return {
+        放行单号: o.单号,
+        流出门岗: o.流出门岗 || "",
+        流入门岗: o.流入门岗 || "",
+        状态类型: o.在途超时 ? "在途超时" : "到达超时",
+        超时时长: mins,
+        特保: !!o.特保
+      };
+    })
+    .sort((a, b) => b.超时时长 - a.超时时长);
+
   // —— 申请量时间趋势：订单级（按订单申请日期计数） ——
   const validOrders = orderList.filter(o => o._日期);
   let trend = [];
@@ -1300,6 +1411,10 @@ function _computeStatsRaw() {
     receiveRate: orderCount ? received / orderCount : 0,
     received,
     closedOrders, arrivedTimeout, scopedOrders, inTransitNotTimeout, closeRate,
+    specialCloseRate, normalCloseRate,
+    specialClosedOrders, specialArrivedTimeout, specialTransitTimeout, specialScopedOrders,
+    normalClosedOrders, normalArrivedTimeout, normalTransitTimeout, normalScopedOrders,
+    attentionOrders,
     typeDist: { 特级安保单: specialOrders, 普通单: orderCount - specialOrders },
     trend,
     deptTop: top(o => o.申请部门),
@@ -1704,7 +1819,7 @@ function kpiEsc(s) { return String(s ?? "").replace(/[<>]/g, ""); }
 function kpiTone(body, tone) {
   const slot = body.closest(".cardSlot");
   if (!slot) return;
-  slot.classList.remove("v-brand", "v-purple", "v-warn", "v-danger");
+  slot.classList.remove("v-brand", "v-purple", "v-warn", "v-danger", "v-ok");
   if (tone) slot.classList.add(tone);
 }
 function parseKpiTime(v) {
@@ -1727,7 +1842,184 @@ function kpiWaitHours(r) {
   if (!t) return 0;
   return Math.max(0, (Date.now() - t) / 3600000);
 }
+
+function fmtRateDur(mins) {
+  mins = Math.max(0, Math.round(Number(mins) || 0));
+  if (mins < 60) return "超 " + mins + "m";
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? ("超 " + h + "h " + m + "m") : ("超 " + h + "h");
+}
+function rateTabBundle(S, tab) {
+  tab = tab || "overview";
+  if (tab === "special") {
+    return {
+      tab, tone: "v-ok", accent: "#7a63f5", soft: "rgba(122,99,245,",
+      rate: S.specialCloseRate || 0,
+      closed: S.specialClosedOrders || 0,
+      arrivedTO: S.specialArrivedTimeout || 0,
+      transitTO: S.specialTransitTimeout || 0,
+      scoped: S.specialScopedOrders || 0,
+      inOk: 0,
+      attention: (S.attentionOrders || []).filter(a => a.特保)
+    };
+  }
+  if (tab === "normal") {
+    return {
+      tab, tone: "v-ok", accent: "#2f7cf6", soft: "rgba(47,124,246,",
+      rate: S.normalCloseRate || 0,
+      closed: S.normalClosedOrders || 0,
+      arrivedTO: S.normalArrivedTimeout || 0,
+      transitTO: S.normalTransitTimeout || 0,
+      scoped: S.normalScopedOrders || 0,
+      inOk: 0,
+      attention: (S.attentionOrders || []).filter(a => !a.特保)
+    };
+  }
+  return {
+    tab: "overview", tone: "v-ok", accent: "#1ea672", soft: "rgba(30,166,114,",
+    rate: S.closeRate || 0,
+    closed: S.closedOrders || 0,
+    arrivedTO: S.arrivedTimeout || 0,
+    transitTO: (S.transitTimeoutOrders || []).length,
+    scoped: S.scopedOrders || 0,
+    inOk: S.inTransitNotTimeout || 0,
+    attention: S.attentionOrders || []
+  };
+}
+function svgRateBall(pct, size, uid, accent, soft) {
+  // pct 0~1；水位：球底 − 百分比×直径（与原型一致）
+  const cx = size / 2, cy = size / 2, r = size * 0.45;
+  const yLevel = cy + r - Math.max(0, Math.min(1, pct)) * (2 * r);
+  const amp = size * 0.045;
+  const y1 = yLevel, y2 = yLevel + amp * 0.6;
+  const w = size * 2;
+  const clip = "ball-clip-" + uid;
+  const path1 = "M0," + y1.toFixed(1) + " Q" + (size * 0.125).toFixed(1) + "," + (y1 - amp).toFixed(1) + " " + (size * 0.25).toFixed(1) + "," + y1.toFixed(1) +
+    " T" + (size * 0.5).toFixed(1) + "," + y1.toFixed(1) + " T" + (size * 0.75).toFixed(1) + "," + y1.toFixed(1) + " T" + size.toFixed(1) + "," + y1.toFixed(1) +
+    " T" + (size * 1.25).toFixed(1) + "," + y1.toFixed(1) + " T" + (size * 1.5).toFixed(1) + "," + y1.toFixed(1) + " T" + (size * 1.75).toFixed(1) + "," + y1.toFixed(1) + " T" + w.toFixed(1) + "," + y1.toFixed(1) +
+    " L" + w.toFixed(1) + "," + size + " L0," + size + " Z";
+  const path2 = "M0," + y2.toFixed(1) + " Q" + (size * 0.167).toFixed(1) + "," + (y2 - amp).toFixed(1) + " " + (size * 0.333).toFixed(1) + "," + y2.toFixed(1) +
+    " T" + (size * 0.667).toFixed(1) + "," + y2.toFixed(1) + " T" + size.toFixed(1) + "," + y2.toFixed(1) +
+    " T" + (size * 1.333).toFixed(1) + "," + y2.toFixed(1) + " T" + (size * 1.667).toFixed(1) + "," + y2.toFixed(1) + " T" + w.toFixed(1) + "," + y2.toFixed(1) +
+    " L" + w.toFixed(1) + "," + size + " L0," + size + " Z";
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+    '<defs><clipPath id="' + clip + '"><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '"/></clipPath></defs>' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r + 2) + '" fill="none" stroke="' + soft + '0.15)" stroke-width="2"/>' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + soft + '0.06)"/>' +
+    '<g clip-path="url(#' + clip + ')">' +
+    '<g class="wave-g"><path fill="' + soft + '0.25)" d="' + path1 + '"/></g>' +
+    '<g class="wave-g" style="animation-delay:-1.2s"><path fill="' + soft + '0.18)" d="' + path2 + '"/></g>' +
+    '<rect x="0" y="' + y2.toFixed(1) + '" width="' + size + '" height="' + Math.max(0, size - y2).toFixed(1) + '" fill="' + soft + '0.32)"/>' +
+    "</g></svg>";
+}
+function htmlRateMedium(S) {
+  const b = rateTabBundle(S, "overview");
+  const pctTxt = (b.rate * 100).toFixed(1) + "%";
+  const uid = "rm" + Math.random().toString(36).slice(2, 8);
+  return '<div class="rate-m">' +
+    '<div class="rate-m-main">' +
+    '<div class="rate-ball">' + svgRateBall(b.rate, 120, uid, b.accent, b.soft) +
+    '<div class="rate-ball-center"><div class="rate-ball-label">放行结案完成率</div><div class="rate-ball-val">' + pctTxt + "</div></div></div>" +
+    '<div class="rate-m-metrics">' +
+    '<div class="rate-m-row"><i class="dot" style="--dc:var(--ok)"></i><span class="metric-label">正常结案</span><span class="metric-val ok">' + b.closed + "<small>单</small></span></div>" +
+    '<div class="rate-m-row"><i class="dot" style="--dc:var(--warn)"></i><span class="metric-label">到达超时</span><span class="metric-val warn">' + b.arrivedTO + "<small>单</small></span></div>" +
+    '<div class="rate-m-row"><i class="dot" style="--dc:var(--danger)"></i><span class="metric-label">在途超时</span><span class="metric-val danger">' + b.transitTO + "<small>单</small></span></div>" +
+    '<div class="rate-m-foot">纳入统计 ' + b.scoped + " 单</div></div></div>" +
+    '<div class="rate-m-bar"><span class="footer-note">在途未超 ' + b.inOk + ' 单不计入分母</span><span class="footer-link rate-foot-link">查看明细 →</span></div></div>';
+}
+function htmlRateProg(b) {
+  const scoped = b.scoped || 0;
+  const rows = [
+    { name: "正常结案", n: b.closed, cls: "ok", color: "var(--ok)" },
+    { name: "到达超时", n: b.arrivedTO, cls: "warn", color: "var(--warn)" },
+    { name: "在途超时", n: b.transitTO, cls: "danger", color: "var(--danger)" }
+  ];
+  return '<div class="rate-progress">' + rows.map(r => {
+    const pct = scoped ? (r.n / scoped * 100) : 0;
+    const pctTxt = pct.toFixed(1) + "%";
+    return '<div class="rate-prog-row"><div class="rate-prog-top"><span class="rate-prog-name"><i class="dot" style="--dc:' + r.color + '"></i>' + r.name +
+      '</span><span class="rate-prog-val" style="color:' + r.color + '"><span class="count">' + r.n + '</span><span class="pct">' + pctTxt + "</span></span></div>" +
+      '<div class="rate-prog-track"><i class="' + r.cls + '" style="width:' + pct.toFixed(1) + '%"></i></div></div>';
+  }).join("") + "</div>";
+}
+function htmlRateAttention(list) {
+  const n = list.length;
+  const body = list.slice(0, 40).map(a => {
+    const cls = a.状态类型 === "在途超时" ? "danger" : "warn";
+    const gate = a.流出门岗 || a.流入门岗 || "—";
+    return '<div class="rate-attn-item"><div class="rate-attn-left"><span class="rate-attn-no">' + kpiEsc(a.放行单号) +
+      '</span><span class="rate-attn-gate">' + kpiEsc(gate) + '</span></div><div class="rate-attn-right">' +
+      '<span class="rate-status ' + cls + '">' + kpiEsc(a.状态类型) + '</span>' +
+      '<span class="rate-dur">' + fmtRateDur(a.超时时长) + "</span></div></div>";
+  }).join("") || '<div class="rate-attn-item"><span class="rate-attn-gate">暂无待关注单据</span></div>';
+  return '<div class="rate-attn"><div class="rate-attn-head"><span class="rate-attn-title">待关注单据</span>' +
+    '<span class="rate-attn-more">全部 ' + n + " 条 →</span></div>" +
+    '<div class="rate-attn-list">' + body + "</div>" +
+    '<div class="rate-attn-foot">点击查看完整明细 →</div></div>';
+}
+function htmlRateLarge(S, tab) {
+  const b = rateTabBundle(S, tab);
+  const pctTxt = (b.rate * 100).toFixed(1) + "%";
+  const uid = "rl" + Math.random().toString(36).slice(2, 8);
+  const unclosed = Math.max(0, (b.arrivedTO || 0) + (b.transitTO || 0));
+  return '<div class="rate-l" data-rate-tab="' + kpiEsc(b.tab) + '">' +
+    '<div class="rate-l-left"><div class="rate-l-ball">' + svgRateBall(b.rate, 160, uid, b.accent, b.soft) +
+    '<div class="rate-ball-center"><div class="rate-ball-val">' + pctTxt + '</div><div class="rate-ball-label">结案完成率</div></div></div>' +
+    '<div class="rate-legend"><span class="lg-pill"><i class="dot" style="--dc:' + b.accent + '"></i>正常结案 <b>' + b.closed + " 单</b></span>" +
+    '<span class="lg-pill"><i class="dot" style="--dc:var(--danger)"></i>未结案 <b>' + unclosed + " 单</b></span></div></div>" +
+    '<div class="rate-l-mid">' + htmlRateProg(b) +
+    '<div class="rate-l-note">纳入统计 ' + b.scoped + " 单 · 在途未超不计入</div></div>" +
+    '<div class="rate-l-right">' + htmlRateAttention(b.attention) + "</div></div>";
+}
+function clearRateHeadSeg(body) {
+  const slot = body.closest(".cardSlot");
+  if (!slot) return;
+  slot.classList.remove("kpi-rate-large", "tab-special", "tab-normal", "tab-overview");
+  slot.querySelectorAll(".cardHead .kpi-seg.rate-seg").forEach(el => el.remove());
+}
+function bindRateChrome(body, dens) {
+  body.querySelectorAll(".rate-foot-link, .rate-attn-more, .rate-attn-foot").forEach(el => {
+    el.addEventListener("click", e => { e.stopPropagation(); if (!editMode) openDetail("rate"); });
+  });
+  if (dens !== "expanded") return;
+  const slot = body.closest(".cardSlot");
+  const head = slot && slot.querySelector(".cardHead");
+  if (!head) return;
+  clearRateHeadSeg(body);
+  slot.classList.add("kpi-rate-large");
+  const tab = body.dataset.kpiTab || "overview";
+  slot.classList.add("tab-" + tab);
+  const seg = document.createElement("div");
+  seg.className = "kpi-seg rate-seg";
+  seg.setAttribute("role", "tablist");
+  seg.innerHTML =
+    '<button type="button" data-tab="overview"' + (tab === "overview" ? ' class="on"' : "") + ">总览</button>" +
+    '<button type="button" data-tab="special"' + (tab === "special" ? ' class="on"' : "") + ">特保</button>" +
+    '<button type="button" data-tab="normal"' + (tab === "normal" ? ' class="on"' : "") + ">非特保</button>";
+  const rm = head.querySelector(".cardRemove");
+  head.insertBefore(seg, rm);
+  seg.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const next = btn.dataset.tab;
+      body.dataset.kpiTab = next;
+      body.innerHTML = htmlRateLarge(computeStats(), next);
+      bindRateChrome(body, "expanded");
+    });
+  });
+}
+
 function buildKpiProps(id, S) {
+  if (id === "kpi_rate") {
+    const b = rateTabBundle(S, "overview");
+    return {
+      tone: "v-ok", tab: "overview",
+      rate: b.rate, closed: b.closed, arrivedTO: b.arrivedTO, transitTO: b.transitTO,
+      scoped: b.scoped, inOk: b.inOk,
+      specialCloseRate: S.specialCloseRate || 0, normalCloseRate: S.normalCloseRate || 0,
+      attentionOrders: S.attentionOrders || []
+    };
+  }
   const total = S.orderCount || 0;
   const special = S.specialOrders || 0;
   const normal = Math.max(0, total - special);
@@ -2179,21 +2471,29 @@ const CARD_DEFS = {
     render(body, ctx) {
       const { w, h } = kpiCardSize("kpi_rate");
       const dens = kpiDensity(w, h, "kpi_rate");
+      body.dataset.kpiDens = dens;
       if (liveCharts.kpi_rate_pie) { try { liveCharts.kpi_rate_pie.dispose(); } catch (e) { } delete liveCharts.kpi_rate_pie; }
       if (dens === "compact") {
-        body.dataset.kpiDens = dens;
+        clearKpiHeadSeg(body);
+        clearRateHeadSeg(body);
+        kpiTone(body, "");
         body.innerHTML = '<div class="kpiShell" data-dens="compact"><div class="kpiMini kpiMiniFill"><div class="chart"></div></div></div>';
         cardChart("kpi_rate", body.querySelector(".chart")).setOption(optionBuilders.liquid(ctx.S), true);
         return;
       }
       if (liveCharts.kpi_rate) { try { liveCharts.kpi_rate.dispose(); } catch (e) { } delete liveCharts.kpi_rate; }
-      renderKpiAdaptive(body, ctx, {
-        id: "kpi_rate", label: "放行结案完成率", color: "var(--ok)", format: "pct",
-        value: S => S.closeRate,
-        chips: S => [["完成", S.closedOrders, "var(--ok)"], ["纳入", S.scopedOrders, "var(--accent)"],
-          ["未纳入", S.inTransitNotTimeout, "var(--txt2)"]],
-        miniOption: S => KPI_DETAIL.rate.chart(S)
-      });
+      clearKpiHeadSeg(body);
+      clearRateHeadSeg(body);
+      kpiTone(body, "v-ok");
+      const S = ctx.S;
+      if (dens === "cozy") {
+        body.innerHTML = htmlRateMedium(S);
+        bindRateChrome(body, dens);
+        return;
+      }
+      const tab = body.dataset.kpiTab || "overview";
+      body.innerHTML = htmlRateLarge(S, tab);
+      bindRateChrome(body, dens);
     },
     update(body, ctx) {
       const { w, h } = kpiCardSize("kpi_rate");
@@ -2203,13 +2503,19 @@ const CARD_DEFS = {
         if (liveCharts.kpi_rate) liveCharts.kpi_rate.setOption(optionBuilders.liquid(ctx.S));
         return;
       }
-      updateKpiAdaptive(body, ctx, {
-        id: "kpi_rate", label: "放行结案完成率", color: "var(--ok)", format: "pct",
-        value: S => S.closeRate,
-        chips: S => [["完成", S.closedOrders, "var(--ok)"], ["纳入", S.scopedOrders, "var(--accent)"],
-          ["未纳入", S.inTransitNotTimeout, "var(--txt2)"]],
-        miniOption: S => KPI_DETAIL.rate.chart(S)
-      });
+      // M/L：整卡按最新 stats 重绘，保留 Tab
+      const tab = body.dataset.kpiTab || "overview";
+      clearKpiHeadSeg(body);
+      clearRateHeadSeg(body);
+      kpiTone(body, "v-ok");
+      if (dens === "cozy") {
+        body.innerHTML = htmlRateMedium(ctx.S);
+        bindRateChrome(body, dens);
+      } else {
+        body.dataset.kpiTab = tab;
+        body.innerHTML = htmlRateLarge(ctx.S, tab);
+        bindRateChrome(body, dens);
+      }
     }
   },
   chart_type: {
@@ -2538,7 +2844,7 @@ function buildCardContent(def) {
   head.querySelector(".cardRemove").onclick = e => { e.stopPropagation(); removeCard(def.id); };
   if (def.detailKey) body.addEventListener("click", e => {
     if (editMode) return;
-    if (e.target.closest(".kpiMini, .kpi-seg, .m-cta, .lp-link, .lp-foot, button")) return;
+    if (e.target.closest(".kpiMini, .kpi-seg, .m-cta, .lp-link, .lp-foot, .rate-foot-link, .rate-attn-more, .rate-attn-foot, button")) return;
     openDetail(def.detailKey);
   });
   const item = document.createElement("div");   // 外层 .grid-stack-item
@@ -2565,8 +2871,10 @@ window.__dashTest = {
     const b = document.querySelector('[data-card="' + id + '"] .cardBody');
     return b ? b.dataset.kpiDens : null;
   },
-  hasChips(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiChips, [data-card="' + id + '"] .m-stat, [data-card="' + id + '"] .m-cta'); },
-  hasMini(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiMini, [data-card="' + id + '"] .l-body'); },
+  hasChips(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiChips, [data-card="' + id + '"] .m-stat, [data-card="' + id + '"] .m-cta, [data-card="' + id + '"] .rate-m-metrics'); },
+  hasMini(id) { return !!document.querySelector('[data-card="' + id + '"] .kpiMini, [data-card="' + id + '"] .l-body, [data-card="' + id + '"] .rate-l, [data-card="' + id + '"] .rate-m'); },
+  hasRateM(id) { return !!document.querySelector('[data-card="' + id + '"] .rate-m'); },
+  hasRateL(id) { return !!document.querySelector('[data-card="' + id + '"] .rate-l'); },
   detailOpen() { const el = document.getElementById("detailOverlay"); return !!(el && el.classList.contains("open")); },
   setKpiSize(id, w, h) {
     const g = window.__dashGrid;

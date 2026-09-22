@@ -4,7 +4,7 @@
 先打开原型确认视觉与交互，再按本说明书改主文件。样板见 `kpi-card-redesign/HANDOFF.md`。
 
 ```yaml
-status: approved       # draft | approved | implementing | shipped
+status: implementing       # draft | approved | implementing | shipped
 owner_design: Trae
 owner_impl: Grok Build
 approved_by: 用户
