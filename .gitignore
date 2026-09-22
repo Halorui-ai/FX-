@@ -25,6 +25,7 @@ Thumbs.db
 # 工具/代理内部目录（非项目内容）
 .qoder/
 .workbuddy/
+.trae-html-share-packages/
 
 # 本地 e2e（Playwright），不随离线看板分发、不入库
 tests/
