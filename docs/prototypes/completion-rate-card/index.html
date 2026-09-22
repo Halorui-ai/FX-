@@ -1,1 +1,1498 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>结案率卡片原型</title>
+    <style id="theme-vars">
+/* 结案率卡片原型 - Design Tokens
+   对齐 kpi-card-redesign HANDOFF 规格，主色为绿色（正向达成率） */
+
+:root {
+  /* 语义色 - 主色：绿（结案率=正向达成率） */
+  --fx-primary: #1ea672;
+  --fx-primary-foreground: #ffffff;
+  --fx-primary-soft: rgba(30, 166, 114, 0.12);
+
+  /* 语义色 - 状态 */
+  --fx-danger: #f04d3e;
+  --fx-danger-soft: rgba(240, 77, 62, 0.12);
+  --fx-warn: #f59a26;
+  --fx-warn-soft: rgba(245, 154, 38, 0.12);
+  --fx-ok: #1ea672;
+  --fx-ok-soft: rgba(30, 166, 114, 0.12);
+  --fx-brand: #2f7cf6;
+  --fx-brand-soft: rgba(47, 124, 246, 0.1);
+  --fx-purple: #7a63f5;
+  --fx-purple-soft: rgba(122, 99, 245, 0.1);
+
+  /* 中性色 */
+  --fx-background: #f3f6fb;
+  --fx-foreground: #20262e;
+  --fx-card: rgba(255, 255, 255, 0.74);
+  --fx-card-foreground: #20262e;
+  --fx-card-strong: rgba(255, 255, 255, 0.9);
+  --fx-panel: rgba(255, 255, 255, 0.56);
+  --fx-muted: #748093;
+  --fx-muted-foreground: #748093;
+  --fx-faint: #9aa5b5;
+  --fx-line: rgba(31, 41, 55, 0.09);
+  --fx-track: rgba(31, 41, 55, 0.08);
+  --fx-border: rgba(31, 41, 55, 0.09);
+  --fx-input: rgba(31, 41, 55, 0.06);
+  --fx-ring: rgba(47, 124, 246, 0.3);
+  --fx-popover: rgba(255, 255, 255, 0.95);
+  --fx-popover-foreground: #20262e;
+
+  /* 圆角 */
+  --fx-radius-sm: 8px;
+  --fx-radius-md: 16px;
+  --fx-radius-lg: 20px;
+  --fx-radius-xl: 24px;
+  --fx-radius-full: 999px;
+
+  /* 字体 */
+  --fx-font-sans: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --fx-font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+
+  /* 字号 */
+  --fx-text-xs: 11px;
+  --fx-text-sm: 12px;
+  --fx-text-base: 13px;
+  --fx-text-md: 14px;
+  --fx-text-lg: 15px;
+  --fx-text-xl: 18px;
+  --fx-text-2xl: 22px;
+  --fx-text-3xl: 28px;
+  --fx-text-4xl: 38px;
+  --fx-text-5xl: 52px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fx-background: #0f172a;
+    --fx-foreground: #e2e8f0;
+    --fx-card: rgba(30, 41, 59, 0.7);
+    --fx-card-foreground: #e2e8f0;
+    --fx-muted: #64748b;
+    --fx-muted-foreground: #64748b;
+    --fx-line: rgba(148, 163, 184, 0.15);
+    --fx-border: rgba(148, 163, 184, 0.15);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--fx-font-sans);
+  background: var(--fx-background);
+  color: var(--fx-foreground);
+  font-size: var(--fx-text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: var(--fx-font-mono);
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--fx-background);
+    --color-foreground: var(--fx-foreground);
+    --color-card: var(--fx-card);
+    --color-card-foreground: var(--fx-card-foreground);
+    --color-popover: var(--fx-popover);
+    --color-popover-foreground: var(--fx-popover-foreground);
+    --color-primary: var(--fx-primary);
+    --color-primary-foreground: var(--fx-primary-foreground);
+    --color-muted: var(--fx-muted);
+    --color-muted-foreground: var(--fx-muted-foreground);
+    --color-border: var(--fx-border);
+    --color-input: var(--fx-input);
+    --color-ring: var(--fx-ring);
+    --radius-sm: var(--fx-radius-sm);
+    --radius-md: var(--fx-radius-md);
+    --radius-lg: var(--fx-radius-lg);
+    --radius-xl: var(--fx-radius-xl);
+  }
+  @layer base {
+    body { background: var(--fx-background); color: var(--fx-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--fx-background); }
+      .text-background { color: var(--fx-background); }
+      .border-background { border-color: var(--fx-background); }
+      .ring-background { --tw-ring-color: var(--fx-background); }
+      .bg-foreground { background-color: var(--fx-foreground); }
+      .text-foreground { color: var(--fx-foreground); }
+      .border-foreground { border-color: var(--fx-foreground); }
+      .ring-foreground { --tw-ring-color: var(--fx-foreground); }
+      .bg-card { background-color: var(--fx-card); }
+      .text-card { color: var(--fx-card); }
+      .border-card { border-color: var(--fx-card); }
+      .ring-card { --tw-ring-color: var(--fx-card); }
+      .bg-card-foreground { background-color: var(--fx-card-foreground); }
+      .text-card-foreground { color: var(--fx-card-foreground); }
+      .border-card-foreground { border-color: var(--fx-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--fx-card-foreground); }
+      .bg-popover { background-color: var(--fx-popover); }
+      .text-popover { color: var(--fx-popover); }
+      .border-popover { border-color: var(--fx-popover); }
+      .ring-popover { --tw-ring-color: var(--fx-popover); }
+      .bg-popover-foreground { background-color: var(--fx-popover-foreground); }
+      .text-popover-foreground { color: var(--fx-popover-foreground); }
+      .border-popover-foreground { border-color: var(--fx-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--fx-popover-foreground); }
+      .bg-primary { background-color: var(--fx-primary); }
+      .text-primary { color: var(--fx-primary); }
+      .border-primary { border-color: var(--fx-primary); }
+      .ring-primary { --tw-ring-color: var(--fx-primary); }
+      .bg-primary-foreground { background-color: var(--fx-primary-foreground); }
+      .text-primary-foreground { color: var(--fx-primary-foreground); }
+      .border-primary-foreground { border-color: var(--fx-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--fx-primary-foreground); }
+      .bg-muted { background-color: var(--fx-muted); }
+      .text-muted { color: var(--fx-muted); }
+      .border-muted { border-color: var(--fx-muted); }
+      .ring-muted { --tw-ring-color: var(--fx-muted); }
+      .bg-muted-foreground { background-color: var(--fx-muted-foreground); }
+      .text-muted-foreground { color: var(--fx-muted-foreground); }
+      .border-muted-foreground { border-color: var(--fx-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--fx-muted-foreground); }
+      .bg-border { background-color: var(--fx-border); }
+      .text-border { color: var(--fx-border); }
+      .border-border { border-color: var(--fx-border); }
+      .ring-border { --tw-ring-color: var(--fx-border); }
+      .bg-input { background-color: var(--fx-input); }
+      .text-input { color: var(--fx-input); }
+      .border-input { border-color: var(--fx-input); }
+      .ring-input { --tw-ring-color: var(--fx-input); }
+      .bg-ring { background-color: var(--fx-ring); }
+      .text-ring { color: var(--fx-ring); }
+      .border-ring { border-color: var(--fx-ring); }
+      .ring-ring { --tw-ring-color: var(--fx-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+
+    <style>
+      body {
+        background:
+          radial-gradient(ellipse at 20% 10%, rgba(47, 124, 246, 0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 80%, rgba(30, 166, 114, 0.05) 0%, transparent 50%),
+          linear-gradient(180deg, #f3f6fb 0%, #eef2f8 100%);
+        min-height: 100vh;
+      }
+
+      .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 48px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 48px;
+      }
+
+      .section-label {
+        font-size: var(--fx-text-sm);
+        color: var(--fx-muted);
+        font-weight: 500;
+        margin-bottom: 12px;
+        letter-spacing: 0.5px;
+      }
+
+      .kpi-card {
+        position: relative;
+        background: var(--fx-card);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-radius: var(--fx-radius-md);
+        box-shadow:
+          0 10px 30px rgba(28, 45, 74, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+      }
+
+      .card-drag-handle {
+        height: 6px;
+        background: transparent;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .card-drag-handle:hover {
+        background: rgba(31, 41, 55, 0.06);
+      }
+      .card-drag-handle::before {
+        content: '';
+        width: 32px;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(31, 41, 55, 0.15);
+      }
+      .card-drag-handle:hover::before {
+        background: rgba(31, 41, 55, 0.25);
+      }
+
+      .card-accent-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--fx-primary);
+        border-radius: var(--fx-radius-md) 0 0 var(--fx-radius-md);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px 0 20px;
+        margin-left: 4px;
+      }
+
+      .card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .card-icon {
+        width: 20px;
+        height: 20px;
+        color: var(--fx-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .card-title {
+        font-size: var(--fx-text-md);
+        font-weight: 600;
+        color: var(--fx-foreground);
+      }
+
+      .card-close-btn {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: var(--fx-faint);
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: transparent;
+        font-size: 16px;
+        line-height: 1;
+      }
+      .card-close-btn:hover {
+        background: rgba(31, 41, 55, 0.06);
+        color: var(--fx-muted);
+      }
+
+      .medium-card {
+        max-width: 480px;
+      }
+
+      .medium-card-body {
+        display: flex;
+        align-items: center;
+        padding: 16px 24px 12px 28px;
+        gap: 20px;
+      }
+
+      .water-ball-container {
+        flex-shrink: 0;
+        position: relative;
+      }
+
+      .water-ball-svg {
+        display: block;
+      }
+
+      .water-ball-center-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+      }
+
+      .water-ball-label {
+        font-size: 10px;
+        color: var(--fx-muted);
+        margin-bottom: 2px;
+        white-space: nowrap;
+      }
+
+      .water-ball-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--fx-foreground);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+
+      .metrics-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .metric-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .metric-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .metric-dot.ok { background: var(--fx-ok); }
+      .metric-dot.warn { background: var(--fx-warn); }
+      .metric-dot.danger { background: var(--fx-danger); }
+
+      .metric-label {
+        flex: 1;
+        font-size: var(--fx-text-sm);
+        color: var(--fx-muted);
+      }
+
+      .metric-value {
+        font-size: var(--fx-text-xl);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+      .metric-value.ok { color: var(--fx-ok); }
+      .metric-value.warn { color: var(--fx-warn); }
+      .metric-value.danger { color: var(--fx-danger); }
+
+      .metric-unit {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-faint);
+        margin-left: 2px;
+        font-weight: 400;
+      }
+
+      .metrics-footer {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-faint);
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--fx-line);
+      }
+
+      .card-footer-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 24px 14px 28px;
+        border-top: 1px solid var(--fx-line);
+        font-size: var(--fx-text-xs);
+      }
+
+      .footer-note {
+        color: var(--fx-faint);
+      }
+
+      .footer-link {
+        color: var(--fx-primary);
+        cursor: pointer;
+        font-weight: 500;
+        transition: opacity 0.2s;
+      }
+      .footer-link:hover {
+        opacity: 0.8;
+      }
+
+      .large-card {
+        max-width: 960px;
+      }
+
+      /* 大卡头部 - 三列 grid 确保 Tab 绝对居中 */
+      .large-card-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 12px 20px 0 20px;
+        margin-left: 4px;
+        gap: 12px;
+      }
+
+      .large-card-header .card-title-group {
+        justify-self: start;
+      }
+
+      .large-card-header .card-close-btn {
+        justify-self: end;
+      }
+
+      .card-tabs {
+        justify-self: center;
+        display: flex;
+        background: var(--fx-input);
+        border-radius: var(--fx-radius-full);
+        padding: 3px;
+        gap: 2px;
+      }
+
+      .tab-btn {
+        padding: 6px 18px;
+        font-size: var(--fx-text-sm);
+        color: var(--fx-muted);
+        border: none;
+        background: transparent;
+        border-radius: var(--fx-radius-full);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .tab-btn.active {
+        background: #ffffff;
+        color: var(--fx-brand);
+        box-shadow: 0 2px 8px rgba(28, 45, 74, 0.08);
+        font-weight: 600;
+      }
+
+      .tab-btn:hover:not(.active) {
+        color: var(--fx-foreground);
+      }
+
+      .large-card-body {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1fr;
+        gap: 0;
+        padding: 20px 24px 20px 28px;
+      }
+
+      .left-column {
+        padding-right: 24px;
+        border-right: 1px solid var(--fx-line);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .large-water-ball-container {
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .large-water-ball-center-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+      }
+
+      .large-water-ball-value {
+        font-size: 38px;
+        font-weight: 700;
+        color: var(--fx-foreground);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        transition: color 0.3s;
+      }
+
+      .large-water-ball-label {
+        font-size: var(--fx-text-sm);
+        color: var(--fx-muted);
+        margin-top: 6px;
+      }
+
+      .legend-pills {
+        display: flex;
+        gap: 10px;
+      }
+
+      .legend-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: var(--fx-panel);
+        border: 1px solid var(--fx-border);
+        border-radius: var(--fx-radius-full);
+        font-size: var(--fx-text-xs);
+        color: var(--fx-muted);
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .legend-dot.ok { background: var(--fx-ok); }
+      .legend-dot.warn { background: var(--fx-warn); }
+      .legend-dot.danger { background: var(--fx-danger); }
+      .legend-dot.purple { background: var(--fx-purple); }
+
+      .legend-pill-value {
+        color: var(--fx-foreground);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .middle-column {
+        padding: 0 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-right: 1px solid var(--fx-line);
+      }
+
+      .metrics-subtitle {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-faint);
+        margin-bottom: 16px;
+      }
+
+      .progress-metrics {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .progress-metric-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .progress-metric-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .progress-metric-name-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .progress-metric-name {
+        font-size: var(--fx-text-sm);
+        color: var(--fx-foreground);
+      }
+
+      .progress-metric-value {
+        font-size: var(--fx-text-sm);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+
+      .progress-metric-value .count {
+        color: var(--fx-foreground);
+      }
+
+      .progress-metric-value .pct {
+        color: var(--fx-muted);
+        font-size: var(--fx-text-xs);
+        font-weight: 400;
+      }
+
+      .progress-bar-track {
+        height: 6px;
+        background: var(--fx-track);
+        border-radius: var(--fx-radius-full);
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        border-radius: var(--fx-radius-full);
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+      }
+      .progress-bar-fill.ok { background: var(--fx-ok); }
+      .progress-bar-fill.warn { background: var(--fx-warn); }
+      .progress-bar-fill.danger { background: var(--fx-danger); }
+
+      .right-column {
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .attention-panel {
+        background: var(--fx-panel);
+        border: 1px solid var(--fx-border);
+        border-radius: var(--fx-radius-md);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .attention-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--fx-line);
+      }
+
+      .attention-panel-title {
+        font-size: var(--fx-text-sm);
+        font-weight: 600;
+        color: var(--fx-foreground);
+      }
+
+      .attention-panel-more {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-primary);
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .attention-list {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 4px 0;
+      }
+
+      .attention-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        gap: 8px;
+        transition: background 0.2s;
+      }
+
+      .attention-item:hover {
+        background: rgba(31, 41, 55, 0.03);
+      }
+
+      .attention-item-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .attention-order-no {
+        font-family: var(--fx-font-mono);
+        font-size: var(--fx-text-xs);
+        color: var(--fx-foreground);
+        font-weight: 500;
+      }
+
+      .attention-gate {
+        font-size: 10px;
+        color: var(--fx-faint);
+      }
+
+      .attention-item-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px;
+        flex-shrink: 0;
+      }
+
+      .status-tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+      .status-tag.danger {
+        background: var(--fx-danger-soft);
+        color: var(--fx-danger);
+      }
+      .status-tag.warn {
+        background: var(--fx-warn-soft);
+        color: var(--fx-warn);
+      }
+
+      .timeout-duration {
+        font-size: 10px;
+        color: var(--fx-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .attention-panel-footer {
+        padding: 10px 14px;
+        text-align: center;
+        font-size: var(--fx-text-xs);
+        color: var(--fx-faint);
+        border-top: 1px solid var(--fx-line);
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      .attention-panel-footer:hover {
+        color: var(--fx-muted);
+      }
+
+      .square-bottom-section {
+        display: none;
+      }
+
+      .square-list-col {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .square-list-col-title {
+        font-size: var(--fx-text-sm);
+        font-weight: 600;
+        color: var(--fx-foreground);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .square-list-col-title .col-count {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-muted);
+        font-weight: 400;
+      }
+
+      .square-list-footer {
+        margin-top: auto;
+        padding-top: 8px;
+        font-size: var(--fx-text-xs);
+        color: var(--fx-primary);
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .wave-path {
+        transition: fill 0.3s;
+      }
+
+      @keyframes wave-move {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      .wave-group-1 {
+        animation: wave-move 6s linear infinite;
+      }
+
+      .wave-group-2 {
+        animation: wave-move 8s linear infinite reverse;
+        opacity: 0.5;
+      }
+
+      .water-ball-glow {
+        filter: drop-shadow(0 0 8px rgba(30, 166, 114, 0.15));
+      }
+
+      .water-ball-glow.purple {
+        filter: drop-shadow(0 0 8px rgba(122, 99, 245, 0.15));
+      }
+
+      @media (max-width: 900px) and (min-width: 701px) {
+        .large-card-body {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          padding: 20px 24px 20px 28px;
+        }
+
+        .left-column {
+          padding-right: 20px;
+          border-right: 1px solid var(--fx-line);
+          border-bottom: none;
+        }
+
+        .middle-column {
+          padding: 0 0 0 20px;
+          border-right: none;
+          border-left: none;
+        }
+
+        .right-column {
+          display: none;
+        }
+
+        .square-bottom-section {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-column: 1 / -1;
+          gap: 0;
+          border-top: 1px solid var(--fx-line);
+          padding-top: 20px;
+          margin-top: 20px;
+        }
+
+        .square-bottom-section .square-list-col:first-child {
+          padding-right: 20px;
+          border-right: 1px solid var(--fx-line);
+        }
+
+        .square-bottom-section .square-list-col:last-child {
+          padding-left: 20px;
+        }
+
+        .square-list-col .attention-list {
+          padding: 0;
+        }
+
+        .square-list-col .attention-item {
+          padding: 8px 0;
+        }
+
+        .square-list-col .attention-item:hover {
+          background: transparent;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .page-container {
+          padding: 24px 16px;
+          gap: 32px;
+        }
+
+        .medium-card-body {
+          flex-direction: column;
+          padding: 16px 20px 12px 24px;
+        }
+
+        .large-card-body {
+          grid-template-columns: 1fr;
+          padding: 16px 20px 16px 24px;
+        }
+
+        .left-column {
+          border-right: none;
+          border-bottom: 1px solid var(--fx-line);
+          padding-right: 0;
+          padding-bottom: 20px;
+          margin-bottom: 20px;
+        }
+
+        .middle-column {
+          padding: 0 0 20px 0;
+          border-right: none;
+          border-bottom: 1px solid var(--fx-line);
+          margin-bottom: 20px;
+        }
+
+        .right-column {
+          padding-left: 0;
+        }
+
+        .square-bottom-section {
+          display: none;
+        }
+
+        .large-card-header {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .large-card-header .card-title-group {
+          justify-self: start;
+        }
+
+        .large-card-header .card-close-btn {
+          position: absolute;
+          top: 12px;
+          right: 20px;
+        }
+
+        .card-tabs {
+          justify-self: center;
+          width: auto;
+        }
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+      <div class="page-container">
+
+        <section id="medium-card">
+          <div class="section-label">中卡 M</div>
+          <div class="kpi-card medium-card">
+            <div class="card-accent-bar"></div>
+            <div class="card-drag-handle"></div>
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-icon">
+                  <i data-lucide="check-circle-2" width="20" height="20"></i>
+                </div>
+                <span class="card-title">放行结案完成率</span>
+              </div>
+              <button class="card-close-btn" aria-label="关闭">×</button>
+            </div>
+            <div class="medium-card-body">
+              <div class="water-ball-container">
+                <svg class="water-ball-svg water-ball-glow" width="120" height="120" viewBox="0 0 120 120">
+                  <defs>
+                    <clipPath id="ball-clip-medium">
+                      <circle cx="60" cy="60" r="54"></circle>
+                    </clipPath>
+                  </defs>
+                  <circle cx="60" cy="60" r="56" fill="none" stroke="rgba(30, 166, 114, 0.15)" stroke-width="2"></circle>
+                  <circle cx="60" cy="60" r="54" fill="rgba(30, 166, 114, 0.06)"></circle>
+                  <g clip-path="url(#ball-clip-medium)">
+                    <g class="wave-group-1">
+                      <path class="wave-path" fill="rgba(30, 166, 114, 0.25)"
+                            d="M0,72 Q15,66 30,72 T60,72 T90,72 T120,72 T150,72 T180,72 T210,72 T240,72 L240,120 L0,120 Z"></path>
+                    </g>
+                    <g class="wave-group-2">
+                      <path class="wave-path" fill="rgba(30, 166, 114, 0.18)"
+                            d="M0,76 Q20,70 40,76 T80,76 T120,76 T160,76 T200,76 T240,76 L240,120 L0,120 Z"></path>
+                    </g>
+                    <rect class="wave-path" x="0" y="76" width="120" height="44" fill="rgba(30, 166, 114, 0.35)"></rect>
+                  </g>
+                </svg>
+                <div class="water-ball-center-text">
+                  <div class="water-ball-label">放行结案完成率</div>
+                  <div class="water-ball-value tabular-nums">61.4%</div>
+                </div>
+              </div>
+              <div class="metrics-column">
+                <div class="metric-row">
+                  <span class="metric-dot ok"></span>
+                  <span class="metric-label">正常结案</span>
+                  <span class="metric-value ok tabular-nums">126<span class="metric-unit">单</span></span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-dot warn"></span>
+                  <span class="metric-label">到达超时</span>
+                  <span class="metric-value warn tabular-nums">36<span class="metric-unit">单</span></span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-dot danger"></span>
+                  <span class="metric-label">在途超时</span>
+                  <span class="metric-value danger tabular-nums">40<span class="metric-unit">单</span></span>
+                </div>
+                <div class="metrics-footer tabular-nums">纳入统计 202 单</div>
+              </div>
+            </div>
+            <div class="card-footer-bar">
+              <span class="footer-note">在途未超 76 单不计入分母</span>
+              <span class="footer-link">查看明细 →</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="large-card">
+          <div class="section-label">大卡 L（拖动窗口宽度查看响应式变化）</div>
+          <div class="kpi-card large-card">
+            <div class="card-accent-bar"></div>
+            <div class="card-drag-handle"></div>
+            <div class="large-card-header">
+              <div class="card-title-group">
+                <div class="card-icon">
+                  <i data-lucide="check-circle-2" width="20" height="20"></i>
+                </div>
+                <span class="card-title">放行结案完成率</span>
+              </div>
+              <div class="card-tabs">
+                <button class="tab-btn active" data-tab="overview" id="tab-overview" data-dom-id="tab-overview">总览</button>
+                <button class="tab-btn" data-tab="special" id="tab-special" data-dom-id="tab-special">特保</button>
+                <button class="tab-btn" data-tab="normal" id="tab-normal" data-dom-id="tab-normal">非特保</button>
+              </div>
+              <button class="card-close-btn" aria-label="关闭">×</button>
+            </div>
+            <div class="large-card-body">
+              <div class="left-column">
+                <div class="large-water-ball-container">
+                  <svg class="water-ball-svg water-ball-glow" id="large-water-ball" width="160" height="160" viewBox="0 0 180 180">
+                    <defs>
+                      <clipPath id="ball-clip-large">
+                        <circle cx="90" cy="90" r="80"></circle>
+                      </clipPath>
+                    </defs>
+                    <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(30, 166, 114, 0.12)" stroke-width="2" id="ball-outer-ring"></circle>
+                    <circle cx="90" cy="90" r="80" fill="rgba(30, 166, 114, 0.05)" id="ball-inner-bg"></circle>
+                    <g clip-path="url(#ball-clip-large)">
+                      <g class="wave-group-1">
+                        <path class="wave-path" id="wave1-large" fill="rgba(30, 166, 114, 0.22)"
+                              d="M0,100 Q22.5,92 45,100 T90,100 T135,100 T180,100 T225,100 T270,100 T315,100 T360,100 L360,180 L0,180 Z"></path>
+                      </g>
+                      <g class="wave-group-2">
+                        <path class="wave-path" id="wave2-large" fill="rgba(30, 166, 114, 0.16)"
+                              d="M0,105 Q30,97 60,105 T120,105 T180,105 T240,105 T300,105 T360,105 L360,180 L0,180 Z"></path>
+                      </g>
+                      <rect class="wave-path" id="wave-fill-large" x="0" y="105" width="180" height="75" fill="rgba(30, 166, 114, 0.3)"></rect>
+                    </g>
+                  </svg>
+                  <div class="large-water-ball-center-text">
+                    <div class="large-water-ball-value tabular-nums" id="ball-percent">61.4%</div>
+                    <div class="large-water-ball-label">结案完成率</div>
+                  </div>
+                </div>
+                <div class="legend-pills">
+                  <div class="legend-pill">
+                    <span class="legend-dot ok" id="legend-ok-dot"></span>
+                    <span>正常结案</span>
+                    <span class="legend-pill-value tabular-nums" id="legend-ok-value">126 单</span>
+                  </div>
+                  <div class="legend-pill">
+                    <span class="legend-dot danger" id="legend-unclosed-dot"></span>
+                    <span>未结案</span>
+                    <span class="legend-pill-value tabular-nums" id="legend-unclosed-value">76 单</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="middle-column">
+                <div class="metrics-subtitle tabular-nums">纳入统计 <span id="total-count">202</span> 单 · 在途未超不计入</div>
+                <div class="progress-metrics">
+                  <div class="progress-metric-row">
+                    <div class="progress-metric-header">
+                      <div class="progress-metric-name-group">
+                        <span class="metric-dot ok"></span>
+                        <span class="progress-metric-name">正常结案</span>
+                      </div>
+                      <div class="progress-metric-value">
+                        <span class="count tabular-nums" id="ok-count">126</span>
+                        <span class="pct tabular-nums" id="ok-pct">62.4%</span>
+                      </div>
+                    </div>
+                    <div class="progress-bar-track">
+                      <div class="progress-bar-fill ok" id="ok-bar" style="width: 62.4%"></div>
+                    </div>
+                  </div>
+                  <div class="progress-metric-row">
+                    <div class="progress-metric-header">
+                      <div class="progress-metric-name-group">
+                        <span class="metric-dot warn"></span>
+                        <span class="progress-metric-name">到达超时</span>
+                      </div>
+                      <div class="progress-metric-value">
+                        <span class="count tabular-nums" id="warn-count">36</span>
+                        <span class="pct tabular-nums" id="warn-pct">17.8%</span>
+                      </div>
+                    </div>
+                    <div class="progress-bar-track">
+                      <div class="progress-bar-fill warn" id="warn-bar" style="width: 17.8%"></div>
+                    </div>
+                  </div>
+                  <div class="progress-metric-row">
+                    <div class="progress-metric-header">
+                      <div class="progress-metric-name-group">
+                        <span class="metric-dot danger"></span>
+                        <span class="progress-metric-name">在途超时</span>
+                      </div>
+                      <div class="progress-metric-value">
+                        <span class="count tabular-nums" id="danger-count">40</span>
+                        <span class="pct tabular-nums" id="danger-pct">19.8%</span>
+                      </div>
+                    </div>
+                    <div class="progress-bar-track">
+                      <div class="progress-bar-fill danger" id="danger-bar" style="width: 19.8%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="right-column">
+                <div class="attention-panel">
+                  <div class="attention-panel-header">
+                    <span class="attention-panel-title">待关注单据</span>
+                    <span class="attention-panel-more">全部 76 条 →</span>
+                  </div>
+                  <div class="attention-list" id="wide-attention-list">
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315001</span>
+                        <span class="attention-gate">东二门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag danger">在途超时</span>
+                        <span class="timeout-duration tabular-nums">超 2h 35m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315003</span>
+                        <span class="attention-gate">南三门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag danger">在途超时</span>
+                        <span class="timeout-duration tabular-nums">超 1h 12m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315005</span>
+                        <span class="attention-gate">北二门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag danger">在途超时</span>
+                        <span class="timeout-duration tabular-nums">超 48m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315002</span>
+                        <span class="attention-gate">西一门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag warn">到达超时</span>
+                        <span class="timeout-duration tabular-nums">超 45m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315006</span>
+                        <span class="attention-gate">东一门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag warn">到达超时</span>
+                        <span class="timeout-duration tabular-nums">超 32m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315004</span>
+                        <span class="attention-gate">北门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="status-tag warn">到达超时</span>
+                        <span class="timeout-duration tabular-nums">超 20m</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="attention-panel-footer">点击查看完整明细 →</div>
+                </div>
+              </div>
+
+              <div class="square-bottom-section">
+                <div class="square-list-col">
+                  <div class="square-list-col-title">
+                    <span class="metric-dot danger" style="width:6px;height:6px;"></span>
+                    <span>在途超时</span>
+                    <span class="col-count tabular-nums" id="sq-danger-count">40 单</span>
+                  </div>
+                  <div class="attention-list" id="sq-danger-list">
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315001</span>
+                        <span class="attention-gate">东二门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 2h 35m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315003</span>
+                        <span class="attention-gate">南三门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 1h 12m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315005</span>
+                        <span class="attention-gate">北二门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 48m</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="square-list-footer">查看全部 →</div>
+                </div>
+                <div class="square-list-col">
+                  <div class="square-list-col-title">
+                    <span class="metric-dot warn" style="width:6px;height:6px;"></span>
+                    <span>到达超时</span>
+                    <span class="col-count tabular-nums" id="sq-warn-count">36 单</span>
+                  </div>
+                  <div class="attention-list" id="sq-warn-list">
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315002</span>
+                        <span class="attention-gate">西一门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 45m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315006</span>
+                        <span class="attention-gate">东一门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 32m</span>
+                      </div>
+                    </div>
+                    <div class="attention-item">
+                      <div class="attention-item-left">
+                        <span class="attention-order-no">FX20240315004</span>
+                        <span class="attention-gate">北门岗</span>
+                      </div>
+                      <div class="attention-item-right">
+                        <span class="timeout-duration tabular-nums">超 20m</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="square-list-footer">查看全部 →</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <script>
+      lucide.createIcons();
+
+      const tabData = {
+        overview: {
+          percent: '61.4%',
+          total: 202,
+          ok: { count: 126, pct: '62.4%', barPct: 62.4 },
+          warn: { count: 36, pct: '17.8%', barPct: 17.8 },
+          danger: { count: 40, pct: '19.8%', barPct: 19.8 },
+          unclosed: 76,
+          color: 'green',
+          primaryColor: '#1ea672',
+          wave1Y: 100,
+          wave2Y: 105,
+          fillY: 105,
+          dangerList: [
+            { no: 'FX20240315001', gate: '东二门岗', time: '超 2h 35m' },
+            { no: 'FX20240315003', gate: '南三门岗', time: '超 1h 12m' },
+            { no: 'FX20240315005', gate: '北二门岗', time: '超 48m' }
+          ],
+          warnList: [
+            { no: 'FX20240315002', gate: '西一门岗', time: '超 45m' },
+            { no: 'FX20240315006', gate: '东一门岗', time: '超 32m' },
+            { no: 'FX20240315004', gate: '北门岗', time: '超 20m' }
+          ]
+        },
+        special: {
+          percent: '45.2%',
+          total: 62,
+          ok: { count: 28, pct: '45.2%', barPct: 45.2 },
+          warn: { count: 14, pct: '22.6%', barPct: 22.6 },
+          danger: { count: 20, pct: '32.2%', barPct: 32.2 },
+          unclosed: 32,
+          color: 'purple',
+          primaryColor: '#7a63f5',
+          wave1Y: 135,
+          wave2Y: 140,
+          fillY: 140,
+          dangerList: [
+            { no: 'TB20240315011', gate: '特保通道A', time: '超 3h 10m' },
+            { no: 'TB20240315013', gate: '特保通道C', time: '超 1h 55m' },
+            { no: 'TB20240315015', gate: '特保通道B', time: '超 52m' }
+          ],
+          warnList: [
+            { no: 'TB20240315012', gate: '特保通道D', time: '超 38m' },
+            { no: 'TB20240315016', gate: '特保通道A', time: '超 25m' },
+            { no: 'TB20240315014', gate: '特保通道E', time: '超 15m' }
+          ]
+        },
+        normal: {
+          percent: '65.8%',
+          total: 140,
+          ok: { count: 92, pct: '65.7%', barPct: 65.7 },
+          warn: { count: 22, pct: '15.7%', barPct: 15.7 },
+          danger: { count: 26, pct: '18.6%', barPct: 18.6 },
+          unclosed: 44,
+          color: 'green',
+          primaryColor: '#1ea672',
+          wave1Y: 92,
+          wave2Y: 97,
+          fillY: 97,
+          dangerList: [
+            { no: 'FX20240315021', gate: '西二门岗', time: '超 2h 05m' },
+            { no: 'FX20240315023', gate: '南一门岗', time: '超 58m' },
+            { no: 'FX20240315025', gate: '东三门岗', time: '超 42m' }
+          ],
+          warnList: [
+            { no: 'FX20240315022', gate: '北三门岗', time: '超 40m' },
+            { no: 'FX20240315026', gate: '南二门岗', time: '超 28m' },
+            { no: 'FX20240315024', gate: '西三门岗', time: '超 18m' }
+          ]
+        }
+      };
+
+      function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const totalCount = document.getElementById('total-count');
+      const okCount = document.getElementById('ok-count');
+      const okPct = document.getElementById('ok-pct');
+      const okBar = document.getElementById('ok-bar');
+      const warnCount = document.getElementById('warn-count');
+      const warnPct = document.getElementById('warn-pct');
+      const warnBar = document.getElementById('warn-bar');
+      const dangerCount = document.getElementById('danger-count');
+      const dangerPct = document.getElementById('danger-pct');
+      const dangerBar = document.getElementById('danger-bar');
+      const ballPercent = document.getElementById('ball-percent');
+      const legendOkValue = document.getElementById('legend-ok-value');
+      const legendUnclosedValue = document.getElementById('legend-unclosed-value');
+      const legendOkDot = document.getElementById('legend-ok-dot');
+      const legendUnclosedDot = document.getElementById('legend-unclosed-dot');
+      const largeWaterBall = document.getElementById('large-water-ball');
+      const ballOuterRing = document.getElementById('ball-outer-ring');
+      const ballInnerBg = document.getElementById('ball-inner-bg');
+      const wave1Large = document.getElementById('wave1-large');
+      const wave2Large = document.getElementById('wave2-large');
+      const waveFillLarge = document.getElementById('wave-fill-large');
+      const sqDangerCount = document.getElementById('sq-danger-count');
+      const sqWarnCount = document.getElementById('sq-warn-count');
+      const sqDangerList = document.getElementById('sq-danger-list');
+      const sqWarnList = document.getElementById('sq-warn-list');
+      const wideAttentionList = document.getElementById('wide-attention-list');
+      const attentionPanelMore = document.querySelector('.attention-panel-more');
+
+      function updateWaterBallWaves(data) {
+        const color = data.primaryColor;
+        ballOuterRing.setAttribute('stroke', hexToRgba(color, 0.12));
+        ballInnerBg.setAttribute('fill', hexToRgba(color, 0.05));
+        const y1 = data.wave1Y;
+        const y2 = data.wave2Y;
+        const amp = 8;
+        wave1Large.setAttribute('d',
+          `M0,${y1} Q22.5,${y1 - amp} 45,${y1} T90,${y1} T135,${y1} T180,${y1} T225,${y1} T270,${y1} T315,${y1} T360,${y1} L360,180 L0,180 Z`
+        );
+        wave1Large.setAttribute('fill', hexToRgba(color, 0.22));
+        wave2Large.setAttribute('d',
+          `M0,${y2} Q30,${y2 - amp} 60,${y2} T120,${y2} T180,${y2} T240,${y2} T300,${y2} T360,${y2} L360,180 L0,180 Z`
+        );
+        wave2Large.setAttribute('fill', hexToRgba(color, 0.16));
+        waveFillLarge.setAttribute('y', y2);
+        waveFillLarge.setAttribute('height', 180 - y2);
+        waveFillLarge.setAttribute('fill', hexToRgba(color, 0.3));
+        largeWaterBall.classList.toggle('purple', data.color === 'purple');
+      }
+
+      function renderListItems(container, items, showTag) {
+        container.innerHTML = items.map(item => `
+          <div class="attention-item">
+            <div class="attention-item-left">
+              <span class="attention-order-no">${item.no}</span>
+              <span class="attention-gate">${item.gate}</span>
+            </div>
+            <div class="attention-item-right">
+              ${showTag ? `<span class="status-tag ${showTag}">${showTag === 'danger' ? '在途超时' : '到达超时'}</span>` : ''}
+              <span class="timeout-duration tabular-nums">${item.time}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function renderWideList(data) {
+        const dangerItems = data.dangerList.map(item => ({ ...item, type: 'danger' }));
+        const warnItems = data.warnList.map(item => ({ ...item, type: 'warn' }));
+        const allItems = [...dangerItems, ...warnItems];
+        wideAttentionList.innerHTML = allItems.map(item => `
+          <div class="attention-item">
+            <div class="attention-item-left">
+              <span class="attention-order-no">${item.no}</span>
+              <span class="attention-gate">${item.gate}</span>
+            </div>
+            <div class="attention-item-right">
+              <span class="status-tag ${item.type}">${item.type === 'danger' ? '在途超时' : '到达超时'}</span>
+              <span class="timeout-duration tabular-nums">${item.time}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function switchTab(tabName) {
+        const data = tabData[tabName];
+        tabBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        totalCount.textContent = data.total;
+        okCount.textContent = data.ok.count;
+        okPct.textContent = data.ok.pct;
+        okBar.style.width = data.ok.barPct + '%';
+        warnCount.textContent = data.warn.count;
+        warnPct.textContent = data.warn.pct;
+        warnBar.style.width = data.warn.barPct + '%';
+        dangerCount.textContent = data.danger.count;
+        dangerPct.textContent = data.danger.pct;
+        dangerBar.style.width = data.danger.barPct + '%';
+        ballPercent.textContent = data.percent;
+        ballPercent.style.color = data.primaryColor;
+        updateWaterBallWaves(data);
+        legendOkValue.textContent = data.ok.count + ' 单';
+        legendUnclosedValue.textContent = data.unclosed + ' 单';
+        if (data.color === 'purple') {
+          legendOkDot.style.background = data.primaryColor;
+        } else {
+          legendOkDot.style.background = '';
+        }
+        renderWideList(data);
+        attentionPanelMore.textContent = '全部 ' + data.unclosed + ' 条 →';
+        sqDangerCount.textContent = data.danger.count + ' 单';
+        sqWarnCount.textContent = data.warn.count + ' 单';
+        renderListItems(sqDangerList, data.dangerList, false);
+        renderListItems(sqWarnList, data.warnList, false);
+      }
+
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchTab(btn.dataset.tab);
+        });
+      });
+    </script>
+</body>
+</html>
