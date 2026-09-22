@@ -273,3 +273,13 @@
 - 结论：新原型只写 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`），不是交付物。唯一开工闸门是 HANDOFF 的 `status: approved`（只有用户能改这个字段）。实现 Agent 按 HANDOFF 改主文件，数据走 `buildKpiProps` / `computeStats()`。`kpi-card-redesign/` 作已交付样板留在原处。Issue 标签与 `grok -p` 触发以后再论，不作开工前提。
 - 禁止：设计阶段改主 HTML / `CONFIG` / 口径函数；未 approved 就改对应卡片；在仓库根或 Qoder 目录另开原型树；把原型演示数字写进 `computeStats`；用 Issue 标签替代 HANDOFF 状态。
 - 现行文档：AGENT 角色节；docs/prototypes/README.md；本条
+
+### D-25  新布局推荐 Issue + design/feat 分支 + PR；标签不替代 HANDOFF
+
+- 状态：已采纳
+- 类型：流程
+- 日期 / 版本：2026-09-22
+- 背景：D-24 把开工闸定在 HANDOFF `approved`。用户希望新布局走 Issue → Trae 分支 → 审核 → `ready-for-build` → Grok PR → 合并关单，但不要让标签成为第二套法律。
+- 结论：新布局 / 改主文件推荐：Issue（可选 `design/trae`）→ `design/<slug>` 只交原型 PR → 用户改 HANDOFF 为 `approved` 并合并 → 可选打 `ready-for-build` → Grok 从 `main` 开 `feat/<slug>` 提 PR（开工可把 HANDOFF 改 `implementing`）→ `file://` 验收后合并，HANDOFF 改 `shipped`，关 Issue。**唯一开工闸门仍是 `status: approved`。** 没开 Issue、没打标签不算违禁。改一句文案可直推 `main`。禁止提 `.trae-html-share-packages/` 与 `.uploads/`。
+- 禁止：用标签替代 HANDOFF；没有 `approved` 仍改主文件；把没开 Issue 当硬禁令；Actions 被标签自动开工。
+- 现行文档：AGENT 「推荐卡片流程」；docs/prototypes/README.md；D-24
