@@ -527,9 +527,10 @@ body {
         padding: 20px 24px 20px 28px;
         flex: 1;
         min-height: 0;
+        align-items: stretch;
       }
 
-      /* 左栏 - 水球区（垂直居中，高度固定内容） */
+      /* 左栏 - 水球区（垂直居中） */
       .left-column {
         padding-right: 24px;
         border-right: 1px solid var(--fx-line);
@@ -537,6 +538,7 @@ body {
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        min-height: 0;
       }
 
       .large-water-ball-container {
@@ -602,13 +604,14 @@ body {
         font-variant-numeric: tabular-nums;
       }
 
-      /* 中栏 - 进度条指标区（垂直居中，高度固定内容） */
+      /* 中栏 - 进度条指标区（垂直居中） */
       .middle-column {
         padding: 0 24px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         border-right: 1px solid var(--fx-line);
+        min-height: 0;
       }
 
       .metrics-subtitle {
@@ -706,6 +709,7 @@ body {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        box-shadow: 0 2px 8px rgba(28, 45, 74, 0.04);
       }
 
       .attention-panel-header {
@@ -734,7 +738,7 @@ body {
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 8px 0;
+        padding: 12px 0;
         overflow-y: auto;
         overflow-x: hidden;
         min-height: 0;
