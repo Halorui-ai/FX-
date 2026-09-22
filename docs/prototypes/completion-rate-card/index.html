@@ -699,6 +699,7 @@ body {
         padding-left: 20px;
         display: flex;
         flex-direction: column;
+        min-height: 0;
       }
 
       .attention-panel {
@@ -1040,15 +1041,15 @@ body {
                     <!-- 波浪层1 -->
                     <g class="wave-group-1">
                       <path class="wave-path" fill="rgba(30, 166, 114, 0.25)"
-                            d="M0,72 Q15,66 30,72 T60,72 T90,72 T120,72 T150,72 T180,72 T210,72 T240,72 L240,120 L0,120 Z" ></path>
+                            d="M0,44 Q15,38 30,44 T60,44 T90,44 T120,44 T150,44 T180,44 T210,44 T240,44 L240,120 L0,120 Z" ></path>
                     </g>
                     <!-- 波浪层2 -->
                     <g class="wave-group-2">
                       <path class="wave-path" fill="rgba(30, 166, 114, 0.18)"
-                            d="M0,76 Q20,70 40,76 T80,76 T120,76 T160,76 T200,76 T240,76 L240,120 L0,120 Z" ></path>
+                            d="M0,48 Q20,42 40,48 T80,48 T120,48 T160,48 T200,48 T240,48 L240,120 L0,120 Z" ></path>
                     </g>
                     <!-- 主体填充 -->
-                    <rect class="wave-path" x="0" y="76" width="120" height="44" fill="rgba(30, 166, 114, 0.35)" ></rect>
+                    <rect class="wave-path" x="0" y="48" width="120" height="72" fill="rgba(30, 166, 114, 0.35)" ></rect>
                   </g>
                 </svg>
                 <div class="water-ball-center-text">
@@ -1127,15 +1128,15 @@ body {
                       <!-- 波浪层1 -->
                       <g class="wave-group-1">
                         <path class="wave-path" id="wave1-large" fill="rgba(30, 166, 114, 0.22)"
-                              d="M0,100 Q22.5,92 45,100 T90,100 T135,100 T180,100 T225,100 T270,100 T315,100 T360,100 L360,180 L0,180 Z" ></path>
+                              d="M0,67 Q22.5,59 45,67 T90,67 T135,67 T180,67 T225,67 T270,67 T315,67 T360,67 L360,180 L0,180 Z" ></path>
                       </g>
                       <!-- 波浪层2 -->
                       <g class="wave-group-2">
                         <path class="wave-path" id="wave2-large" fill="rgba(30, 166, 114, 0.16)"
-                              d="M0,105 Q30,97 60,105 T120,105 T180,105 T240,105 T300,105 T360,105 L360,180 L0,180 Z" ></path>
+                              d="M0,72 Q30,64 60,72 T120,72 T180,72 T240,72 T300,72 T360,72 L360,180 L0,180 Z" ></path>
                       </g>
                       <!-- 主体填充 -->
-                      <rect class="wave-path" id="wave-fill-large" x="0" y="105" width="180" height="75" fill="rgba(30, 166, 114, 0.3)" ></rect>
+                      <rect class="wave-path" id="wave-fill-large" x="0" y="72" width="180" height="108" fill="rgba(30, 166, 114, 0.3)" ></rect>
                     </g>
                   </svg>
                   <div class="large-water-ball-center-text">
@@ -1404,13 +1405,13 @@ body {
                     <g clip-path="url(#ball-clip-tall)">
                       <g class="wave-group-1">
                         <path class="wave-path" fill="rgba(30, 166, 114, 0.22)"
-                              d="M0,100 Q22.5,92 45,100 T90,100 T135,100 T180,100 T225,100 T270,100 T315,100 T360,100 L360,180 L0,180 Z"></path>
+                              d="M0,67 Q22.5,59 45,67 T90,67 T135,67 T180,67 T225,67 T270,67 T315,67 T360,67 L360,180 L0,180 Z"></path>
                       </g>
                       <g class="wave-group-2">
                         <path class="wave-path" fill="rgba(30, 166, 114, 0.16)"
-                              d="M0,105 Q30,97 60,105 T120,105 T180,105 T240,105 T300,105 T360,105 L360,180 L0,180 Z"></path>
+                              d="M0,72 Q30,64 60,72 T120,72 T180,72 T240,72 T300,72 T360,72 L360,180 L0,180 Z"></path>
                       </g>
-                      <rect class="wave-path" x="0" y="105" width="180" height="75" fill="rgba(30, 166, 114, 0.3)"></rect>
+                      <rect class="wave-path" x="0" y="72" width="180" height="108" fill="rgba(30, 166, 114, 0.3)"></rect>
                     </g>
                   </svg>
                   <div class="large-water-ball-center-text">
@@ -1616,9 +1617,9 @@ body {
           unclosed: 76,
           color: 'green',
           primaryColor: '#1ea672',
-          wave1Y: 100,
-          wave2Y: 105,
-          fillY: 105,
+          wave1Y: 67,
+          wave2Y: 72,
+          fillY: 72,
           // 待关注列表数据
           dangerList: [
             { no: 'FX20240315001', gate: '东二门岗', time: '超 2h 35m' },
@@ -1640,9 +1641,9 @@ body {
           unclosed: 32,
           color: 'purple',
           primaryColor: '#7a63f5',
-          wave1Y: 135,
-          wave2Y: 140,
-          fillY: 140,
+          wave1Y: 93,
+          wave2Y: 98,
+          fillY: 98,
           dangerList: [
             { no: 'TB20240315011', gate: '特保通道A', time: '超 3h 10m' },
             { no: 'TB20240315013', gate: '特保通道C', time: '超 1h 55m' },
@@ -1663,9 +1664,9 @@ body {
           unclosed: 44,
           color: 'green',
           primaryColor: '#1ea672',
-          wave1Y: 92,
-          wave2Y: 97,
-          fillY: 97,
+          wave1Y: 60,
+          wave2Y: 65,
+          fillY: 65,
           dangerList: [
             { no: 'FX20240315021', gate: '西二门岗', time: '超 2h 05m' },
             { no: 'FX20240315023', gate: '南一门岗', time: '超 58m' },
