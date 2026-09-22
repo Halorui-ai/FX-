@@ -4,14 +4,14 @@
 先打开原型确认视觉与交互，再按本说明书改主文件。样板见 `kpi-card-redesign/HANDOFF.md`。
 
 ```yaml
-status: draft          # draft | approved | implementing | shipped
+status: implementing   # draft | approved | implementing | shipped
 owner_design: Trae
 owner_impl: Grok Build
-approved_by:
-approved_at:           # YYYY-MM-DD
-freeze:                # 审批后不得改的视觉：水球形态 / 语义色分配 / 三栏布局骨架
-must_not_change:       # 结案率口径（CONTEXT.md §3）、特保 WF9897、小卡 S 形态不改
-impl_touch:            # kpi_rate 的 M/L 模板、buildKpiProps 字段扩展
+approved_by: 用户
+approved_at: 2026-09-23
+freeze: 水球形态 / 语义色分配（绿主色、红在途超时、橙到达超时、紫特保）/ 三栏布局骨架 / M 左右分栏
+must_not_change: 结案率口径（CONTEXT.md §3）、特保 WF9897、小卡 S 形态不改
+impl_touch: kpi_rate 的 M/L 模板、buildKpiProps 字段扩展（特保/非特保分维度、待关注列表）
 ```
 
 > 实现 Agent：`status` 不是 `approved` （或 `implementing`）就不要改主文件里对应卡片。
