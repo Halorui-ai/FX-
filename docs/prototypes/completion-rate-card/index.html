@@ -625,6 +625,15 @@ body {
         gap: 12px;
       }
 
+      /* 中栏底部说明（与中卡 metrics-footer 一致） */
+      .middle-column .metrics-footer {
+        font-size: var(--fx-text-xs);
+        color: var(--fx-faint);
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--fx-line);
+      }
+
       .progress-metric-row {
         display: flex;
         flex-direction: column;
@@ -1140,7 +1149,6 @@ body {
 
               <!-- 中栏 - 进度条指标区 -->
               <div class="middle-column">
-                <div class="metrics-subtitle tabular-nums">纳入统计 <span id="total-count">202</span> 单 · 在途未超不计入</div>
                 <div class="progress-metrics">
                   <!-- 正常结案 -->
                   <div class="progress-metric-row">
@@ -1191,6 +1199,7 @@ body {
                     </div>
                   </div>
                 </div>
+                <div class="metrics-footer tabular-nums">纳入统计 <span id="total-count">202</span> 单 · 在途未超不计入</div>
               </div>
 
               <!-- 右栏 - 待关注单据列表（宽屏用） -->
@@ -1413,7 +1422,6 @@ body {
               </div>
 
               <div class="middle-column">
-                <div class="metrics-subtitle tabular-nums">纳入统计 202 单 · 在途未超不计入</div>
                 <div class="progress-metrics">
                   <div class="progress-metric-row">
                     <div class="progress-metric-header">
@@ -1461,6 +1469,7 @@ body {
                     </div>
                   </div>
                 </div>
+                <div class="metrics-footer tabular-nums">纳入统计 202 单 · 在途未超不计入</div>
               </div>
 
               <div class="right-column">
