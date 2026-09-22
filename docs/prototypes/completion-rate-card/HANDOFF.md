@@ -4,14 +4,14 @@
 先打开原型确认视觉与交互，再按本说明书改主文件。样板见 `kpi-card-redesign/HANDOFF.md`。
 
 ```yaml
-status: implementing   # draft | approved | implementing | shipped
+status: approved       # draft | approved | implementing | shipped
 owner_design: Trae
 owner_impl: Grok Build
 approved_by: 用户
 approved_at: 2026-09-23
 freeze: 水球形态 / 语义色分配（绿主色、红在途超时、橙到达超时、紫特保）/ 三栏布局骨架 / M 左右分栏
 must_not_change: 结案率口径（CONTEXT.md §3）、特保 WF9897、小卡 S 形态不改
-impl_touch: kpi_rate 的 M/L 模板、buildKpiProps 字段扩展（特保/非特保分维度、待关注列表）
+impl_touch: kpi_rate 的 M/L 模板、computeStats 字段扩展（特保/非特保分维度、待关注列表）、buildKpiProps
 ```
 
 > 实现 Agent：`status` 不是 `approved` （或 `implementing`）就不要改主文件里对应卡片。
@@ -98,25 +98,34 @@ impl_touch: kpi_rate 的 M/L 模板、buildKpiProps 字段扩展（特保/非特
 
 原型里的数字只是演示。实现时写对应的 `computeStats()` / `buildKpiProps` 字段名，禁止写死。
 
-| UI 文案 | 字段 | 口径级别 | 说明 |
-|---|---|---|---|
-| 61.4%（主数字） | `closeRate` | 单 | = closedOrders / scopedOrders |
-| 纳入统计 N 单 | `scopedOrders` | 单 | 分母 = 正常结案 + 到达超时 + 在途超时 |
-| 正常结案 N 单 | `closedOrders` | 单 | 分子 = 已到达 && 未放行超时 |
-| 到达超时 N 单 | `arrivedOvertime` | 单 | 已到达 && 放行超时 |
-| 在途超时 N 单 | `inTransitOvertime` | 单 | 未到达 && 放行超时 |
-| 在途未超 N 单 | `inTransitNormal` | 单 | 不计入分母，仅作说明 |
-| 特保结案率 | `specialCloseRate` | 单 | Tab=特保时显示 |
-| 非特保结案率 | `normalCloseRate` | 单 | Tab=非特保时显示 |
-| 待关注单据列表 | `attentionOrders` | 单 | 在途超时 + 到达超时，按时长降序取前 N 条 |
+**已存在于 computeStats 的字段**（直接用）：
 
-> 口径定义见 CONTEXT.md §3「放行结案完成率」。
+| UI 文案 | 字段 | 说明 |
+|---|---|---|
+| 61.4%（主数字） | `closeRate` | = closedOrders / scopedOrders |
+| 纳入统计 N 单 | `scopedOrders` | 分母 = closedOrders + arrivedTimeout + transitTimeoutOrders.length |
+| 正常结案 N 单 | `closedOrders` | 已到达 && 未放行超时 |
+| 到达超时 N 单 | `arrivedTimeout` | 已到达 && 放行超时 |
+| 在途超时 N 单 | `transitTimeoutOrders.length` | 未到达 && 放行超时；`transitTimeoutOrders` 是数组 |
+| 在途未超 N 单（说明） | `inTransitNotTimeout` | 不计入分母 |
+
+**需在 computeStats 新增的字段**：
+
+| UI 文案 | 字段 | 说明 |
+|---|---|---|
+| 特保结案率 | `specialCloseRate` | Tab=特保时主数字；按 `o.特保` 过滤后重算 closed/scoped |
+| 非特保结案率 | `normalCloseRate` | Tab=非特保时主数字 |
+| 特保三指标 | `specialClosedOrders` / `specialArrivedTimeout` / `specialTransitTimeout` / `specialScopedOrders` | 同口径，仅特保单 |
+| 非特保三指标 | `normalClosedOrders` / `normalArrivedTimeout` / `normalTransitTimeout` / `normalScopedOrders` | 同口径，仅非特保单 |
+| 待关注单据列表 | `attentionOrders` | 数组，元素含 `{ 放行单号, 流出门岗, 流入门岗, 状态类型(在途超时/到达超时), 超时时长(分钟) }`；在途超时 + 到达超时合并，按时长降序 |
+
+> 口径定义见 CONTEXT.md §3「放行结案完成率」。特保识别只认物品分类以 `WF9897` 开头。
 
 ---
 
 ## 5. 交互
 
-- **Tab 切换**（仅大卡）：总览 / 特保 / 非特保；切换时中栏水球百分比、颜色，左栏进度条数值同步变化；过渡 300ms
+- **Tab 切换**（仅大卡）：总览 / 特保 / 非特保；切换时**左栏**水球百分比、颜色，**中栏**进度条数值同步变化；过渡 300ms
 - **点击下钻**：卡片主体 / "查看明细 →" / "全部 N 条 →" / "点击查看完整明细 →" 均打开现有二级详情页（`detailKey: rate`）
 - **拖拽缩放**：保持现有 gridstack 机制，尺寸跨越 S/M/L 断点时切换模板
 - **水球动画**：波浪有轻微上下浮动效果（静态也可，优先保证性能）
