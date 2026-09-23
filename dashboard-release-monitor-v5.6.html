@@ -456,8 +456,8 @@ body.editing .cardRemove{display:flex}
 .rate-ball-label{font-size:10px;color:var(--muted);line-height:1.2;margin-bottom:2px;white-space:nowrap}
 .rate-ball-val{font-size:22px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.1;font-family:"Segoe UI","Inter",monospace}
 .rate-m-metrics{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
-.rate-m-row{display:flex;align-items:center;gap:8px}
-.rate-m-row .metric-label{flex:1;font-size:13px;color:var(--muted)}
+.rate-m-row{display:flex;align-items:center;gap:12px;justify-content:flex-start}
+.rate-m-row .metric-label{flex:none;font-size:13px;color:var(--muted);white-space:nowrap}
 .rate-m-row .metric-val{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace;line-height:1.2}
 .rate-m-row .metric-val.ok{color:var(--ok)} .rate-m-row .metric-val.warn{color:var(--warn)} .rate-m-row .metric-val.danger{color:var(--danger)}
 .rate-m-row .metric-val small{font-size:11px;font-weight:400;color:var(--faint);margin-left:2px}
@@ -506,10 +506,9 @@ body.editing .cardRemove{display:flex}
 .rate-dur{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .rate-attn-foot{flex:none;padding:10px 0 2px;text-align:center;font-size:12px;color:var(--brand);font-weight:500;cursor:pointer}
 .rate-attn-foot:hover{text-decoration:underline}
-.cardSlot.kpi-rate-large .cardHead{gap:10px;margin-bottom:12px}
+.cardSlot.kpi-rate-large .cardHead{position:relative;gap:10px;margin-bottom:16px;padding-top:8px}
 .cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:36%}
 .kpi-seg.rate-seg{margin-left:auto;margin-right:auto;position:absolute;left:50%;transform:translateX(-50%)}
-.cardSlot.kpi-rate-large .cardHead{position:relative}
 .kpi-seg.rate-seg button.on{color:var(--ok)}
 .cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on{color:var(--cat-purple)}
 .cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on{color:var(--brand)}
