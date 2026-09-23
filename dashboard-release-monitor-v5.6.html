@@ -21,6 +21,8 @@
   --warn-soft:rgba(245,154,38,.12); --danger-soft:rgba(240,77,62,.12); --ok-soft:rgba(30,166,114,.12);
   --card-face:rgba(255,255,255,.74); --panel:rgba(255,255,255,.56); --track:rgba(31,41,55,.08);
   --muted:#748093; --faint:#9aa5b5;
+  --sb-size:6px; --sb-radius:999px;
+  --sb-thumb:rgba(47,124,246,.38); --sb-thumb-hover:rgba(47,124,246,.62);
 }
 /* 默认主题深色模式变量（外部主题各自定义深色变量，此处仅默认主题用） */
 [data-mode="dark"]{
@@ -34,6 +36,7 @@
   --warn-soft:rgba(210,153,34,.16); --danger-soft:rgba(248,81,73,.16); --ok-soft:rgba(63,185,80,.16);
   --card-face:rgba(23,32,50,.66); --panel:rgba(255,255,255,.05); --track:rgba(220,230,245,.12);
   --muted:#9aa8bd; --faint:#6d7b90;
+  --sb-thumb:rgba(91,155,255,.45); --sb-thumb-hover:rgba(91,155,255,.72);
 }
 [data-mode="dark"] html{background:var(--bg)}
 [data-mode="dark"] body{background:none;color:var(--txt)}
@@ -466,7 +469,7 @@ body.editing .cardRemove{display:flex}
 .rate-m-bar .footer-note{font-size:12px;color:var(--muted)}
 .rate-m-bar .footer-link{font-size:12px;color:var(--brand);font-weight:500;cursor:pointer;white-space:nowrap}
 .rate-m-bar .footer-link:hover{text-decoration:underline}
-.rate-l{display:grid;grid-template-columns:minmax(0,180px) minmax(0,240px) minmax(150px,1fr);grid-template-rows:minmax(0,1fr);gap:16px;align-items:stretch;height:100%;min-height:0;margin-top:2px;overflow:hidden}
+.rate-l{display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.05fr) minmax(0,1.2fr);grid-template-rows:minmax(0,1fr);gap:16px;align-items:stretch;height:100%;min-height:0;margin-top:2px;overflow:hidden}
 .rate-l-left{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:0;align-self:stretch;overflow:hidden;container-type:size}.rate-l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:0;align-self:stretch;overflow:hidden}
 .rate-l-mid{border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 12px}
 .rate-l-ball{position:relative;flex:0 1 auto;box-sizing:border-box;width:min(160px,100%,max(72px,calc(100cqh - 68px)));height:min(160px,max(72px,calc(100cqh - 68px)));max-width:100%;aspect-ratio:1;overflow:visible}
@@ -508,9 +511,9 @@ body.editing .cardRemove{display:flex}
 .rate-attn-foot:hover{text-decoration:underline}
 .cardSlot.kpi-rate-large{overflow:hidden}
 .cardSlot.kpi-rate-large .cardBody{overflow:hidden;min-height:0}
-.cardSlot.kpi-rate-large .cardHead{position:relative;gap:10px;margin-bottom:12px;padding-top:8px}
-.cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:36%}
-.kpi-seg.rate-seg{margin-left:auto;margin-right:auto;position:absolute;left:50%;transform:translateX(-50%)}
+.cardSlot.kpi-rate-large .cardHead{gap:10px;margin-bottom:12px}
+.cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:42%}
+.kpi-seg.rate-seg{position:static;left:auto;transform:none;margin-left:auto;margin-right:0}
 .kpi-seg.rate-seg button.on{color:var(--ok)}
 .cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on{color:var(--cat-purple)}
 .cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on{color:var(--brand)}
@@ -550,7 +553,7 @@ body.editing .cardRemove{display:flex}
   font-size:13px;font-weight:500;color:var(--danger);background:0;border:0;width:100%;cursor:pointer;font-family:inherit}
 .m-cta .arr{transition:transform .15s}
 .m-cta:hover .arr{transform:translateX(3px)}
-.l-body{margin-top:4px;display:grid;grid-template-columns:minmax(0,200px) minmax(0,250px) minmax(168px,1fr);grid-template-rows:minmax(0,1fr);gap:16px;align-items:stretch;height:100%;min-height:0;overflow:hidden}
+.l-body{margin-top:4px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr) minmax(0,1.2fr);grid-template-rows:minmax(0,1fr);gap:16px;align-items:stretch;height:100%;min-height:0;overflow:hidden}
 .l-body>section:first-child{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;container-type:size}
 .l-hero{padding-bottom:16px;flex:none}
 .l-hero .hero-num{font-size:clamp(28px,22cqh,52px)}
@@ -562,16 +565,22 @@ body.editing .cardRemove{display:flex}
 .ltrack i{display:block;height:100%;border-radius:999px;transition:width .4s ease}
 .l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
   border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 20px;min-width:0;min-height:0;overflow:hidden;container-type:size}
-.donut{width:min(228px,100%);height:min(228px,max(72px,calc(100cqh - 52px)));max-width:100%;flex:0 1 auto;overflow:visible}
+.donut{width:100%;height:min(100%,calc(100cqh - 44px));max-width:100%;flex:1 1 auto;min-height:0;overflow:visible}
 .donut svg{overflow:visible;display:block;width:100%;height:100%}
 .donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
-.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.legend{display:flex;flex-wrap:nowrap;gap:8px;justify-content:center}
+.l-mid .lg-pill{white-space:nowrap;padding:3px 10px}
 .lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--txt2);
   background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
 .lg-pill b{color:var(--txt);font-family:"Segoe UI",monospace}
 .l-panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 14px 8px;display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden}
 .lp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex:none;min-width:0}
-.lp-scroll{flex:1;min-height:0;overflow:auto}
+.lp-scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent}
+.lp-scroll::-webkit-scrollbar,.rate-attn-list::-webkit-scrollbar{width:var(--sb-size);height:var(--sb-size)}
+.lp-scroll::-webkit-scrollbar-track,.rate-attn-list::-webkit-scrollbar-track{background:transparent}
+.lp-scroll::-webkit-scrollbar-thumb,.rate-attn-list::-webkit-scrollbar-thumb{background:var(--sb-thumb);border-radius:var(--sb-radius)}
+.lp-scroll::-webkit-scrollbar-thumb:hover,.rate-attn-list::-webkit-scrollbar-thumb:hover{background:var(--sb-thumb-hover)}
+.rate-attn-list{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent}
 .lp-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600}
 .lp-link{font-size:12px;color:var(--brand);font-weight:500;white-space:nowrap;cursor:pointer}
 .lp-link:hover{text-decoration:underline}
@@ -597,8 +606,8 @@ body.editing .cardRemove{display:flex}
 .cardSlot.kpi-large .l-body{flex:1;min-height:0;height:auto}
 .cardSlot.kpi-cozy{container-type:size}
 .cardSlot.kpi-cozy .m-main-col{flex:1;min-height:0;height:auto;display:flex;flex-direction:column;justify-content:stretch}
-.cardSlot.kpi-cozy .m-main{height:auto;flex:1;min-height:0;align-items:center;container-type:size}
-.cardSlot.kpi-cozy .m-copy{flex:1;min-width:0}
+.cardSlot.kpi-cozy .m-main{height:auto;flex:1;min-height:0;align-items:center;justify-content:center;gap:clamp(28px,4cqw,48px);container-type:size}
+.cardSlot.kpi-cozy .m-copy{flex:0 1 auto;min-width:0}
 .cardSlot.kpi-cozy .hero-num{font-size:clamp(28px,34cqh,56px)}
 .cardSlot.kpi-cozy .m-visual{flex:0 1 auto;width:auto;height:100%;max-width:48%;min-width:0;display:flex;align-items:center;justify-content:center}
 .cardSlot.kpi-cozy .m-visual svg{width:auto;height:min(100%,88cqh);max-width:100%;aspect-ratio:1}
@@ -615,10 +624,10 @@ body.editing .cardRemove{display:flex}
 .cardSlot.kpi-rate-cozy .rate-ball svg{width:100%;height:100%}
 .cardSlot.kpi-rate-cozy .rate-ball-val{font-size:clamp(16px,24cqh,34px)}
 .cardSlot.kpi-rate-cozy .rate-m-metrics{gap:clamp(8px,8cqh,28px);justify-content:center;height:100%}
-.kpi-tier-hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:6;pointer-events:none;
-  max-width:calc(100% - 24px);padding:4px 12px;border-radius:999px;background:rgba(20,28,44,.82);color:#fff;
-  font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cardSlot:has(> .kpi-tier-hint) .cardHead{margin-top:28px}
+.kpi-tier-ghost{position:absolute;z-index:1;box-sizing:border-box;pointer-events:none;border-radius:16px;
+  border:2px dashed #2f7cf6;background:rgba(47,124,246,.10)}
+.kpi-tier-ghost-label{position:absolute;right:10px;bottom:8px;padding:3px 10px;border-radius:999px;
+  background:#2f7cf6;color:#fff;font-size:12px;line-height:18px;white-space:nowrap}
 .cardSlot.kpi-large .cardHead{gap:10px;margin-bottom:16px}
 .cardSlot.kpi-large .cardTitle{flex:none;max-width:40%}
 .kpi-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);margin-left:auto;flex:none}
@@ -671,7 +680,7 @@ body.editing .cardRemove{display:flex}
 .grid-stack-item{transition:left .3s,top .3s,width .3s,height .3s}
 /* 拖拽占位符 */
 .grid-stack-placeholder{background:rgba(0,113,227,0.08)!important;border:2px dashed rgba(0,113,227,0.35)!important;border-radius:14px!important}
-/* 缩放手柄（液态玻璃风） */
+/* 缩放手柄：内收到卡片圆角上的角标（与 margin 8px、圆角 16px 对齐） */
 .grid-stack-item>.ui-resizable-ne{cursor:ne-resize}
 .grid-stack-item>.ui-resizable-nw{cursor:nw-resize}
 .grid-stack-item>.ui-resizable-se{cursor:se-resize}
@@ -680,44 +689,56 @@ body.editing .cardRemove{display:flex}
 .grid-stack-item>.ui-resizable-handle{transition:opacity .2s}
 .grid-stack-item:not(:hover)>.ui-resizable-handle{opacity:0}
 .grid-stack-item:hover>.ui-resizable-handle{opacity:1}
-/* 清除 gridstack 默认灰色箭头底图与旋转，改为液态玻璃风圆角手柄 */
 .grid-stack-item>.ui-resizable-ne,.grid-stack-item>.ui-resizable-nw,
 .grid-stack-item>.ui-resizable-se,.grid-stack-item>.ui-resizable-sw{
-  background-image:none;transform:none;
-  width:18px;height:18px;
-  background:rgba(255,255,255,0.55);
-  border:1px solid rgba(0,113,227,0.25);
-  border-radius:7px;
-  box-shadow:0 1px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7);
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  background:transparent!important;background-image:none!important;transform:none!important;
+  border:0;box-shadow:none;width:16px;height:16px;margin:0;
 }
-/* 手柄内角标：与整体 UI 一致的单线圆角箭头（accent 蓝） */
-.grid-stack-item>.ui-resizable-se::after{content:"";position:absolute;right:4px;bottom:4px;width:9px;height:9px;
-  border-right:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 3px 0}
-.grid-stack-item>.ui-resizable-nw::after{content:"";position:absolute;left:4px;top:4px;width:9px;height:9px;
-  border-left:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:3px 0 0 0}
-.grid-stack-item>.ui-resizable-ne::after{content:"";position:absolute;right:4px;top:4px;width:9px;height:9px;
-  border-right:1.8px solid rgba(0,113,227,0.75);border-top:1.8px solid rgba(0,113,227,0.75);border-radius:0 3px 0 0}
-.grid-stack-item>.ui-resizable-sw::after{content:"";position:absolute;left:4px;bottom:4px;width:9px;height:9px;
-  border-left:1.8px solid rgba(0,113,227,0.75);border-bottom:1.8px solid rgba(0,113,227,0.75);border-radius:0 0 0 3px}
-/* 手柄 hover 高亮 */
-.grid-stack-item>.ui-resizable-handle:hover{background:rgba(0,113,227,0.14)!important;border-color:rgba(0,113,227,0.55)!important}
-.grid-stack-item>.ui-resizable-handle:hover::after{border-color:rgba(0,113,227,0.95)!important}
+.grid-stack-item>.ui-resizable-nw{top:8px;left:8px}
+.grid-stack-item>.ui-resizable-ne{top:8px;right:8px}
+.grid-stack-item>.ui-resizable-se{bottom:8px;right:8px}
+.grid-stack-item>.ui-resizable-sw{bottom:8px;left:8px}
+.grid-stack-item>.ui-resizable-se::after,.grid-stack-item>.ui-resizable-nw::after,
+.grid-stack-item>.ui-resizable-ne::after,.grid-stack-item>.ui-resizable-sw::after{
+  content:"";position:absolute;inset:0;background:transparent;box-shadow:none;border:2px solid transparent;
+}
+.grid-stack-item>.ui-resizable-se::after{border-right-color:var(--accent);border-bottom-color:var(--accent);border-radius:0 0 16px 0}
+.grid-stack-item>.ui-resizable-nw::after{border-left-color:var(--accent);border-top-color:var(--accent);border-radius:16px 0 0 0}
+.grid-stack-item>.ui-resizable-ne::after{border-right-color:var(--accent);border-top-color:var(--accent);border-radius:0 16px 0 0}
+.grid-stack-item>.ui-resizable-sw::after{border-left-color:var(--accent);border-bottom-color:var(--accent);border-radius:0 0 0 16px}
+.grid-stack-item>.ui-resizable-handle:hover::after{border-width:2.5px}
 /* 拖拽中的卡片提升层级 + 阴影增强 */
 .grid-stack-item.ui-draggable-dragging{z-index:100;box-shadow:0 16px 48px rgba(0,0,0,0.15)}
 .grid-stack-item.ui-draggable-dragging .cardSlot{box-shadow:0 16px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.45)}
 /* 低性能模式：gridstack 降级 */
 body.perf-lite .grid-stack-item{transition:none!important}
 body.perf-lite .grid-stack-item>.ui-resizable-handle{opacity:1}
-body.perf-lite .grid-stack-item>.ui-resizable-ne,
-body.perf-lite .grid-stack-item>.ui-resizable-nw,
-body.perf-lite .grid-stack-item>.ui-resizable-se,
-body.perf-lite .grid-stack-item>.ui-resizable-sw{
-  background:rgba(0,0,0,0.06);border-color:rgba(0,0,0,0.18);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 body.perf-lite .grid-stack-item>.ui-resizable-ne::after,
 body.perf-lite .grid-stack-item>.ui-resizable-nw::after,
 body.perf-lite .grid-stack-item>.ui-resizable-se::after,
-body.perf-lite .grid-stack-item>.ui-resizable-sw::after{border-color:rgba(0,0,0,0.45)}
+body.perf-lite .grid-stack-item>.ui-resizable-sw::after{box-shadow:none;background:transparent}
+[data-theme="brutal"]{--sb-size:8px;--sb-radius:0;--sb-thumb:#111;--sb-thumb-hover:var(--accent)}
+[data-theme="brutal"][data-mode="dark"]{--sb-thumb:#f4f1e8;--sb-thumb-hover:var(--accent)}
+[data-theme="brutal"] .grid-stack-item>.ui-resizable-se::after,
+[data-theme="brutal"] .grid-stack-item>.ui-resizable-nw::after,
+[data-theme="brutal"] .grid-stack-item>.ui-resizable-ne::after,
+[data-theme="brutal"] .grid-stack-item>.ui-resizable-sw::after{border-radius:0}
+[data-theme="terminal"]{--sb-size:8px;--sb-radius:0;--sb-thumb:var(--accent);--sb-thumb-hover:var(--ok)}
+[data-theme="terminal"] .grid-stack-item>.ui-resizable-se::after,
+[data-theme="terminal"] .grid-stack-item>.ui-resizable-nw::after,
+[data-theme="terminal"] .grid-stack-item>.ui-resizable-ne::after,
+[data-theme="terminal"] .grid-stack-item>.ui-resizable-sw::after{border-radius:0}
+[data-theme="swiss"]{--sb-size:4px;--sb-radius:0;--sb-thumb:var(--txt);--sb-thumb-hover:var(--accent)}
+[data-theme="swiss"] .grid-stack-item>.ui-resizable-se::after,
+[data-theme="swiss"] .grid-stack-item>.ui-resizable-nw::after,
+[data-theme="swiss"] .grid-stack-item>.ui-resizable-ne::after,
+[data-theme="swiss"] .grid-stack-item>.ui-resizable-sw::after{border-radius:0}
+[data-theme="material"]{--sb-size:6px;--sb-radius:4px;--sb-thumb:color-mix(in srgb,var(--accent) 40%,transparent);--sb-thumb-hover:var(--accent)}
+[data-theme="fluent"]{--sb-size:6px;--sb-radius:999px;--sb-thumb:color-mix(in srgb,var(--accent) 28%,transparent);--sb-thumb-hover:color-mix(in srgb,var(--accent) 50%,transparent)}
+[data-theme="neumorph"]{--sb-size:8px;--sb-radius:999px;--sb-thumb:color-mix(in srgb,var(--txt) 22%,transparent);--sb-thumb-hover:color-mix(in srgb,var(--accent) 45%,transparent)}
+[data-theme="clay"]{--sb-size:8px;--sb-radius:999px;--sb-thumb:color-mix(in srgb,var(--accent) 45%,white);--sb-thumb-hover:var(--accent)}
+[data-theme="aurora"]{--sb-size:6px;--sb-radius:999px;--sb-thumb:color-mix(in srgb,var(--accent) 55%,transparent);--sb-thumb-hover:var(--accent)}
+[data-theme="glass"]{--sb-size:6px;--sb-radius:999px;--sb-thumb:rgba(0,113,227,.35);--sb-thumb-hover:rgba(0,113,227,.6)}
 
 /* 低性能模式：卡片槽降级 */
 body.perf-lite .cardSlot{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(255,255,255,0.82)!important;transition:none!important}
@@ -1852,43 +1873,44 @@ function nearestKpiTier(w, h, id, dir) {
   }
   return best;
 }
-function kpiTierStepPhrase(step) {
-  const parts = [];
-  if (step.dw > 0) parts.push("再宽 " + step.dw + " 列");
-  if (step.dw < 0) parts.push("再窄 " + (-step.dw) + " 列");
-  if (step.dh > 0) parts.push("再高 " + step.dh + " 行");
-  if (step.dh < 0) parts.push("再矮 " + (-step.dh) + " 行");
-  return parts.join("、");
-}
-function kpiTierHintText(w, h, id) {
-  const names = { compact: "小卡", cozy: "中卡", expanded: "大卡" };
-  const now = kpiDensity(w, h, id);
-  const bits = [names[now]];
-  const up = nearestKpiTier(w, h, id, 1);
-  const down = nearestKpiTier(w, h, id, -1);
-  if (up) bits.push(kpiTierStepPhrase(up) + " → " + names[up.d]);
-  if (down) bits.push(kpiTierStepPhrase(down) + " → " + names[down.d]);
-  return bits.join("  ·  ");
-}
-let kpiTierHintTimer = 0;
-function showKpiTierHint(el) {
-  const node = (el && el.el) ? el.el : el;
-  if (!node || !node.querySelector) return;
-  const slot = node.querySelector("[data-card]");
-  if (!slot) return;
-  const def = CARD_DEFS[slot.dataset.card];
-  if (!def || !def.kpiAdaptive) return;
-  const size = kpiCardSize(def.id);
-  let hint = slot.querySelector(":scope > .kpi-tier-hint");
-  if (!hint) {
-    hint = document.createElement("div");
-    hint.className = "kpi-tier-hint";
-    slot.appendChild(hint);
+const KPI_TIER_NAME = { compact: "小卡", cozy: "中卡", expanded: "大卡" };
+function ensureKpiTierGhost() {
+  const host = document.getElementById("cardGrid");
+  if (!host) return null;
+  let ghost = host.querySelector(":scope > .kpi-tier-ghost");
+  if (!ghost) {
+    ghost = document.createElement("div");
+    ghost.className = "kpi-tier-ghost";
+    ghost.hidden = true;
+    ghost.innerHTML = '<span class="kpi-tier-ghost-label"></span>';
+    host.appendChild(ghost);
   }
-  hint.textContent = kpiTierHintText(size.w, size.h, def.id);
+  return ghost;
 }
-function clearKpiTierHints() {
-  document.querySelectorAll(".kpi-tier-hint").forEach(el => el.remove());
+function hideKpiTierGhost() {
+  const ghost = document.querySelector("#cardGrid > .kpi-tier-ghost");
+  if (ghost) ghost.hidden = true;
+}
+function showKpiTierGhost(el) {
+  const node = (el && el.el) ? el.el : el;
+  const slot = node && node.querySelector && node.querySelector("[data-card]");
+  const ghost = ensureKpiTierGhost();
+  if (!ghost || !slot) return;
+  const def = CARD_DEFS[slot.dataset.card];
+  const item = slot.closest(".grid-stack-item");
+  const gs = item && item.gridstackNode;
+  if (!def || !def.kpiAdaptive || !gs) { ghost.hidden = true; return; }
+  const up = nearestKpiTier(gs.w, gs.h, def.id, 1);
+  if (!up || (up.dw <= 0 && up.dh <= 0)) { ghost.hidden = true; return; }
+  let gx = gs.x, gy = gs.y, gw = gs.w + up.dw, gh = gs.h + up.dh;
+  if (gx + gw > GRID_COLS) gx = Math.max(0, GRID_COLS - gw);
+  if (gy < 0) gy = 0;
+  ghost.style.left = (gx / GRID_COLS * 100) + "%";
+  ghost.style.width = (gw / GRID_COLS * 100) + "%";
+  ghost.style.top = (gy * GRID_CELL_H) + "px";
+  ghost.style.height = (gh * GRID_CELL_H) + "px";
+  ghost.querySelector(".kpi-tier-ghost-label").textContent = "拖到这里 → " + KPI_TIER_NAME[up.d];
+  ghost.hidden = false;
 }
 function kpiChipsHTML(chips) {
   if (!chips || !chips.length) return "";
@@ -3028,14 +3050,12 @@ function renderDashboard() {
   window.__dashGrid = grid;
   grid.on("resize", (ev, el) => {
     applyKpiDensityForItem(el);
-    showKpiTierHint(el);
+    showKpiTierGhost(el);
   });
   grid.on("resizestop", (ev, el) => {
     syncLayoutFromGrid();
     applyKpiDensityForItem(el);
-    showKpiTierHint(el);
-    clearTimeout(kpiTierHintTimer);
-    kpiTierHintTimer = setTimeout(clearKpiTierHints, 1200);
+    hideKpiTierGhost();
     resizeAllCardCharts();
   });
   grid.on("change dragstop", () => { syncLayoutFromGrid(); resizeAllCardCharts(); });
