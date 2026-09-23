@@ -283,3 +283,23 @@
 - 结论：新布局 / 改主文件推荐：Issue（可选 `design/trae`）→ `design/<slug>` 只交原型 PR → 用户改 HANDOFF 为 `approved` 并合并 → 可选打 `ready-for-build` → Grok 从 `main` 开 `feat/<slug>` 提 PR（开工可把 HANDOFF 改 `implementing`）→ `file://` 验收后合并，HANDOFF 改 `shipped`，关 Issue。**唯一开工闸门仍是 `status: approved`。** 没开 Issue、没打标签不算违禁。改一句文案可直推 `main`。禁止提 `.trae-html-share-packages/` 与 `.uploads/`。
 - 禁止：用标签替代 HANDOFF；没有 `approved` 仍改主文件；把没开 Issue 当硬禁令；Actions 被标签自动开工。
 - 现行文档：AGENT 「推荐卡片流程」；docs/prototypes/README.md；D-24
+
+### D-26  KPI 大卡高度门槛：`w≥12` 且 `h≥6`
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-09-23）
+- 背景：D-23 定大卡为 `w≥12` 且 `h≥8`。用户验收结案率卡时，宽已够半宽、高度落在 6～7 仍停在中卡，左右分栏被拉扁，观感不协调。
+- 结论：`kpiDensity` 大卡改为 `w≥12` 且 `h≥6`（五张 KPI 共用）。中卡条件不变：`h≥6` 或（`w≥10` 且 `h≥5`）；判定顺序仍是先 L 再 M。D-23 其余网格约定不变。
+- 禁止：把大卡再抬回必须 `h≥8` 而不更新本条与 ARCHITECTURE §4。
+- 现行文档：ARCHITECTURE §4；CONTEXT §4；docs/prototypes/completion-rate-card/HANDOFF.md；本条（修订 D-23 大卡高度）
+
+### D-27  中卡高度少一档、大卡宽度少两档；四张业务大卡随栏缩放
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-09-23）
+- 背景：D-26 大卡为 `w≥12` 且 `h≥6`，中卡为 `h≥6`。用户希望中卡更早出现、大卡在更窄时出现。列数与行高本轮不改，仍是 24 列 × 48px。四张业务大卡用固定像素环图，矮大卡整张出现滚动条。
+- 结论：`kpiDensity` 中卡改为 `h≥5`，大卡改为 `w≥10` 且 `h≥6`（五张 KPI 共用，先 L 再 M）。`h≤4` 仍是小卡。四张业务大卡整卡不滚动：环图和主数字随栏缩放，最新记录只在右栏内滚动。结案率中卡水球随栏高缩放（矮则缩小，高则放大）。
+- 禁止：把中卡抬回 `h≥6` 或把大卡宽度抬回 `w≥12` 而不更新本条与 ARCHITECTURE §4；用整卡滚动条代替右栏内部滚动。
+- 现行文档：ARCHITECTURE §4；CONTEXT §4；docs/prototypes/completion-rate-card/HANDOFF.md；本条（修订 D-26 的宽度与中卡高度）

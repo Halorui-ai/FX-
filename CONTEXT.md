@@ -104,7 +104,7 @@
 
 ### KPI（5）
 
-四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格分 S/M/L，规格与字段映射见 `kpi-card-redesign/HANDOFF.md`。网格为 24 列 × 行高 48px。小卡默认 `4×4` 仍为单数字；中卡 `h≥6` 或（`w≥10` 且 `h≥5`）；大卡 `w≥12` 且 `h≥8`（一行可并排两张）。数值只从 `buildKpiProps` ← `computeStats()` / `orders` 取。点空白或「全部 N 条」打开二级详情。结案率不在这四张里，仍用水球。档位阈值见 ARCHITECTURE。
+四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格分 S/M/L，规格与字段映射见 `kpi-card-redesign/HANDOFF.md`。网格为 24 列 × 行高 48px。小卡默认 `4×4` 仍为单数字；中卡 `h≥5`；大卡 `w≥10` 且 `h≥6`。数值只从 `buildKpiProps` ← `computeStats()` / `orders` 取。点空白或「全部 N 条」打开二级详情。结案率 `kpi_rate` 另按 `docs/prototypes/completion-rate-card/HANDOFF.md` 分 S 水球 / M 左水球+三指标 / L 三栏+总览·特保·非特保 Tab；口径不变。档位阈值见 ARCHITECTURE。
 
 | ID | 名称 | 层级 | 公式 |
 |----|------|------|------|
