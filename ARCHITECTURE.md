@@ -72,7 +72,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 
 旧布局（`x+w ≤ 12`）经 `ensureLayoutV24` 自动把 `x/y/w/h` ×2；`localStorage.dashLayouts` 带 `gridCols: 24`，只迁移一次。
 
-四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档，**档变才换模板**（`resizestop` → `applyKpiDensityForItem`）。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率 `kpi_rate`：S 仍为 liquid 水球；M/L 按 `docs/prototypes/completion-rate-card/HANDOFF.md`（水球+三指标 / 三栏+Tab），字段来自 `computeStats` 扩展与 `buildKpiProps('kpi_rate')`。
+四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档。拖拽缩放时按当前格数即时换模板，卡片底部提示距离上一档 / 下一档还差几行几列，松手约 1 秒后提示消失。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率 `kpi_rate`：S 仍为 liquid 水球；M/L 按 `docs/prototypes/completion-rate-card/HANDOFF.md`（水球+三指标 / 三栏+Tab），字段来自 `computeStats` 扩展与 `buildKpiProps('kpi_rate')`。
 
 | 档 | 条件（24 列） | 卡片内 |
 |----|------|--------|
