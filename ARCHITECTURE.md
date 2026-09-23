@@ -72,15 +72,17 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 
 旧布局（`x+w ≤ 12`）经 `ensureLayoutV24` 自动把 `x/y/w/h` ×2；`localStorage.dashLayouts` 带 `gridCols: 24`，只迁移一次。
 
-四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档，**档变才换模板**（`resizestop` → `applyKpiDensityForItem`）。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率仍走原 compact 水球 + 旧 cozy/expanded。
+四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档。拖拽缩放时按当前格数即时换模板，并用虚线框出下一档要占的格子范围（锚在卡片左上角），松手后虚线消失。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率 `kpi_rate`：S 仍为 liquid 水球；M/L 按 `docs/prototypes/completion-rate-card/HANDOFF.md`（水球+三指标 / 三栏+Tab），字段来自 `computeStats` 扩展与 `buildKpiProps('kpi_rate')`。
 
 | 档 | 条件（24 列） | 卡片内 |
 |----|------|--------|
-| S compact | 默认 `4×4`（宽&lt;10 且 高&lt;6） | 现状：标题区 + 单个核心数字（不动） |
-| M cozy | `h≥6`，或 `w≥10` 且 `h≥5` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA |
-| L expanded | `w≥12` 且 `h≥8`（半宽，一行可并排两张） | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录；点空白/「全部 N 条」打开现有二级详情 |
+| S compact | 高 ≤4（默认 `4×4`；很宽但只有 4 行仍是小卡） | 现状：标题区 + 单个核心数字（不动） |
+| M cozy | `h≥5` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA。矮中卡图形随栏高缩小 |
+| L expanded | `w≥10` 且 `h≥6` | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录。环图与主数字随栏缩放；滚动只在右栏记录区。点空白/「全部 N 条」打开现有二级详情 |
 
 点 `.kpi-seg` 不打开详情。规格见 `kpi-card-redesign/HANDOFF.md`。
+
+结案率 `kpi_rate` 同档位阈值；S=liquid 水球（默认常为 8×4 仍 compact）；M=左水球（随栏高缩放）+右三指标+底注；L=水球图例|进度条|待关注列表，三栏按比例变宽，Tab「总览/特保/非特保」在标题右侧。四张业务大卡中栏为引导线大环，图例横排。编辑态四角角标内收，对齐卡片 16px 圆角。大卡右栏滚动条用 `--sb-size` / `--sb-radius` / `--sb-thumb`，随主题变。
 
 内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维、GDMS，不在管理层精简视图里。KPI 自适应档位见上一小节。
 
