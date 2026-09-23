@@ -466,11 +466,11 @@ body.editing .cardRemove{display:flex}
 .rate-m-bar .footer-note{font-size:12px;color:var(--muted)}
 .rate-m-bar .footer-link{font-size:12px;color:var(--brand);font-weight:500;cursor:pointer;white-space:nowrap}
 .rate-m-bar .footer-link:hover{text-decoration:underline}
-.rate-l{display:grid;grid-template-columns:minmax(160px,200px) minmax(200px,280px) minmax(0,1fr);gap:20px;align-items:stretch;height:100%;min-height:0;margin-top:2px}
-.rate-l-left,.rate-l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-width:0;align-self:center}
-.rate-l-mid{border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 16px}
-.rate-l-ball{position:relative;width:160px;height:160px}
-.rate-l-ball svg{display:block;width:160px;height:160px}
+.rate-l{display:grid;grid-template-columns:minmax(0,200px) minmax(0,280px) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:16px;align-items:stretch;height:100%;min-height:0;margin-top:2px;overflow:hidden}
+.rate-l-left,.rate-l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;min-height:0;align-self:stretch;overflow:hidden}
+.rate-l-mid{border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 12px}
+.rate-l-ball{position:relative;width:min(160px,100%);aspect-ratio:1;max-height:min(160px,calc(100% - 56px));flex:none}
+.rate-l-ball svg{display:block;width:100%;height:100%}
 .rate-l-ball .rate-ball-center .rate-ball-val{font-size:28px}
 .rate-l-ball .rate-ball-center .rate-ball-label{font-size:11px}
 .rate-legend{display:flex;flex-direction:column;gap:6px;width:100%;max-width:180px}
@@ -506,7 +506,9 @@ body.editing .cardRemove{display:flex}
 .rate-dur{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .rate-attn-foot{flex:none;padding:10px 0 2px;text-align:center;font-size:12px;color:var(--brand);font-weight:500;cursor:pointer}
 .rate-attn-foot:hover{text-decoration:underline}
-.cardSlot.kpi-rate-large .cardHead{position:relative;gap:10px;margin-bottom:16px;padding-top:8px}
+.cardSlot.kpi-rate-large{overflow:hidden}
+.cardSlot.kpi-rate-large .cardBody{overflow:hidden;min-height:0}
+.cardSlot.kpi-rate-large .cardHead{position:relative;gap:10px;margin-bottom:12px;padding-top:8px}
 .cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:36%}
 .kpi-seg.rate-seg{margin-left:auto;margin-right:auto;position:absolute;left:50%;transform:translateX(-50%)}
 .kpi-seg.rate-seg button.on{color:var(--ok)}
