@@ -1775,7 +1775,7 @@ function buildDetailTable() {
 // ---------- KPI 按网格尺寸分档（仅 5 张 KPI；图表卡仍靠 echarts.resize） ----------
 function kpiDensity(w, h, id) {
   w = Number(w) || 4; h = Number(h) || 4;
-  if (w >= 12 && h >= 8) return "expanded";
+  if (w >= 12 && h >= 6) return "expanded";
   // 结案率默认 8×4 仍用水球
   if (id === "kpi_rate" && h <= 4 && w <= 8) return "compact";
   // 高≥6 一定中卡；宽≥10 且高≥5 才按宽度进中卡（避免全宽矮条被挤进三段式）
