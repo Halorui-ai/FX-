@@ -595,16 +595,30 @@ body.editing .cardRemove{display:flex}
 .cardSlot.kpi-large,.cardSlot.kpi-rate-large{container-type:size}
 .cardSlot.kpi-large .cardBody,.cardSlot.kpi-cozy .cardBody,.cardSlot.kpi-rate-cozy .cardBody{overflow:hidden;min-height:0;display:flex;flex-direction:column}
 .cardSlot.kpi-large .l-body{flex:1;min-height:0;height:auto}
-.cardSlot.kpi-cozy .m-main-col{flex:1;min-height:0;height:auto;container-type:size;display:flex;flex-direction:column}
-.cardSlot.kpi-cozy .m-main{height:auto;flex:1;min-height:0}
-.cardSlot.kpi-cozy .hero-num{font-size:clamp(26px,18cqh,38px)}
-.cardSlot.kpi-cozy .m-visual{width:min(118px,46cqh);max-width:min(132px,46cqh)}
-.cardSlot.kpi-cozy .m-visual svg{width:100%;height:auto}
-.cardSlot.kpi-cozy .medallion{width:min(84px,40cqh);height:min(84px,40cqh)}
-.cardSlot.kpi-rate-cozy .rate-m{flex:1;min-height:0;container-type:size}
-.cardSlot.kpi-rate-cozy .rate-ball{width:min(120px,calc(100cqh - 64px));height:min(120px,calc(100cqh - 64px))}
+.cardSlot.kpi-cozy{container-type:size}
+.cardSlot.kpi-cozy .m-main-col{flex:1;min-height:0;height:auto;display:flex;flex-direction:column;justify-content:stretch}
+.cardSlot.kpi-cozy .m-main{height:auto;flex:1;min-height:0;align-items:center;container-type:size}
+.cardSlot.kpi-cozy .m-copy{flex:1;min-width:0}
+.cardSlot.kpi-cozy .hero-num{font-size:clamp(28px,34cqh,56px)}
+.cardSlot.kpi-cozy .m-visual{flex:0 1 auto;width:auto;height:100%;max-width:48%;min-width:0;display:flex;align-items:center;justify-content:center}
+.cardSlot.kpi-cozy .m-visual svg{width:auto;height:min(100%,88cqh);max-width:100%;aspect-ratio:1}
+.cardSlot.kpi-cozy .m-visual-stack{width:min(280px,52%);height:100%;max-width:52%;align-items:stretch}
+.cardSlot.kpi-cozy .m-visual-stack .stack-wrap{display:flex;flex-direction:column;justify-content:center;height:100%;width:100%}
+.cardSlot.kpi-cozy .m-visual-stack .stackbar{height:clamp(12px,10cqh,28px)}
+.cardSlot.kpi-cozy .m-visual-stack .stack-lg{flex:1;justify-content:space-evenly;gap:clamp(8px,6cqh,22px);margin-top:clamp(10px,5cqh,24px)}
+.cardSlot.kpi-cozy .m-visual-stack .stack-lg span{font-size:clamp(13px,5cqh,18px)}
+.cardSlot.kpi-cozy .medallion{width:min(100%,72cqh);height:min(100%,72cqh);aspect-ratio:1}
+.cardSlot.kpi-cozy .medallion svg{width:42%;height:42%}
+.cardSlot.kpi-rate-cozy .rate-m{flex:1;min-height:0}
+.cardSlot.kpi-rate-cozy .rate-m-main{flex:1;min-height:0;align-items:center;container-type:size}
+.cardSlot.kpi-rate-cozy .rate-ball{width:min(100cqh,100%,240px);height:min(100cqh,240px);container-type:size}
 .cardSlot.kpi-rate-cozy .rate-ball svg{width:100%;height:100%}
-.cardSlot.kpi-rate-cozy .rate-m-metrics{gap:clamp(4px,2cqh,10px)}
+.cardSlot.kpi-rate-cozy .rate-ball-val{font-size:clamp(16px,24cqh,34px)}
+.cardSlot.kpi-rate-cozy .rate-m-metrics{gap:clamp(8px,8cqh,28px);justify-content:center;height:100%}
+.kpi-tier-hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:6;pointer-events:none;
+  max-width:calc(100% - 24px);padding:4px 12px;border-radius:999px;background:rgba(20,28,44,.82);color:#fff;
+  font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cardSlot:has(> .kpi-tier-hint) .cardHead{margin-top:28px}
 .cardSlot.kpi-large .cardHead{gap:10px;margin-bottom:16px}
 .cardSlot.kpi-large .cardTitle{flex:none;max-width:40%}
 .kpi-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);margin-left:auto;flex:none}
@@ -1805,9 +1819,76 @@ function kpiDensity(w, h, id) {
   return "compact";
 }
 function kpiCardSize(id) {
+  const slot = document.querySelector('#cardGrid [data-card="' + id + '"]');
+  const item = slot && slot.closest(".grid-stack-item");
+  const node = item && item.gridstackNode;
+  if (node && node.w && node.h) return { w: node.w, h: node.h };
+  if (item) {
+    const w = parseInt(item.getAttribute("gs-w"), 10);
+    const h = parseInt(item.getAttribute("gs-h"), 10);
+    if (w && h) return { w, h };
+  }
   const def = CARD_DEFS[id];
   const it = (workingLayout || []).find(x => x.id === id);
   return { w: (it && it.w) || (def && def.w) || 4, h: (it && it.h) || (def && def.h) || 4 };
+}
+function nearestKpiTier(w, h, id, dir) {
+  const rank = { compact: 0, cozy: 1, expanded: 2 };
+  const now = rank[kpiDensity(w, h, id)];
+  let best = null;
+  for (let dh = -8; dh <= 10; dh++) {
+    for (let dw = -16; dw <= 20; dw++) {
+      if (!dw && !dh) continue;
+      const ww = w + dw, hh = h + dh;
+      if (ww < 2 || hh < 2 || ww > 24) continue;
+      const d = kpiDensity(ww, hh, id);
+      const r = rank[d];
+      if (dir > 0 && r <= now) continue;
+      if (dir < 0 && r >= now) continue;
+      const cost = Math.abs(dw) + Math.abs(dh);
+      const axes = (dw ? 1 : 0) + (dh ? 1 : 0);
+      if (!best || cost < best.cost || (cost === best.cost && axes < best.axes)) best = { dw, dh, d, cost, axes };
+    }
+  }
+  return best;
+}
+function kpiTierStepPhrase(step) {
+  const parts = [];
+  if (step.dw > 0) parts.push("再宽 " + step.dw + " 列");
+  if (step.dw < 0) parts.push("再窄 " + (-step.dw) + " 列");
+  if (step.dh > 0) parts.push("再高 " + step.dh + " 行");
+  if (step.dh < 0) parts.push("再矮 " + (-step.dh) + " 行");
+  return parts.join("、");
+}
+function kpiTierHintText(w, h, id) {
+  const names = { compact: "小卡", cozy: "中卡", expanded: "大卡" };
+  const now = kpiDensity(w, h, id);
+  const bits = [names[now]];
+  const up = nearestKpiTier(w, h, id, 1);
+  const down = nearestKpiTier(w, h, id, -1);
+  if (up) bits.push(kpiTierStepPhrase(up) + " → " + names[up.d]);
+  if (down) bits.push(kpiTierStepPhrase(down) + " → " + names[down.d]);
+  return bits.join("  ·  ");
+}
+let kpiTierHintTimer = 0;
+function showKpiTierHint(el) {
+  const node = (el && el.el) ? el.el : el;
+  if (!node || !node.querySelector) return;
+  const slot = node.querySelector("[data-card]");
+  if (!slot) return;
+  const def = CARD_DEFS[slot.dataset.card];
+  if (!def || !def.kpiAdaptive) return;
+  const size = kpiCardSize(def.id);
+  let hint = slot.querySelector(":scope > .kpi-tier-hint");
+  if (!hint) {
+    hint = document.createElement("div");
+    hint.className = "kpi-tier-hint";
+    slot.appendChild(hint);
+  }
+  hint.textContent = kpiTierHintText(size.w, size.h, def.id);
+}
+function clearKpiTierHints() {
+  document.querySelectorAll(".kpi-tier-hint").forEach(el => el.remove());
 }
 function kpiChipsHTML(chips) {
   if (!chips || !chips.length) return "";
@@ -2166,7 +2247,7 @@ function htmlMediumVisual(p) {
   if (p.visual === "progress") return '<div class="m-visual">' + svgProgressDonut(p.special / (p.total || 1), "var(--cat-purple)", String(p.specialRec), "特保记录") + "</div>";
   if (p.visual === "stack") {
     const a = Math.max(p.overtime, 0.01), b = Math.max(p.inOk, 0.01);
-    return '<div class="m-visual" style="width:132px"><div class="stack-wrap"><div class="stackbar">' +
+    return '<div class="m-visual m-visual-stack"><div class="stack-wrap"><div class="stackbar">' +
       '<i style="flex:' + a + ';background:var(--warn)"></i><i style="flex:' + b + ';background:var(--brand)"></i></div>' +
       '<div class="stack-lg"><span><i class="dot" style="--dc:var(--warn)"></i>超时未放行 <b>' + p.overtime + "</b></span>" +
       "<span><i class=\"dot\" style=\"--dc:var(--brand)\"></i>在途未超 <b>" + p.inOk + "</b></span></div></div></div>";
@@ -2186,7 +2267,7 @@ function htmlCells(cells) {
 function htmlKpiMedium(p) {
   const cta = p.cta ? '<button type="button" class="m-cta">查看超时单据明细 <span class="arr">→</span></button>' : "";
   const stats = p.cells ? htmlCells(p.cells) : cta;
-  return '<div class="m-main-col"><div class="m-main"><div><div class="hero-num">' + p.hero + '<span class="unit">' + (p.unit || "单") + "</span></div>" +
+  return '<div class="m-main-col"><div class="m-main"><div class="m-copy"><div class="hero-num">' + p.hero + '<span class="unit">' + (p.unit || "单") + "</span></div>" +
     '<div class="hero-sub">' + p.subHtml + "</div></div>" + htmlMediumVisual(p) + "</div>" + stats + "</div>";
 }
 function htmlBars(bars) {
@@ -2277,14 +2358,19 @@ function clearKpiHeadSeg(body) {
   slot.classList.remove("kpi-large", "kpi-cozy");
   slot.querySelectorAll(".cardHead .kpi-seg").forEach(el => el.remove());
 }
+function kpiDetailKey(spec) {
+  if (!spec) return "";
+  if (spec.detailKey) return spec.detailKey;
+  const def = CARD_DEFS[spec.id];
+  return (def && def.detailKey) || "";
+}
 function bindKpiChrome(body, spec, p, dens) {
   kpiTone(body, p.tone);
   clearKpiHeadSeg(body);
+  const open = e => { e.stopPropagation(); if (!editMode) openDetail(kpiDetailKey(spec)); };
   const cta = body.querySelector(".m-cta");
-  if (cta) cta.addEventListener("click", e => { e.stopPropagation(); if (!editMode) openDetail(spec.detailKey); });
-  body.querySelectorAll(".lp-link, .lp-foot").forEach(el => {
-    el.addEventListener("click", e => { e.stopPropagation(); if (!editMode) openDetail(spec.detailKey); });
-  });
+  if (cta) cta.addEventListener("click", open);
+  body.querySelectorAll(".lp-link, .lp-foot").forEach(el => el.addEventListener("click", open));
   const slot0 = body.closest(".cardSlot");
   if (slot0) slot0.classList.toggle("kpi-cozy", dens === "cozy");
   if (dens !== "expanded") return;
@@ -2940,9 +3026,16 @@ function renderDashboard() {
     def.render(item.querySelector(".cardBody"), ctx);
   });
   window.__dashGrid = grid;
+  grid.on("resize", (ev, el) => {
+    applyKpiDensityForItem(el);
+    showKpiTierHint(el);
+  });
   grid.on("resizestop", (ev, el) => {
     syncLayoutFromGrid();
     applyKpiDensityForItem(el);
+    showKpiTierHint(el);
+    clearTimeout(kpiTierHintTimer);
+    kpiTierHintTimer = setTimeout(clearKpiTierHints, 1200);
     resizeAllCardCharts();
   });
   grid.on("change dragstop", () => { syncLayoutFromGrid(); resizeAllCardCharts(); });
