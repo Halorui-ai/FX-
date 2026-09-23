@@ -17,6 +17,7 @@
 
 ## 2026-09-23
 
+- KPI 大卡门槛由 `w≥12` 且 `h≥8` 改为 `w≥12` 且 `h≥6`（`kpiDensity`，五张 KPI 共用）：避免很宽但高度未到 8 时仍停在中卡、比例失调。见 D-26。
 - 微调 `kpi_rate`：中卡指标文字与数字收紧间距（去掉 label `flex:1` 撑开）；大卡 Tab 区增加上内边距，避免贴卡片上边缘。
 - 实现 `kpi_rate` 中卡/大卡：按 `docs/prototypes/completion-rate-card/HANDOFF.md`；S 水球不变。M 左水球+右三指标+底注；L 三栏+总览/特保/非特保 Tab+待关注列表。数字来自 `computeStats`/`buildKpiProps`，无写死原型值。
 - `computeStats` 扩展特保/非特保结案分维与 `attentionOrders`（在途超时+到达超时，按时长降序）；特保仍只认 WF9897。
