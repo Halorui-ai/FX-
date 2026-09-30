@@ -28,6 +28,7 @@
 | 主路径 | 主线程分块（`XLSX.read` + `sheetToRowsChunked`，块间让出 UI） |
 | Web Worker | 代码保留，**默认禁用**（`window.__workerDisabled = true`） |
 | 原因 | file:// 下 blob Worker 无法 `importScripts` 外部 `xlsx`；内联库方案已回退（D-10） |
+| xlsx 取址 | `decode_range` 行号 0 起，拼单元格地址时 +1（或用 `encode_cell`）；主线程与 Worker 一致 |
 | CSV | PapaParse，无需 Worker（10 万行约 1.7s，xlsx 约 20s） |
 
 ---

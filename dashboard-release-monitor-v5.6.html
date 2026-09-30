@@ -1191,10 +1191,10 @@ function firstNonEmptySheet(wb) {
 }
 async function sheetToRowsChunked(ws) {
   const rng = XLSX.utils.decode_range(ws["!ref"]);
-  // 预计算列字母地址与行地址前缀，避免提取阶段反复 encode_cell（10 万行级提速明显）
+  // decode_range 行号 0 起，单元格地址行号 1 起；列字母预计算，拼地址时 +1（避免 10 万行反复 encode_cell）
   const colLet = [];
   for (let c = rng.s.c; c <= rng.e.c; c++) colLet.push(XLSX.utils.encode_col(c));
-  const cellAt = (r, c) => { const cell = ws[colLet[c - rng.s.c] + r]; return cell && cell.v != null ? cell.v : ""; };
+  const cellAt = (r, c) => { const cell = ws[colLet[c - rng.s.c] + (r + 1)]; return cell && cell.v != null ? cell.v : ""; };
   // 表头定位：仅读前 20 行构造小型 AOA
   const headAoa = [], headEnd = Math.min(rng.s.r + 19, rng.e.r);
   for (let r = rng.s.r; r <= headEnd; r++) {
@@ -1207,7 +1207,7 @@ async function sheetToRowsChunked(ws) {
   const headerRow = rng.s.r + hRel;
   const header = [];
   for (let c = rng.s.c; c <= rng.e.c; c++) {
-    const cell = ws[colLet[c - rng.s.c] + headerRow];
+    const cell = ws[colLet[c - rng.s.c] + (headerRow + 1)];
     header.push(cell && (cell.w != null || cell.v != null) ? String(cell.w != null ? cell.w : cell.v).trim() : ("列" + c));
   }
   // 分块提取数据行（跳过全空行）
@@ -1241,10 +1241,10 @@ self.onmessage = function (e) {
     var rng = XLSX.utils.decode_range(ws['!ref']);
     var aliasSet = {};
     for (var a = 0; a < d.aliases.length; a++) aliasSet[d.aliases[a]] = 1;
-    // 预计算列字母地址，避免提取阶段反复 encode_cell（10 万行级提速明显）
+    // decode_range 行号 0 起，单元格地址行号 1 起；列字母预计算，拼地址时 +1（避免 10 万行反复 encode_cell）
     var colLet = [];
     for (var cl = rng.s.c; cl <= rng.e.c; cl++) colLet.push(XLSX.utils.encode_col(cl));
-    function cv(r, c) { var cell = ws[colLet[c - rng.s.c] + r]; return cell && cell.v != null ? cell.v : ''; }
+    function cv(r, c) { var cell = ws[colLet[c - rng.s.c] + (r + 1)]; return cell && cell.v != null ? cell.v : ''; }
     var headerRow = -1, limit = Math.min(rng.s.r + 19, rng.e.r);
     for (var r = rng.s.r; r <= limit && headerRow < 0; r++) {
       var hits = 0;
@@ -1252,7 +1252,7 @@ self.onmessage = function (e) {
     }
     if (headerRow < 0) { self.postMessage({ type: 'error', code: 'NO_HEADER' }); return; }
     var header = [];
-    for (var hc = rng.s.c; hc <= rng.e.c; hc++) { var hcell = ws[colLet[hc - rng.s.c] + headerRow]; header.push(hcell && (hcell.w != null || hcell.v != null) ? String(hcell.w != null ? hcell.w : hcell.v).trim() : ('列' + hc)); }
+    for (var hc = rng.s.c; hc <= rng.e.c; hc++) { var hcell = ws[colLet[hc - rng.s.c] + (headerRow + 1)]; header.push(hcell && (hcell.w != null || hcell.v != null) ? String(hcell.w != null ? hcell.w : hcell.v).trim() : ('列' + hc)); }
     var total = rng.e.r - headerRow, out = [], CHUNK = 10000;
     for (var i = 0; i < total; i++) {
       var rr = headerRow + 1 + i, o = {}, empty = true;
