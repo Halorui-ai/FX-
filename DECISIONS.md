@@ -303,3 +303,13 @@
 - 结论：`kpiDensity` 中卡改为 `h≥5`，大卡改为 `w≥10` 且 `h≥6`（五张 KPI 共用，先 L 再 M）。`h≤4` 仍是小卡。四张业务大卡整卡不滚动：环图和主数字随栏缩放，最新记录只在右栏内滚动。结案率中卡水球随栏高缩放（矮则缩小，高则放大）。
 - 禁止：把中卡抬回 `h≥6` 或把大卡宽度抬回 `w≥12` 而不更新本条与 ARCHITECTURE §4；用整卡滚动条代替右栏内部滚动。
 - 现行文档：ARCHITECTURE §4；CONTEXT §4；docs/prototypes/completion-rate-card/HANDOFF.md；本条（修订 D-26 的宽度与中卡高度）
+
+### D-28  xlsx 取址行号 +1（踩坑：直接打开丢最后一行）
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-10-01）
+- 背景：`decode_range` 行号从 0 起，SheetJS 单元格地址从 1 起。主线程与 Worker 用列字母直接拼接 0 起行号，读到不存在的地址，表头错位，`!ref` 最后一行永远读不到。末行若是独立订单（含特保单）会整单消失；先转 CSV 再载入则正常。
+- 结论：行号在代码里保持 0 起（与 `decode_range`、`findHeaderRow` 一致），只在拼单元格地址时 +1。主线程 `sheetToRowsChunked` 与 Worker 同一规则。
+- 禁止：用 `decode_range` 的 0 起行号直接拼 `A1` 地址。
+- 现行文档：ARCHITECTURE §1
