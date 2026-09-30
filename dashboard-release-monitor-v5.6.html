@@ -1737,8 +1737,8 @@ const optionBuilders = {
         trigger: "axis", axisPointer: { type: "shadow" },
         formatter(p) {
           const d = data.find(x => x.name === p[0].axisValue);
-          if (!d) return p[0].axisValue;
-          return d.name + "<br/>在途 <b>" + d.total + "</b> 单（超时 " + d.timeout + " / 未超时 " + d.ok + "）<br/>其中特保 " + d.special + " 单";
+          if (!d) return escapeHtml(p[0].axisValue);
+          return escapeHtml(d.name) + "<br/>在途 <b>" + d.total + "</b> 单（超时 " + d.timeout + " / 未超时 " + d.ok + "）<br/>其中特保 " + d.special + " 单";
         }
       },
       legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
@@ -1761,8 +1761,8 @@ const optionBuilders = {
       trigger: "axis", axisPointer: { type: "shadow" },
       formatter(p) {
         const d = data.find(x => x.name === p[0].axisValue);
-        if (!d) return p[0].axisValue;
-        return d.name + "<br/>过岗 <b>" + d.hops + "</b> 次（记录）<br/>去重 " + d.orders + " 单 · 特保过岗 " + d.specialHops + " 次";
+        if (!d) return escapeHtml(p[0].axisValue);
+        return escapeHtml(d.name) + "<br/>过岗 <b>" + d.hops + "</b> 次（记录）<br/>去重 " + d.orders + " 单 · 特保过岗 " + d.specialHops + " 次";
       }
     },
     grid: { left: 10, right: 40, top: 8, bottom: 10, containLabel: true },
@@ -1786,7 +1786,7 @@ const optionBuilders = {
     const keys = Object.keys(bk), vals = Object.values(bk);
     const total = vals.reduce((a, b) => a + b, 0) || 1;
     return {
-      tooltip: { trigger: "axis", formatter: p => p.map(s => s.name + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
+      tooltip: { trigger: "axis", formatter: p => p.map(s => escapeHtml(s.name) + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
       grid: { left: 10, right: 30, top: 20, bottom: 10, containLabel: true },
       xAxis: { type: "value", ...baseAxis },
       yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
@@ -1939,7 +1939,16 @@ function kpiPct(n, d, digits) {
   if (!d) return (0).toFixed(x) + "%";
   return (n / d * 100).toFixed(x) + "%";
 }
-function kpiEsc(s) { return String(s ?? "").replace(/[<>]/g, ""); }
+function escapeHtml(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+function kpiEsc(s) { return escapeHtml(s); }
 function kpiTone(body, tone) {
   const slot = body.closest(".cardSlot");
   if (!slot) return;
@@ -2827,9 +2836,9 @@ const CARD_DEFS = {
         '<th style="padding:5px 6px">#</th><th style="padding:5px 6px">放行单号</th><th style="padding:5px 6px">部门</th><th style="padding:5px 6px">门岗</th><th style="padding:5px 6px">状态</th></tr></thead><tbody>';
       list.slice(0, 20).forEach((o, i) => {
         html += '<tr style="border-bottom:1px solid var(--line)"><td style="padding:4px 6px;color:var(--txt2)">' + (i + 1) + '</td>' +
-          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)">' + o.单号 + '</td>' +
-          '<td style="padding:4px 6px;color:var(--txt2)">' + (o.申请部门 || "-") + '</td>' +
-          '<td style="padding:4px 6px;color:var(--txt2)">' + (o.流入门岗 || "-") + '</td>' +
+          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)">' + escapeHtml(o.单号) + '</td>' +
+          '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.申请部门 || "-") + '</td>' +
+          '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.流入门岗 || "-") + '</td>' +
           '<td style="padding:4px 6px"><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">未结案</span></td></tr>';
       });
       html += '</tbody></table>';
@@ -3391,7 +3400,7 @@ function renderLayoutSelect() {
   const sel = $("layoutSelect");
   const names = [...Object.keys(BUILTIN_LAYOUTS), ...Object.keys(externalViews), ...Object.keys(layoutState.custom)];
   sel.innerHTML = names.map(n =>
-    '<option value="' + n + '"' + (n === layoutState.active ? " selected" : "") + '>' + n +
+    '<option value="' + escapeHtml(n) + '"' + (n === layoutState.active ? " selected" : "") + '>' + escapeHtml(n) +
     (externalViews[n] ? " 📦" : layoutState.custom[n] ? " ★" : "") + '</option>'
   ).join("");
   sel.title = Object.keys(externalViews).length
@@ -3478,7 +3487,7 @@ function stripPrivate(o) {
 function updateFileMeta(S) {
   const dates = rows.filter(r => r._申请日期).map(r => r._申请日期);
   const range = dates.length ? `${_.min(dates).format("YYYY-MM-DD")} ~ ${_.max(dates).format("YYYY-MM-DD")}` : "无有效日期";
-  $("fileMeta").innerHTML = `文件：<b>${currentFileName}</b> ｜ 共 <b>${S.total}</b> 条记录 / <b>${S.orderCount}</b> 单 ｜ 时间范围：<b>${range}</b>`;
+  $("fileMeta").innerHTML = `文件：<b>${escapeHtml(currentFileName)}</b> ｜ 共 <b>${S.total}</b> 条记录 / <b>${S.orderCount}</b> 单 ｜ 时间范围：<b>${escapeHtml(range)}</b>`;
 }
 
 // ---------- 异常监控卡片内容生成（供 CARD_DEFS 复用） ----------
@@ -3490,8 +3499,8 @@ function analysisTransitHTML(S) {
     preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
-      `<b style="color:var(--txt)">${o.单号}</b></span>` +
-      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
+      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
@@ -3508,8 +3517,8 @@ function analysisReceiveHTML(S) {
     preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
-      `<b style="color:var(--txt)">${o.单号}</b></span>` +
-      `<span style="color:var(--txt2)">${o.申请部门 || "-"} · ${o.流入门岗 || "-"}</span></div>`).join("") +
+      `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
+      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
@@ -3655,12 +3664,19 @@ const KPI_DETAIL = {
 };
 
 let overviewState = { dim: 0, cat: null };
-let _visibleCols = null;   // 全局可见列缓存（基于全量 rows 采样计算一次）
+let _visibleCols = null;   // 全局可见列缓存（renderAll 时按全量 rows 算一次）
 
-// 采样扫描字段非空性：大数据时只看前 1000 行足以判定列是否有值，避免 O(字段×全行) 扫描
+// 全表扫描：每个字段遇到第一个非空值后不再检查，尚未确认的字段都找到后提前结束
 function computeVisibleCols(list) {
-  const sample = list.length > 1000 ? list.slice(0, 1000) : list;
-  return Object.keys(CONFIG.字段映射).filter(k => sample.some(r => r[k] !== "" && r[k] != null));
+  const keys = Object.keys(CONFIG.字段映射);
+  const pending = new Set(keys);
+  for (let i = 0; i < list.length && pending.size; i++) {
+    const r = list[i];
+    for (const k of pending) {
+      if (r[k] !== "" && r[k] != null) pending.delete(k);
+    }
+  }
+  return keys.filter(k => !pending.has(k));
 }
 
 // —— 二级页表格列：按详情类型定制列集（避免全部列挤入窄容器），超宽列自动横向滚动 ——
@@ -3703,9 +3719,13 @@ function detailCols(key) {
 }
 
 let detailPanelOpening = false;   // 面板正在展开（首次打开）：图表需延迟到展开完成后绘制
+let detailDisposeTimer = null, detailDrawTimer = null, detailResizeTimer = null;
 
 function openDetail(key) {
   const cfg = KPI_DETAIL[key]; if (!cfg || !rows.length) return;
+  if (detailDisposeTimer) { clearTimeout(detailDisposeTimer); detailDisposeTimer = null; }
+  if (detailDrawTimer) { clearTimeout(detailDrawTimer); detailDrawTimer = null; }
+  if (detailResizeTimer) { clearTimeout(detailResizeTimer); detailResizeTimer = null; }
   $("detailPanelTitle").textContent = cfg.title;
   detailPanelOpening = true;                       // ★ 标记首次打开：图表动画等面板展开后再播
   $("detailOverlay").classList.add("open");
@@ -3719,7 +3739,8 @@ function openDetail(key) {
     $("detailCatFilters").innerHTML = "";
     renderSimpleDetail(cfg, key);
   }
-  setTimeout(() => {
+  detailResizeTimer = setTimeout(() => {
+    detailResizeTimer = null;
     detailPanelOpening = false;
     // 图表动画结束后再 resize（避免动画中途强制重绘导致"结尾跳跃"）
     if (detailChartInst) detailChartInst.resize();
@@ -3730,16 +3751,18 @@ function openDetail(key) {
 // 首次打开（detailPanelOpening）→ 延迟 360ms 绘制，动画从头完整播放；维度切换/筛选 → 立即绘制
 // onReady(inst) 在实例创建后回调（用于绑定事件等，需在实例存在后执行的操作）
 function renderDetailChart(opt, onReady) {
+  if (detailDrawTimer) { clearTimeout(detailDrawTimer); detailDrawTimer = null; }
   if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
   if (opt) {
     $("detailChartBox").style.display = "";
     const draw = () => {
+      detailDrawTimer = null;
       if (!$("detailOverlay").classList.contains("open")) return;   // 面板已关闭则放弃（避免渲染到隐藏容器）
       detailChartInst = initEC($("detailChart"));
       detailChartInst.setOption(withDetailAnim(opt));
       if (onReady) onReady(detailChartInst);
     };
-    if (detailPanelOpening) setTimeout(draw, 360);
+    if (detailPanelOpening) detailDrawTimer = setTimeout(draw, 360);
     else draw();
   } else { $("detailChartBox").style.display = "none"; }
 }
@@ -3836,7 +3859,12 @@ function applyCatFilter(name) {
 function closeDetail() {
   $("detailOverlay").classList.remove("open");
   document.body.style.overflow = "";
-  setTimeout(() => {
+  detailPanelOpening = false;
+  if (detailDrawTimer) { clearTimeout(detailDrawTimer); detailDrawTimer = null; }
+  if (detailResizeTimer) { clearTimeout(detailResizeTimer); detailResizeTimer = null; }
+  if (detailDisposeTimer) clearTimeout(detailDisposeTimer);
+  detailDisposeTimer = setTimeout(() => {
+    detailDisposeTimer = null;
     if (detailChartInst) { detailChartInst.dispose(); detailChartInst = null; }
     if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
   }, 350);
@@ -3856,12 +3884,12 @@ function pushFeedItems(newRows, eventText) {
     el.className = "feedItem feedItem--new";
     el.innerHTML =
       `<span class="t">${(r._申请日期 || dayjs()).format("HH:mm:ss")}</span>` +
-      `<b>${r.放行单号}</b>` +
-      `<span>${r.申请部门} · ${r.放行物品名称} ×${r.数量}</span>` +
-      `<span class="route">${r.流出门岗}→${r.流入门岗}</span>` +
+      `<b>${escapeHtml(r.放行单号)}</b>` +
+      `<span>${escapeHtml(r.申请部门)} · ${escapeHtml(r.放行物品名称)} ×${escapeHtml(r.数量)}</span>` +
+      `<span class="route">${escapeHtml(r.流出门岗)}→${escapeHtml(r.流入门岗)}</span>` +
       (eventText
-        ? `<span class="stBadge st-ev">${eventText}</span>`
-        : `<span class="stBadge ${stCls}">${r._特保 ? "特保" : (r.放行状态 || "正常")}</span>`);
+        ? `<span class="stBadge st-ev">${escapeHtml(eventText)}</span>`
+        : `<span class="stBadge ${stCls}">${r._特保 ? "特保" : escapeHtml(r.放行状态 || "正常")}</span>`);
     box.prepend(el);
   });
   const N = CONFIG.实时演示.动态栏保留条数;
