@@ -204,3 +204,4 @@
 - 通用模拟：`gen_monitor_data_v3.py` → `物品放行监控_模拟测试.xlsx`。
 - 解析压测：`物品放行监控_生成_100k.xlsx`（格式真实，门岗均匀）。
 - `docs/archive/scripts/` 旧脚本可能仍用 WF8888，不要用来测特保。
+- `gen_monitor_data_v3.py` 与 `gen_gate_pressure_data.py` 都读取仓库根目录的 `物品放行监控_原备份.xlsx` 作为表头模板。该文件不在仓库里（`.gitignore` 忽略 `物品放行监控_*.xlsx`），干净 clone 上这两个脚本会因找不到模板而退出。
