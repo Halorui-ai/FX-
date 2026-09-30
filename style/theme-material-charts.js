@@ -1,6 +1,6 @@
 ﻿/* ==========================================================================
    主题 5：Material 3 谷歌 (material) — ECharts 图表主题适配
-   适用：dashboard-release-monitor-v5.5.html（data-theme + data-mode 属性系统）
+   适用：dashboard-release-monitor-v5.6.html（data-theme + data-mode 属性系统）
    用法：在 </body> 之前、所有业务脚本之后添加：
    <script src="./style/theme-material-charts.js"></script>
 

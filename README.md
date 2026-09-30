@@ -4,7 +4,7 @@
 
 > **当前版本**：`v5.6.0`（主题插件 + 浅色/深色；顶栏功能抽屉）  
 > **主文件**：`dashboard-release-monitor-v5.6.html`  
-> **工作目录**：本仓库（`DSH_数据看板`）。`液态玻璃看板Qoder` 为另一 agent 的视觉实验归档，**禁止在那边平行改业务**。新布局原型只写 [`docs/prototypes/`](docs/prototypes/README.md)。
+> **工作目录**：本仓库（GitHub `Halorui-ai/FX-`）。`液态玻璃看板Qoder` 为另一 agent 的视觉实验归档，**禁止在那边平行改业务**。新布局原型只写 [`docs/prototypes/`](docs/prototypes/README.md)。
 
 ---
 
@@ -15,6 +15,8 @@
 3. 拖入导出文件，或点「载入示例数据预览」。
 
 大文件建议先点「转存 CSV」再加载（约 35 倍）。老电脑点顶栏右侧圆形箭头打开功能面板，把「流畅模式」开关打开。验收门岗高压卡请加载 `物品放行监控_门岗压力演示.xlsx`（由 `gen_gate_pressure_data.py` 生成），不要用 100k 均分门岗集。
+
+配套工具：根目录 `xls-to-csv-converter.html`（离线把 `.xls` / `.xlsx` 转为 CSV，双击打开；不是看板主文件）。
 
 ---
 

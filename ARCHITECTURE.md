@@ -118,7 +118,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 - 应用：`html[data-theme]` + `html[data-mode]`；切走时清理旧 link/script、`_themeCleanup`、恢复 `echarts.init`
 - 记忆：`localStorage.dashTheme` / `dashMode`
 - 现行已注册：Terminal、Aurora、新粗野、液态玻璃、Material3、Fluent、新拟态、粘土、瑞士极简（文件在 `style/`）
-- 另有一份 `style/theme-material3.*`：**仅给归档** `docs/archive/versions/dashboard-release-monitor-v5.5.html` 探测用。现行 v5.6 注册的是 `theme-material.*`。不要按这两个文件头部注释（仍写「与 v4.html 同目录硬链」）去导入。
+- 另有一份 `style/theme-material3.*`：**仅给归档** `docs/archive/versions/dashboard-release-monitor-v5.5.html` 探测用。现行 v5.6 注册的是 `theme-material.*`。这两个文件头已写明只留给该归档页，不要登记进现行 `THEME_REGISTRY`。
 
 图表配色脚本约定：拦截 `echarts.init` / `setOption`，监听 `data-mode`，被移除时停止，并提供 `_themeCleanup`。
 
@@ -136,6 +136,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 - 大 xlsx 的硬瓶颈是 `XLSX.read` 同步阻塞；产品侧引导转存 CSV。
 - 派生字段 `_` 前缀，导出前 `stripPrivate()` 剥离。
 - 新图表动画走 `withAnim()` / `animOpt()`，大数据与 lite 自动降级。
+- 拼进 `innerHTML`（含 tooltip formatter 返回的 HTML）的单元格文本与文件名必须先经 `escapeHtml`。
 
 常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
 

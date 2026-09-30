@@ -17,6 +17,12 @@
 
 ## 2026-10-01
 
+- Issue #7·#23：单元格、文件名、自定义视图名拼进 `innerHTML` 或图表 tooltip HTML 前经 `escapeHtml`；`kpiEsc` 改为转义而不是删掉 `<>`。不含这些字符的正常数据显示不变。
+- Issue #7·#24：`computeVisibleCols` 改为全表扫描，某列在前 1000 行之后才有值时，明细和转存 CSV 不再丢列。
+- Issue #7·#5：详情面板的关闭销毁、打开绘图和 resize 定时器在开关时先清掉，350ms 内关了再开不会把新图或表格清掉。
+- 无行为变化：Issue #7·#29 将 D-26 标为已回退（门槛由 D-27 取代），D-23 仍为已采纳。#30 现行 18 个主题文件头改为适用 v5.6.html（`theme-material3.*` 未动），ARCHITECTURE 去掉已不存在的「硬链」说法。
+- 无行为变化：Issue #7·#26 在 CONTEXT 写明两个生成脚本依赖未入库的表头模板 `物品放行监控_原备份.xlsx`。#27 README 标明 `xls-to-csv-converter.html` 是配套转换工具。#28 README 工作目录改为本仓库，D-15 历史名称未改。
+
 - 修复直接拖入 xls/xlsx 时丢失 `!ref` 最后一行：`decode_range` 的 0 起行号未 +1 就拼单元格地址。主线程 `sheetToRowsChunked` 与 Worker 同改。
 - 少读的那一行若自成一单，订单数、特保、超时、结案率等都可能少计一单；直接打开与先转 CSV 再载入会相差一行。
 - 来源：Issue #7 审查中发现的清单外问题。
