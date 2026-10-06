@@ -71,7 +71,7 @@
 
 gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对旧 12 列 × 95px：横向、竖向步进都细一倍。卡片尺寸在 `CARD_DEFS` 用 `w/h/minW/maxW/minH/maxH`（默认 KPI 为 `4×4`，视觉约等于旧 `2×2`）。编辑模式才允许拖头 / 缩放 / 删除。`syncLayoutFromGrid()` 从 DOM `gs-*` 回写 `workingLayout`。
 
-旧布局（`x+w ≤ 12`）经 `ensureLayoutV24` 自动把 `x/y/w/h` ×2；`localStorage.dashLayouts` 带 `gridCols: 24`，只迁移一次。
+**列制迁移只做一次，之后只认标记（D-30）**：旧 12 列布局的 `x/y/w/h` ×2 由 `ensureLayoutV24` 完成，只在两个入口调用——`loadLayoutState()` 按 `localStorage.dashLayouts.gridCols` 标记迁移 `custom`；`loadViewPlugins()` 按插件 `cols` 标记迁移外部视图。`getLayoutByName()` 只复制返回，**不得**再按 `x+w ≤ 12` 推断列制（24 列制下半宽 / 左半边布局的右边界本就 ≤ 12，再乘一次即被放大）。
 
 四张业务 KPI（总数 / 特保 / 在途超时 / 超时未接收）按网格 `w×h` 分档。拖拽缩放时按当前格数即时换模板，并用虚线框出下一档要占的格子范围（锚在卡片左上角），松手后虚线消失。数据一律 `buildKpiProps(id, computeStats())`，禁止写死演示数字。结案率 `kpi_rate`：S 仍为 liquid 水球；M/L 按 `docs/prototypes/completion-rate-card/HANDOFF.md`（水球+三指标 / 三栏+Tab），字段来自 `computeStats` 扩展与 `buildKpiProps('kpi_rate')`。
 
@@ -125,7 +125,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 ### 视图
 
 - 登记：`VIEW_REGISTRY`
-- 文件内：`window.VIEW_PLUGIN = { id, name, layout: [{id,x,y,w,h}, ...] }`
+- 文件内：`window.VIEW_PLUGIN = { id, name, cols: 24, layout: [{id,x,y,w,h}, ...] }`；`cols: 24` 是列制标记，缺省时按旧 12 列推断（见 §4、D-30）
 - 编辑栏「导出视图文件」可生成，放入 `views/` 并登记即可分享
 
 ---
@@ -138,7 +138,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 - 新图表动画走 `withAnim()` / `animOpt()`，大数据与 lite 自动降级。
 - 拼进 `innerHTML`（含 tooltip formatter 返回的 HTML）的单元格文本与文件名必须先经 `escapeHtml`。
 
-常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
+常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；**视图比保存时宽一倍 → 该布局/插件缺 `cols: 24`，被当成旧 12 列 ×2（D-30）**；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
 
 ---
 
@@ -197,6 +197,7 @@ CARD_DEFS.my_newCard = {
 window.VIEW_PLUGIN = {
   id: "myview",
   name: "我的视图",
+  cols: 24,                 // ★ 列制标记，见下
   layout: [
     { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 }
   ]
@@ -204,6 +205,8 @@ window.VIEW_PLUGIN = {
 ```
 
 放入 `views/`，在 `VIEW_REGISTRY` 追加 `{ id, file }`。`file://` 不会自动扫描未登记文件。
+
+`cols: 24` 必须写：缺省时看板按 v5.5 旧文件处理，若布局 `x+w ≤ 12` 会整体 ×2 —— 于是"只排左半边"的新布局会被放大一倍（D-30）。编辑栏「📤 导出视图文件」生成的插件已自带该字段。
 
 ### 7.6 演示数据
 
