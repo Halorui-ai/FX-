@@ -2948,7 +2948,14 @@ function getLayoutByName(name) {
   // 查找顺序：自定义视图 → 外部视图插件 → 内置预设
   let lay = (layoutState.custom && layoutState.custom[name]) || externalViews[name] || BUILTIN_LAYOUTS[name] || null;
   if (lay && !isNewFormat(lay)) lay = null;   // v4 旧格式（字符串数组）不兼容 → 回退默认
-  return lay ? ensureLayoutV24(lay) : null;
+  if (!lay) return null;
+  // ★ 读取时不再调用 ensureLayoutV24（D-23 禁止对已是 24 列的布局再乘一次；事故见 D-30）。
+  //   迁移职责已各归其位，只做一次：
+  //   · 内置预设：本就是 24 列坐标；
+  //   · custom    ：loadLayoutState 按 localStorage.gridCols 标记一次性迁移；
+  //   · externalViews：loadViewPlugins 按插件 cols 标记一次性迁移。
+  //   若在此按 x+w≤12 再猜一次，半宽 / 左半边布局会被反复放大。
+  return lay.map(it => ({ ...it }));
 }
 function loadLayoutState() {
   try {
@@ -3343,7 +3350,9 @@ function loadViewPlugins(done) {
       const p = window.VIEW_PLUGIN;
       window.VIEW_PLUGIN = null;
       if (p && p.id && Array.isArray(p.layout) && p.layout.length) {
-        externalViews[p.id] = ensureLayoutV24(p.layout);
+        // ★ 列制迁移只在此处做一次（D-30）：带 cols:24 的新插件直接信任；
+        //   无标记的旧插件（v5.5 前导出，12 列坐标）按 x+w≤12 判旧后 ×2。
+        externalViews[p.id] = (p.cols === 24 ? p.layout : ensureLayoutV24(p.layout)).map(it => ({ ...it }));
       }
       finishOne();
     };
@@ -3359,6 +3368,7 @@ function saveViewPlugin(name) {
   const plugin = {
     id: id,
     name: name || id,
+    cols: 24,                 // ★ 显式列制标记：加载时直接信任，不再按坐标猜（D-30）
     layout: workingLayout.map(it => ({ ...it }))
   };
   const js = "window.VIEW_PLUGIN = " + JSON.stringify(plugin, null, 2) + ";\n";
@@ -3389,7 +3399,9 @@ function saveViewPlugin(name) {
     // 外部视图加载完成后：若上次激活的是外部视图且存在，则应用它（loadLayoutState 在插件加载前已跑）
     const active = layoutState.active;
     if (externalViews[active]) {
-      workingLayout = ensureLayoutV24(externalViews[active]);
+      // ★ 直接用已迁移结果（loadViewPlugins 已按 cols 标记迁移过一次）；
+      //   此处再调 ensureLayoutV24 会对旧插件二次放大（D-30）。
+      workingLayout = externalViews[active].map(it => ({ ...it }));
     }
     renderLayoutSelect();
   });

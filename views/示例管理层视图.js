@@ -2,6 +2,7 @@
 window.VIEW_PLUGIN = {
   id: "示例管理层视图",
   name: "示例管理层视图",
+  cols: 24,
   layout: [
     { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 },
     { id: "kpi_special", x: 4, y: 0, w: 4, h: 4 },

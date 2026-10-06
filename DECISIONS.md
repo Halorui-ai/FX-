@@ -323,3 +323,13 @@
 - 结论：统一用 `escapeHtml`（先替换 `&`，再替换 `< > " '`）。`kpiEsc` 改为调用它。数据文本先转义，再拼进 innerHTML 或 tooltip 返回的 HTML。
 - 禁止：用删除 `<>` 代替转义；把单号、部门、门岗、人名、物品名、文件名原文拼进 innerHTML。
 - 现行文档：ARCHITECTURE §6
+
+### D-30  列制迁移只认标记，禁止按坐标猜（踩坑：半宽布局被反复放大）
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-10-07）
+- 背景：D-23 已禁止「对已是 24 列的布局再乘一次」，但实现仍靠坐标推断：`layoutLooksV12` 以 `x+w ≤ 12` 判旧列制，而 `getLayoutByName()` 每次读布局都调 `ensureLayoutV24()`。24 列制下右边界 ≤ 12 本就合法（半宽、左半边），于是四处同时出问题：① 旧 12 列视图只要没铺满（右边界 < 12），升级时先被 `loadLayoutState` 正确 ×2，紧接着被 `getLayoutByName` 再 ×2；② 24 列制新建的 `w=12` 半宽视图每次切过去都被放大，保存后错版写回 `localStorage`；③ 极小布局（如 `w=4`）随「切换 + 保存」反复翻倍，直到右边界 > 12 才停；④ 外部视图插件在 `loadViewPlugins` 迁移后，`initPlugins` 回调又调一次 `ensureLayoutV24`，同样二次放大。
+- 结论：迁移只在两个入口各做一次，之后只认标记——`loadLayoutState()` 按 `localStorage.dashLayouts.gridCols` 迁移 `custom`；`loadViewPlugins()` 按插件 `cols` 标记迁移外部视图（`cols === 24` 直接信任，缺省才按坐标推断，以兼容 v5.5 旧插件）。`getLayoutByName()` 只复制返回，不判断列制。视图插件格式增加 `cols: 24`：`saveViewPlugin()` 导出时写入，`views/示例管理层视图.js` 与 `views/_说明.txt` 同步。已被放大写坏的 `localStorage` 布局不会自动还原，需重排一次。
+- 禁止：在读取路径（`getLayoutByName`，以及任何切换/恢复视图的地方）调用 `ensureLayoutV24`；用 `x+w ≤ 12` 判断一个布局是不是 24 列制；新导出的视图插件不带 `cols` 字段。
+- 现行文档：ARCHITECTURE §4 / §5 / §7.5；本条兑现 D-23 的禁令
