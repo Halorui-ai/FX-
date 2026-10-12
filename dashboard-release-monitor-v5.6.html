@@ -1361,7 +1361,6 @@ function computeOrders() {
     const special = arr.some(r => r._特保);
     const releaseTimeout = arr.some(r => r._放行超时);
     const receiveTimeout = arr.some(r => r._接收超时);
-    const last = arr[arr.length - 1];
     map[no] = {
       单号: no, 记录数: arr.length,
       特保: special,
@@ -1376,8 +1375,8 @@ function computeOrders() {
       已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
       申请部门: arr[0].申请部门 || "",
       接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
-      流入门岗: arr[0].流入门岗 || "",
-      流出门岗: last.流出门岗 || "",                     // 取最后一笔记录的流转方向
+      流入门岗: arr.map(r => r.流入门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
+      流出门岗: arr.map(r => r.流出门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
       物品分类: arr.map(r => r.物品分类).find(Boolean) || "",  // 一单仅一种物品分类（多记录只是经过不同门岗）
       _日期: arr[0]._申请日期
     };
