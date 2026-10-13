@@ -194,6 +194,41 @@ button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,
 .h-segnote{font-size:11px;font-weight:600;color:#c0392b;margin-top:4px;white-space:nowrap}
 [data-mode="dark"] .h-segnote{color:#ff8b80}
 
+/* ===== 方案 C：纵向时间轴 + 右栏（各段耗时排行 / 超时判定） ===== */
+.trace-2col{display:grid;grid-template-columns:minmax(0,1fr) 258px;gap:20px;align-items:start}
+.trace-2col.solo{grid-template-columns:minmax(0,1fr)}
+.trace-2col.solo #sidePanel{display:none}
+@media (max-width:880px){.trace-2col{grid-template-columns:minmax(0,1fr)}.trace-2col #sidePanel{display:none}}
+.s-card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.35);border-radius:14px;
+  padding:14px 15px;margin-bottom:14px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+[data-mode="dark"] .s-card{border-color:rgba(255,255,255,0.12)}
+.s-card:last-child{margin-bottom:0}
+.s-card h4{font-size:12.5px;font-weight:600;margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.s-card h4 small{font-weight:400;color:var(--txt2);font-size:11px}
+.rank-row{margin-bottom:11px}
+.rank-row:last-child{margin-bottom:0}
+.rank-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;margin-bottom:5px}
+.rank-name{color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-val{font-family:Consolas,"SF Mono",Menlo,monospace;font-weight:600;color:var(--txt);white-space:nowrap}
+.rank-val.crit{color:#c0392b}
+[data-mode="dark"] .rank-val.crit{color:#ff8b80}
+.rank-track{height:6px;border-radius:3px;background:var(--track);overflow:hidden}
+.rank-track i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.rank-track i.crit{background:var(--bad)}
+.rank-track i.wait{background:var(--warn)}
+.verdict{display:flex;align-items:flex-start;gap:8px;font-size:11.5px;line-height:1.55;
+  padding:8px 0;border-bottom:1px dashed var(--line)}
+.verdict:last-of-type{border-bottom:none;padding-bottom:0}
+.verdict .mark{flex:none;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;margin-top:1px}
+.verdict.hit .mark{background:rgba(255,59,48,.14);color:#c0392b}
+.verdict.miss .mark{background:rgba(52,199,89,.16);color:#137a3f}
+[data-mode="dark"] .verdict.hit .mark{color:#ff8b80}
+[data-mode="dark"] .verdict.miss .mark{color:#5ee08a}
+.verdict .v-name{font-weight:600;color:var(--txt)}
+.verdict .v-note{color:var(--txt2);display:block;margin-top:3px}
+.s-foot{font-size:10.5px;color:var(--txt2);margin-top:10px;padding-top:9px;border-top:1px solid var(--line);line-height:1.6}
+
 /* 记录明细 */
 .records{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .records h3{font-size:13px;font-weight:600;margin-bottom:10px}
@@ -256,6 +291,7 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
   <span class="tag">时间轴形态（对比用）</span>
   <button class="sample on" id="axisV">纵向</button>
   <button class="sample" id="axisH">横向</button>
+  <button class="sample" id="axisC">纵向 + 右栏</button>
   <span class="tag" id="axisHint"></span>
 </div>
 
@@ -269,7 +305,10 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
     <div id="detailPanelBody">
       <div class="detailChips" id="chips"></div>
       <div class="headline" id="headline"></div>
-      <div id="axis"></div>
+      <div class="trace-2col solo" id="traceCols">
+        <div id="axis"></div>
+        <aside id="sidePanel"></aside>
+      </div>
       <div class="records">
         <h3>该单记录明细 <span id="recCount"></span></h3>
         <div class="scroll"><table id="recTable"></table></div>
@@ -315,11 +354,12 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
       </ul>
     </div>
     <div class="note">
-      <h4>时间轴形态（待你定）</h4>
+      <h4>呈现形态（三选一）</h4>
       <ul>
-        <li><b>纵向</b>：列表式，节点再多也不挤；但右侧会留白</li>
-        <li><b>横向</b>：流转图，铺满宽度、方向感强；节点 ≥6 时横向滚动</li>
-        <li>建议按典型节点数取舍：普通单 3 节点横向更好看；多门岗单（5–7 节点）纵向更稳</li>
+        <li><b>A 纵向</b>：列表式，节点再多也不挤；右侧留白</li>
+        <li><b>B 横向</b>：流转图，铺满宽度、方向感强；节点 ≥6 需横向滚动</li>
+        <li><b>C 纵向+右栏</b>：宽度用满，右栏 = 各段耗时排行 + 超时判定</li>
+        <li>三者共用同一份数据与配色，只是排版不同；切换按钮在页面顶部</li>
       </ul>
     </div>
     <div class="note">
@@ -449,8 +489,8 @@ function badgeText(n, pend) {
   return ({ accent: "正常", ok: "正常", warn: "超时", bad: "超时", purple: "特保" })[n.tone] || "正常";
 }
 
-/* —— 时间轴两种形态：v=纵向列表（默认）/ h=横向流转图 —— */
-let axisMode = "v";
+/* —— 三种呈现形态：v=纵向列表（默认）/ h=横向流转图 / c=纵向+右栏 —— */
+let viewMode = "v";
 let currentKey = "normal";
 
 function axisHTMLV(o, maxGap) {
@@ -506,6 +546,56 @@ function axisHTMLH(o, maxGap) {
   return html + "</div>";
 }
 
+/* —— 方案 C 右栏：各段耗时排行 + 超时判定（实现时判定改用 orders 的布尔字段，不解析文案） —— */
+function sidePanelHTML(o, maxGap) {
+  const segs = [];
+  for (let i = 1; i < o.nodes.length; i++) {
+    const n = o.nodes[i];
+    if (n.gap == null) continue;
+    segs.push({
+      from: KIND[o.nodes[i - 1].kind], to: KIND[n.kind], sec: n.gap,
+      waiting: !!n.waiting, crit: maxGap != null && n.gap === maxGap
+    });
+  }
+  const total = segs.reduce((s, x) => s + x.sec, 0) || 1;
+  const rank = segs.slice().sort((a, b) => b.sec - a.sec);
+  const barW = x => Math.max(4, Math.round(x.sec / total * 100));
+  const st = String(o.state || "");
+  const verdicts = [
+    { name: "放行超时", hit: /超时/.test(st) && /在途|到达|放行/.test(st),
+      note: /在途/.test(st) ? "在途超时：尚未到达流入门岗且已超过放行时限"
+        : /到达/.test(st) ? "到达超时：已到达流入门岗，但放行超时"
+        : /放行/.test(st) ? "放行超时（含特保多笔）" : "未命中" },
+    { name: "超时未接收", hit: /未接收/.test(st),
+      note: /未接收/.test(st) ? "已放行，但超过规定时间仍无接收记录" : "未命中" }
+  ];
+  return `
+      <div class="s-card">
+        <h4>⏱ 各段耗时排行 <small>降序</small></h4>
+        ${rank.map(x => `
+          <div class="rank-row">
+            <div class="rank-top">
+              <span class="rank-name">${esc(x.from)} → ${esc(x.to)}${x.waiting ? "（进行中）" : ""}</span>
+              <span class="rank-val ${x.crit ? "crit" : ""}">${fmtDur(x.sec)}</span>
+            </div>
+            <div class="rank-track"><i class="${x.crit ? "crit" : x.waiting ? "wait" : ""}" style="width:${barW(x)}%"></i></div>
+          </div>`).join("")}
+        <div class="s-foot">最长一段即卡点，已在时间轴标红</div>
+      </div>
+      <div class="s-card">
+        <h4>⚖️ 超时判定</h4>
+        ${verdicts.map(v => `
+          <div class="verdict ${v.hit ? "hit" : "miss"}">
+            <span class="mark">${v.hit ? "!" : "✓"}</span>
+            <span>
+              <span class="v-name">${esc(v.name)}</span>${v.hit ? '<span class="badge bad" style="margin-left:6px">命中</span>' : ""}
+              <span class="v-note">${esc(v.note)}</span>
+            </span>
+          </div>`).join("")}
+        <div class="s-foot">口径依据 CONTEXT §3：在途超时与到达超时互斥，之和 = 放行超时单数</div>
+      </div>`;
+}
+
 function render(key) {
   currentKey = key;
   const o = SAMPLES[key].order, recs = RECORDS[key];
@@ -532,7 +622,10 @@ function render(key) {
     `<span style="margin-left:auto"></span><span class="badge ${o.stateTone}">${esc(o.state)}</span>`;
 
   const maxGap = allGaps.length > 1 ? Math.max(...allGaps.map(n => n.gap)) : null;
-  document.getElementById("axis").innerHTML = axisMode === "h" ? axisHTMLH(o, maxGap) : axisHTMLV(o, maxGap);
+  document.getElementById("axis").innerHTML = viewMode === "h" ? axisHTMLH(o, maxGap) : axisHTMLV(o, maxGap);
+  // 方案 C：纵向 + 右栏；其余形态单栏
+  document.getElementById("traceCols").classList.toggle("solo", viewMode !== "c");
+  document.getElementById("sidePanel").innerHTML = viewMode === "c" ? sidePanelHTML(o, maxGap) : "";
 
   document.getElementById("recCount").textContent = `（${recs.length} 条 · 记录级）`;
   document.getElementById("recTable").innerHTML =
@@ -553,16 +646,20 @@ box.addEventListener("click", e => {
   setSearchMsg(""); render(b.dataset.k);
 });
 
-/* ============ 时间轴形态切换（纵向 / 横向） ============ */
+/* ============ 呈现形态切换（纵向 / 横向 / 纵向+右栏） ============ */
 function syncAxisBtns() {
-  document.getElementById("axisV").classList.toggle("on", axisMode === "v");
-  document.getElementById("axisH").classList.toggle("on", axisMode === "h");
-  document.getElementById("axisHint").textContent = axisMode === "v"
-    ? "纵向：列表式 · 节点再多也不挤 · 右侧会留白"
-    : "横向：流转图 · 铺满宽度 · 节点多时横向滚动";
+  document.getElementById("axisV").classList.toggle("on", viewMode === "v");
+  document.getElementById("axisH").classList.toggle("on", viewMode === "h");
+  document.getElementById("axisC").classList.toggle("on", viewMode === "c");
+  document.getElementById("axisHint").textContent = viewMode === "v"
+    ? "纵向：列表式 · 节点再多也不挤 · 右侧留白"
+    : viewMode === "h"
+    ? "横向：流转图 · 铺满宽度 · 节点 ≥6 需横向滚动"
+    : "纵向 + 右栏：宽度用满，右栏给耗时排行与超时判定";
 }
-document.getElementById("axisV").onclick = () => { axisMode = "v"; syncAxisBtns(); render(currentKey); };
-document.getElementById("axisH").onclick = () => { axisMode = "h"; syncAxisBtns(); render(currentKey); };
+document.getElementById("axisV").onclick = () => { viewMode = "v"; syncAxisBtns(); render(currentKey); };
+document.getElementById("axisH").onclick = () => { viewMode = "h"; syncAxisBtns(); render(currentKey); };
+document.getElementById("axisC").onclick = () => { viewMode = "c"; syncAxisBtns(); render(currentKey); };
 
 /* ============ 单号直查 ============ */
 const searchWrap = document.getElementById("traceSearch");
