@@ -374,3 +374,13 @@
 - 结论：复用现有二级详情抽屉 `#detailOverlay` 承载「追踪模式」（不新开弹层）。① **入口 4 类**：顶栏「单号直查」（`#traceSearch`，任何时候可用，`Ctrl+K` 聚焦）/ 主看板明细表与二级明细表的「放行单号」列（Tabulator `cellClick`）/ 告警卡与未结案表的单号（`.orderLink` + 全局委托，点击 `stopPropagation()` 以免触发卡片自身下钻）。② **内容**：摘要 chips → 身份行 → 时间轴（申请 → 放行×N → 接收；`gap` 语义为"距上一节点"耗时，渲染进该节点行右端）→ 该单记录明细（8 列，去掉冗余的放行单号列）。③ **尺寸**：追踪模式给 `#detailPanel` 加 `.trace-mode` 收窄为 `min(95vw,920px)`（时间线是纵向列表，1180px 会留白），`closeDetail()` 移除并复位。④ **只读**：数据全部来自 `orders[单号]` 与 `rows.filter(放行单号)`，**不新增任何 `computeStats` 字段**；配色遵循 D-33。
 - 禁止：为追踪新增统计口径或改 `computeStats` / `buildKpiProps`；在读取路径重复判断（本功能的定时器复位同理——必须与 `openDetail` **共用**同一套 `detailPanelOpening` / `detailDrawTimer` / `detailResizeTimer` / `detailDisposeTimer`，否则会回退 Issue #7·#5 的修复）；用解析状态文案来判断超时（应直接用 `orders` 的 `在途超时` / `放行超时 && 已到达` / `超时未接收` 布尔字段）。
 - 现行文档：ARCHITECTURE §3 / §6；CONTEXT §4；docs/prototypes/order-timeline/HANDOFF.md
+
+### D-35  功能 / 行为 / 口径必须开 PR；纯文档小改可直推 main
+
+- 状态：已采纳
+- 类型：流程
+- 日期 / 版本：2026-10-14
+- 背景：D-25 写「改一句文案可直推 main」，但近期出现功能与口径改动直推 `main`、跳过 PR 闸门的情况（如 D-32～D-34 一批）。仓库哨兵需在合并前复核；没有 PR 就没有复核入口。
+- 结论：**新功能、行为变化、口径改动必须开 PR 指向 `main`，由仓库哨兵复核后再合并。** 仅纯文档错别字 / 注释 / 体积数字等**无行为变化**的小改，可直推 `main`。本机 `file://` 验收与 HANDOFF `approved` 开工闸门（D-24 / D-25）不变；本条约束的是**合进 main 的路径**。
+- 禁止：功能 / 行为 / 口径改动直推 `main`；用「小改」名义把行为变化塞进直推；跳过哨兵复核强行合并功能 PR。
+- 现行文档：AGENT 「推荐、不强制」与角色节；D-25（本条收紧其直推范围）
