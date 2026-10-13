@@ -17,6 +17,12 @@ docs/prototypes/
 
 已交付的 KPI 中卡/大卡样板仍在仓库根 `kpi-card-redesign/`（D-22），不再搬。**以后新原型只进本目录**，不要再在根上新开一个目录，也不要去 `液态玻璃看板Qoder`。
 
+## 当前原型
+
+| slug | status | 内容 |
+|---|---|---|
+| [`order-timeline/`](order-timeline/HANDOFF.md) | `draft` | 单据全生命周期时间线（订单追踪抽屉）：申请 → 放行各门岗 → 接收 + 段耗时 + 最长卡点。待用户审核转 `approved` 后实现进主文件。 |
+
 ## 流程
 
 开工闸门仍是 HANDOFF 的 `approved`。下面 Git 步骤是推荐，详见 AGENT「推荐卡片流程」。
