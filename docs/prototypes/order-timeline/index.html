@@ -91,7 +91,9 @@ button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,
 /* ===== 抽屉：照主文件 #detailPanel ===== */
 .wrap{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:18px;align-items:start}
 @media (max-width:1000px){.wrap{grid-template-columns:1fr}}
-#detailPanel{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.45);border-radius:20px;
+/* 真实 #detailPanel 是 min(95vw,1180px)；追踪模式收窄一档（时间线为纵向列表，1180 会留大片空白） */
+#detailPanel{width:min(100%,920px);margin:0 auto;
+  background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.45);border-radius:20px;
   backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
   box-shadow:0 24px 80px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.45);overflow:hidden}
 [data-mode="dark"] #detailPanel{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.04)}
@@ -250,6 +252,14 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
         <li>② 主看板明细卡 · 点单号</li>
         <li>③ 二级详情明细表 · 点单号</li>
         <li>④ 告警卡 / 未结案卡预览 · 点单号</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>抽屉尺寸</h4>
+      <ul>
+        <li>常规详情：<code>min(95vw,1180px)</code>（现有，图表 + 宽表需要）</li>
+        <li><b>追踪模式：<code>min(95vw,920px)</code></b><br>时间线是纵向列表，用 1180 右侧会留大片空白</li>
+        <li>实现：给 <code>#detailPanel</code> 加 <code>.trace-mode</code> 切宽度，关闭时移除</li>
       </ul>
     </div>
     <div class="note">
@@ -449,10 +459,9 @@ function render(key) {
 
   document.getElementById("recCount").textContent = `（${recs.length} 条 · 记录级）`;
   document.getElementById("recTable").innerHTML =
-    `<thead><tr><th>#</th><th>放行单号</th><th>物品</th><th>数量</th><th>流出门岗</th><th>流入门岗</th><th>实际放行门岗</th>
-      <th>申请时间</th><th>放行时间</th><th>接收时间</th><th>状态</th></tr></thead><tbody>` +
-    recs.map((r, i) => `<tr><td>${i + 1}</td><td class="mono">${esc(o.no)}</td><td>${esc(r.item)}</td><td>${esc(r.qty)}</td>
-      <td>${esc(r.out)}</td><td>${esc(r.inG)}</td><td>${esc(r.act) || "—"}</td>
+    `<thead><tr><th>#</th><th>物品</th><th>数量</th><th>放行门岗</th><th>申请时间</th><th>放行时间</th><th>接收时间</th><th>状态</th></tr></thead><tbody>` +
+    recs.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.item)}</td><td>${esc(r.qty)}</td>
+      <td>${esc(r.act) || "—"}</td>
       <td class="mono">${esc(r.apply)}</td><td class="mono">${esc(r.rel)}</td><td class="mono">${esc(r.recv)}</td>
       <td><span class="badge ${r.tone}">${esc(r.st)}</span></td></tr>`).join("") + "</tbody>";
 

@@ -113,6 +113,16 @@ impl_touch:            # 主文件：① 顶栏 .metaRow 加 #traceSearch（输�
 - **节点三态**：实心（已完成，按语义着色）／空心橙（进行中，未完成但有等待）／空心灰（未开始）
 - **段耗时行**：位于两个节点之间，胶囊样式；**最长卡点**整段标红 + 「🔴 最长卡点」标签（仅当该单 ≥2 段时才评）
 - 竖线：`2px`，`--line`；最长卡点段用 `--bad` 渐变加重
+
+**抽屉宽度（★ 追踪模式要收窄）**：常规详情沿用现有 `width:min(95vw,1180px)`（图表 + 宽表需要）；**追踪模式改为 `min(95vw,920px)`**——时间线是纵向列表，用 1180px 会在右侧留大片空白。做法：`openTrace()` 时给 `#detailPanel` 加 `.trace-mode`，`closeDetail()` 时移除。
+
+| 模式 | 宽度 | 理由 |
+|---|---|---|
+| 常规详情（KPI / 图表下钻） | `min(95vw,1180px)` | 图表 + 多列明细表需要横向空间 |
+| **追踪模式** | `min(95vw,920px)` | 时间轴单栏即可铺满，不留空白；记录明细表精简为 8 列 |
+
+**记录明细表列（追踪模式专用，8 列）**：`# / 物品 / 数量 / 放行门岗 / 申请时间 / 放行时间 / 接收时间 / 状态`。
+**不放「放行单号」列**（整页就是这一单，标题已标明，重复占宽）。
 - 多记录单据：所有放行节点按时间排序插在申请与接收之间，节点标题注明「第 N 笔放行」
 
 ---
@@ -181,7 +191,7 @@ impl_touch:            # 主文件：① 顶栏 .metaRow 加 #traceSearch（输�
 - `openTrace(no)` 复用 `#detailOverlay`，与 `openDetail(key)` **共用** `detailPanelOpening` / `detailDrawTimer` / `detailResizeTimer` / `detailDisposeTimer`；进入前必须按 `openDetail` 的做法**清掉未触发的定时器**（Issue #7·#5 修的是同一类问题，别回退）。
 - 追踪模式无图表：调 `renderDetailChart(null)` 隐藏图表区即可；`detailResizeTimer` 里的 `if (detailChartInst) resize()` 在无实例时天然跳过。
 - 进入追踪模式前**销毁** `#detailTable2` 的 Tabulator 实例（`detailTableInst.destroy()`），避免隐藏容器里残留实例。
-- `closeDetail()` 时恢复各容器 `display` 与 `traceMode = false`，保证下次打开普通详情正常。
+- `closeDetail()` 时恢复各容器 `display`、`traceMode = false`，并**移除 `#detailPanel` 的 `.trace-mode`**（宽度回到 1180），保证下次打开普通详情正常。
 - Esc / 点遮罩 / ✕ 关闭行为与现有详情一致。
 
 ### 5.3 安全与规范
