@@ -5,17 +5,17 @@
 先在浏览器打开确认视觉与信息层级，再按本说明书改主文件。
 
 ```yaml
-status: draft          # draft | approved | implementing | shipped
-owner_design: DSH（本次由实现侧代笔原型，待用户审核）
-owner_impl: Grok Build
-approved_by:
-approved_at:           # YYYY-MM-DD
-freeze:                # 审批后不得改：顶栏搜索框位置（时间范围右侧） / 时间轴三态圆点 / 段耗时胶囊 / 最长卡点红色高亮 / 严重度配色 / 摘要 chips 顺序
+status: shipped        # 原型经用户评审认可（2026-10-13）→ 已实现进主文件
+owner_design: DSH（实现侧代笔原型，用户评审确认）
+owner_impl: DSH
+approved_by: 用户（"就按照这个原型来"）
+approved_at: 2026-10-13
+freeze:                # 已定稿不得改：顶栏搜索框位置（时间范围右侧）/ 形态 A（纵向 + 行内横向铺开、耗时右端对齐）/ 节点三态圆点 / 最长卡点红色 / 严重度配色（D-33）/ 摘要 chips 顺序 / 追踪抽屉宽度 920px
 must_not_change:       # 口径不动（CONTEXT §3 的超时与特保定义）；不改 CARD_DEFS 任何现有卡；不改 buildKpiProps；不碰结案率水球
-impl_touch:            # 主文件：① 顶栏 .metaRow 加 #traceSearch（输入框 + Ctrl+K）② #detailOverlay 内加 #detailTraceBox + CSS + openTrace/renderTrace ③ 4 处单号入口；ARCHITECTURE §3/§5/§6
+impl_touch:            # 已落于 dashboard-release-monitor-v5.6.html：#traceSearch + #traceInput（顶栏直查 / Ctrl+K）、#detailTraceBox + openTrace/renderTrace/renderTraceAxis/renderTraceTable、3 处明细表 cellClick、3 处 orderLink；ARCHITECTURE §3/§6
 ```
 
-> 实现 Agent：`status` 不是 `approved`（或 `implementing`）就不要改主文件。
+> **实现状态**：已实现并验收（形态取 **A 纵向 + 行内横向铺开**）。形态 B（真横向）与 C（右栏分析）**未实现**，规格保留在下方 §3，将来需要可直接照做。
 
 ---
 

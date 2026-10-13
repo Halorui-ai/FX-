@@ -364,3 +364,13 @@
 - 保持不变：`gdms_timeout_dept`（放行=红）、`gdms_receive_dept` 卡（接收=橙）、`gdms_unclosed`「未结案」（在途超时=红）、泛称「总超时」与特保分类、图表分类调色板、错误面板 / 关闭按钮等非状态色。
 - 禁止：再把放行类超时染成橙或把接收类超时染成红；新增卡片 / 图表 / 告警不按本条选色；为此去改 9 套主题 CSS（主题只定义色值，语义在主文件）。
 - 现行文档：ARCHITECTURE §4 状态色语义；CONTEXT §4
+
+### D-34  单据追踪：一个抽屉两种模式，入口 4 类，只读不新增口径
+
+- 状态：已采纳
+- 类型：架构
+- 日期 / 版本：v5.6（2026-10-13）
+- 背景：看板能回答「有多少单超时」，但回答不了「**这一单为什么卡住**」——要回答得回放行系统翻原始记录。先在设计沙盒 `docs/prototypes/order-timeline/` 出原型（经用户评审，形态定为 **A 纵向 + 行内横向铺开**：每行「时间 │ 轴 │ 标题+徽章 │ 描述·人员·门岗 │ 段耗时」，耗时右端对齐成一列）。
+- 结论：复用现有二级详情抽屉 `#detailOverlay` 承载「追踪模式」（不新开弹层）。① **入口 4 类**：顶栏「单号直查」（`#traceSearch`，任何时候可用，`Ctrl+K` 聚焦）/ 主看板明细表与二级明细表的「放行单号」列（Tabulator `cellClick`）/ 告警卡与未结案表的单号（`.orderLink` + 全局委托，点击 `stopPropagation()` 以免触发卡片自身下钻）。② **内容**：摘要 chips → 身份行 → 时间轴（申请 → 放行×N → 接收；`gap` 语义为"距上一节点"耗时，渲染进该节点行右端）→ 该单记录明细（8 列，去掉冗余的放行单号列）。③ **尺寸**：追踪模式给 `#detailPanel` 加 `.trace-mode` 收窄为 `min(95vw,920px)`（时间线是纵向列表，1180px 会留白），`closeDetail()` 移除并复位。④ **只读**：数据全部来自 `orders[单号]` 与 `rows.filter(放行单号)`，**不新增任何 `computeStats` 字段**；配色遵循 D-33。
+- 禁止：为追踪新增统计口径或改 `computeStats` / `buildKpiProps`；在读取路径重复判断（本功能的定时器复位同理——必须与 `openDetail` **共用**同一套 `detailPanelOpening` / `detailDrawTimer` / `detailResizeTimer` / `detailDisposeTimer`，否则会回退 Issue #7·#5 的修复）；用解析状态文案来判断超时（应直接用 `orders` 的 `在途超时` / `放行超时 && 已到达` / `超时未接收` 布尔字段）。
+- 现行文档：ARCHITECTURE §3 / §6；CONTEXT §4；docs/prototypes/order-timeline/HANDOFF.md

@@ -121,6 +121,65 @@ html button.tb-drawer-btn[aria-expanded="true"] .tb-drawer-chevron{transform:rot
 #fileMeta{color:var(--txt2);font-size:12px;display:inline-flex;align-items:center;height:26px;padding:0 10px;
   border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,0.5);line-height:1}
 #fileMeta b{color:var(--accent);font-weight:600}
+
+/* ========== 单号直查（顶栏 · 时间范围右侧，任何时候可查；D-34） ========== */
+#traceSearch{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 6px 0 10px;
+  border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,0.5);transition:.18s}
+[data-mode="dark"] #traceSearch{background:rgba(255,255,255,0.06)}
+#traceSearch .ts-ico{font-size:12px;opacity:.7;flex:none}
+#traceSearch input{border:none;outline:none;background:transparent;color:var(--txt);
+  font-size:12px;font-family:inherit;width:172px;line-height:1}
+#traceSearch input::placeholder{color:var(--txt2)}
+#traceSearch .ts-kbd{font-size:10px;color:var(--txt2);border:1px solid var(--line);border-radius:5px;
+  padding:1px 5px;line-height:1.5;flex:none}
+#traceSearch:focus-within{border-color:var(--accent);background:rgba(255,255,255,0.9);
+  box-shadow:0 0 0 2px rgba(0,113,227,0.15)}
+[data-mode="dark"] #traceSearch:focus-within{background:rgba(255,255,255,0.10)}
+#traceSearch.err{border-color:var(--bad);box-shadow:0 0 0 2px rgba(255,59,48,0.14)}
+#traceSearch.ok{border-color:var(--ok);box-shadow:0 0 0 2px rgba(52,199,89,0.16)}
+
+/* ========== 单据追踪（抽屉追踪模式；宽度收窄，时间线为纵向列表） ========== */
+#detailPanel.trace-mode{width:min(95vw,920px)}
+#traceHead{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;
+  border-radius:12px;background:rgba(0,0,0,0.04);font-size:12.5px;color:var(--txt2)}
+[data-mode="dark"] #traceHead{background:rgba(255,255,255,0.05)}
+#traceHead b{color:var(--txt);font-weight:600}
+#traceHead .trace-no{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:13px;
+  color:var(--txt);letter-spacing:.2px}
+/* 时间轴：节点竖排，行内「标题 │ 描述 │ 耗时」横向铺开，耗时右端对齐成一列 */
+.tl-row{display:grid;grid-template-columns:62px 26px minmax(0,1fr);align-items:flex-start}
+.tl-time{font-size:12.5px;color:var(--txt);font-variant-numeric:tabular-nums;padding-top:1px;
+  font-family:ui-monospace,"SF Mono",Consolas,monospace}
+.tl-time.pending{color:var(--txt2)}
+.tl-rail{position:relative;display:flex;justify-content:center;min-height:22px}
+.tl-row.node .tl-rail::before{content:"";position:absolute;top:14px;bottom:-6px;width:2px;background:var(--line)}
+.tl-row.node:last-child .tl-rail::before{display:none}
+.tl-dot{width:12px;height:12px;border-radius:50%;margin-top:5px;position:relative;z-index:1;
+  background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+.tl-dot.ok{background:var(--ok)} .tl-dot.warn{background:var(--warn)}
+.tl-dot.bad{background:var(--bad)} .tl-dot.purple{background:var(--cat-purple)}
+.tl-dot.pending{background:transparent;border:2px solid var(--txt2)}
+.tl-dot.pending.p-bad{border-color:var(--bad)}
+.tl-dot.pending.p-warn{border-color:var(--warn)}
+.tl-body{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:0 0 14px 4px;min-width:0}
+.tl-title{display:flex;flex:none;align-items:center;gap:7px;font-size:13.5px;font-weight:600}
+.tl-meta{color:var(--txt2);font-size:12px;flex:1 1 auto;min-width:0;line-height:1.6;word-break:break-all}
+.tl-meta code{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:11.5px;
+  background:rgba(0,0,0,0.05);padding:1px 5px;border-radius:5px}
+[data-mode="dark"] .tl-meta code{background:rgba(255,255,255,0.08)}
+.tl-seg{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;
+  color:var(--txt2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tl-seg.crit{color:var(--danger);font-weight:600}
+.tl-crit{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  color:var(--danger);background:var(--danger-soft);padding:2px 8px;border-radius:999px;white-space:nowrap}
+/* 复用 .tag 体系，补齐两个变体（放行类=红/接收类=黄，见 D-33） */
+.tag-warn{color:var(--warn);background:var(--warn-soft)}
+.tag-purple{color:var(--cat-purple);background:var(--purple-soft)}
+.tag-mute{color:var(--txt2);background:rgba(0,0,0,0.06)}
+[data-mode="dark"] .tag-mute{background:rgba(255,255,255,0.08)}
+/* 可点击单号 */
+.orderLink{cursor:pointer;border-bottom:1px dashed currentColor;transition:.15s}
+.orderLink:hover{color:var(--accent);border-bottom-style:solid}
 .ios-row{flex:none;display:inline-flex;align-items:center;gap:8px;
   padding:4px 10px 4px 12px;border:1px solid var(--line);border-radius:980px;background:rgba(255,255,255,0.6)}
 .ios-row-left{display:flex;align-items:center;gap:6px;min-width:0}
@@ -765,6 +824,11 @@ body.perf-lite .cardSlot:hover{transform:none!important}
       <div class="metaRow">
         <span id="perfTag" title="当前渲染模式"></span>
         <span id="fileMeta"></span>
+        <span id="traceSearch" class="hidden" title="输入放行单号后回车，直达该单全链路时间线（快捷键 Ctrl+K）">
+          <span class="ts-ico">🔍</span>
+          <input id="traceInput" type="text" placeholder="单号直查" autocomplete="off" spellcheck="false">
+          <span class="ts-kbd">Ctrl K</span>
+        </span>
         <span id="liveBadge" class="hidden"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b id="liveTime">--:--:--</b></span>
       </div>
     </div>
@@ -912,6 +976,7 @@ body.perf-lite .cardSlot:hover{transform:none!important}
       <div id="detailDims" style="display:none"></div>
       <div id="detailChartBox"><div id="detailChart"></div></div>
       <div id="detailCatFilters"></div>
+      <div id="detailTraceBox" style="display:none"></div>
       <div id="detailTableBox"><h4 id="detailTableTitle">数据明细</h4><div id="detailTable2"></div></div>
     </div>
   </div>
@@ -1848,7 +1913,8 @@ function buildDetailTable() {
     data: rows, columns: cols, layout: "fitColumns", index: "_rowId",
     pagination: true, paginationSize: isLarge ? 50 : 20,
     ...(isLarge ? { progressiveLoad: "scroll", renderVertical: "virtual" } : {}),
-    movableColumns: true, placeholder: "暂无数据"
+    movableColumns: true, placeholder: "暂无数据",
+    cellClick(e, cell) { if (cell.getColumn().getField() === "放行单号") openTrace(cell.getValue()); }
   });
 }
 
@@ -2860,7 +2926,7 @@ const CARD_DEFS = {
         '<th style="padding:5px 6px">#</th><th style="padding:5px 6px">放行单号</th><th style="padding:5px 6px">部门</th><th style="padding:5px 6px">门岗</th><th style="padding:5px 6px">状态</th></tr></thead><tbody>';
       list.slice(0, 20).forEach((o, i) => {
         html += '<tr style="border-bottom:1px solid var(--line)"><td style="padding:4px 6px;color:var(--txt2)">' + (i + 1) + '</td>' +
-          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)">' + escapeHtml(o.单号) + '</td>' +
+          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)"><span class="orderLink" data-order="' + escapeHtml(o.单号) + '" title="点击查看该单全链路">' + escapeHtml(o.单号) + '</span></td>' +
           '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.申请部门 || "-") + '</td>' +
           '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.流入门岗 || "-") + '</td>' +
           '<td style="padding:4px 6px"><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">未结案</span></td></tr>';
@@ -3708,6 +3774,7 @@ function renderAll() {
   $("dropzone").classList.add("hidden");
   $("dashboard").classList.remove("hidden");
   ["btnReupload", "btnExportExcel", "btnToCsv", "btnShot"].forEach(id => $(id).classList.remove("hidden"));
+  $("traceSearch").classList.remove("hidden");   // 单号直查（有数据才显示）
   $("btnLive").classList.toggle("hidden", !demoMode);
   $("liveBadge").classList.toggle("hidden", !demoMode);
   $("liveFeed").classList.toggle("hidden", !demoMode);
@@ -3747,7 +3814,7 @@ function analysisTransitHTML(S) {
     preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
-      `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
+      `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
       `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
   }
@@ -3765,7 +3832,7 @@ function analysisReceiveHTML(S) {
     preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
-      `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
+      `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
       `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
@@ -4026,7 +4093,8 @@ function renderSimpleDetail(cfg, key) {
   $("detailTableTitle").textContent = `${cfg.tableTitle}（${tRows.length} 条）`;
   detailTableInst = new Tabulator("#detailTable2", {
     data: tRows, columns: detailCols(key), layout: "fitDataStretch",
-    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据",
+    cellClick(e, cell) { if (cell.getColumn().getField() === "放行单号") openTrace(cell.getValue()); }
   });
 }
 
@@ -4090,7 +4158,8 @@ function rebuildOverviewTable(dim) {
   if (detailTableInst) { detailTableInst.destroy(); detailTableInst = null; }
   detailTableInst = new Tabulator("#detailTable2", {
     data: tRows, columns: detailCols("overview"), layout: "fitDataStretch",
-    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据"
+    pagination: true, paginationSize: 15, movableColumns: true, placeholder: "暂无数据",
+    cellClick(e, cell) { if (cell.getColumn().getField() === "放行单号") openTrace(cell.getValue()); }
   });
 }
 
@@ -4108,6 +4177,15 @@ function closeDetail() {
   $("detailOverlay").classList.remove("open");
   document.body.style.overflow = "";
   detailPanelOpening = false;
+  // 追踪模式收尾：撤销收窄宽度并复位容器，避免影响下次打开常规详情（D-34）
+  if (traceMode) {
+    traceMode = false;
+    $("detailPanel").classList.remove("trace-mode");
+    $("detailTraceBox").style.display = "none";
+    $("detailTraceBox").innerHTML = "";
+    $("detailTableBox").style.display = "";
+    $("detailChartBox").style.display = "";
+  }
   if (detailDrawTimer) { clearTimeout(detailDrawTimer); detailDrawTimer = null; }
   if (detailResizeTimer) { clearTimeout(detailResizeTimer); detailResizeTimer = null; }
   if (detailDisposeTimer) clearTimeout(detailDisposeTimer);
@@ -4120,6 +4198,222 @@ function closeDetail() {
 $("btnDetailClose").onclick = closeDetail;
 $("detailOverlay").addEventListener("click", e => { if (e.target === $("detailOverlay")) closeDetail(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && $("detailOverlay").classList.contains("open")) closeDetail(); });
+
+// =====================================================================
+// ★★★ 单据追踪（全生命周期时间线；D-34）★★★
+// 入口：① 顶栏单号直查 ② 主看板明细表单号 ③ 二级明细表单号 ④ 告警卡 / 未结案表单号（orderLink 全局委托）
+// 形态：纵向时间轴（申请 → 放行×N → 接收），行内「标题 │ 描述 │ 段耗时」横向铺开、耗时右端对齐
+// 口径：只读 orders / rows，不新增任何统计；配色遵循 D-33（放行类红 / 接收类黄）
+// =====================================================================
+let traceMode = false;
+const TRACE_KIND = { apply: "申请", release: "放行", receive: "接收" };
+
+function traceFmtDur(sec) {
+  if (sec == null) return "—";
+  const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  if (h <= 0) return m + " 分钟";
+  return m ? h + " 小时 " + m + " 分" : h + " 小时";
+}
+function traceToneVar(t) {
+  return "var(--" + (t === "bad" ? "bad" : t === "warn" ? "warn" : t === "purple" ? "cat-purple" : t === "mute" ? "txt2" : "ok") + ")";
+}
+function traceTagCls(t) {
+  return ({ ok: "tag-ok", warn: "tag-warn", bad: "tag-bad", purple: "tag-purple", accent: "tag-mute", mute: "tag-mute" })[t] || "tag-mute";
+}
+// 状态徽章判定（优先级：在途超时 > 到达超时 > 超时未接收 > 放行异常 > 已接收 > 在途）
+function traceState(o) {
+  if (o.在途超时) return { name: "在途超时", tone: "bad" };
+  if (o.放行超时 && o.已到达) return { name: "到达超时", tone: "bad" };
+  if (o.超时未接收) return { name: "超时未接收", tone: "warn" };
+  if (o.放行异常) return { name: "放行异常", tone: "bad" };
+  if (o.已接收) return { name: "已接收", tone: "ok" };
+  return { name: "在途", tone: "mute" };
+}
+// 构造时间轴节点；gap = 距上一节点耗时（秒），未完成节点标 waiting
+function traceNodes(o, recs) {
+  const earliest = arr => arr.length ? arr.reduce((a, b) => (a.valueOf() <= b.valueOf() ? a : b)) : null;
+  const nodes = [];
+  nodes.push({
+    kind: "apply", time: earliest(recs.map(r => r._申请日期).filter(Boolean)), tone: "accent",
+    desc: "提交放行申请", who: (recs[0].申请人 || "-") + " · " + (o.申请部门 || "-")
+  });
+  const released = recs.filter(r => r._放行日期).sort((a, b) => a._放行日期.valueOf() - b._放行日期.valueOf());
+  if (released.length) {
+    released.forEach((r, i) => nodes.push({
+      kind: "release", time: r._放行日期,
+      desc: released.length > 1 ? "第 " + (i + 1) + " 笔放行" : "放行核验完成",
+      who: (r.放行人 || "-") + " · " + (r.实际放行门岗 || "-"),
+      tone: r._放行超时 ? "bad" : (o.特保 ? "purple" : "ok"),
+      flag: r._放行超时 ? "放行超时" : ""
+    }));
+  } else {
+    nodes.push({ kind: "release", time: null, desc: "尚未放行", tone: "bad", who: o.流入门岗 || "-" });
+  }
+  const recvAt = earliest(recs.map(r => r._接收日期).filter(Boolean));
+  if (recvAt) {
+    const rr = recs.find(r => r._接收日期) || {};
+    nodes.push({
+      kind: "receive", time: recvAt, desc: "接收确认", tone: "ok",
+      who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-")
+    });
+  } else {
+    nodes.push({
+      kind: "receive", time: null, desc: "尚未接收",
+      tone: o.超时未接收 ? "warn" : "accent", who: "待接收"
+    });
+  }
+  const now = dayjs();
+  for (let i = 1; i < nodes.length; i++) {
+    const p = nodes[i - 1], c = nodes[i];
+    if (p.time && c.time) c.gap = Math.max(0, (c.time.valueOf() - p.time.valueOf()) / 1000);
+    else if (p.time && !c.time) { c.gap = Math.max(0, (now.valueOf() - p.time.valueOf()) / 1000); c.waiting = true; }
+  }
+  return nodes;
+}
+function renderTraceAxis(nodes) {
+  const gaps = nodes.filter(n => n.gap != null);
+  const maxGap = gaps.length > 1 ? Math.max(...gaps.map(n => n.gap)) : null;
+  return nodes.map(n => {
+    const pend = !n.time, t = n.tone;
+    const crit = maxGap != null && n.gap === maxGap;
+    const dotCls = pend ? ("pending p-" + (t === "bad" ? "bad" : t === "warn" ? "warn" : "mute")) : t;
+    const tagTxt = pend ? (t === "bad" ? "超时" : "进行中")
+      : (n.kind === "apply" ? "已提交" : (t === "bad" || t === "warn" ? "超时" : t === "purple" ? "特保" : "正常"));
+    return '<div class="tl-row node">' +
+      '<div class="tl-time ' + (pend ? "pending" : "") + '">' + (n.time ? escapeHtml(n.time.format("HH:mm")) : "--:--") + "</div>" +
+      '<div class="tl-rail"><span class="tl-dot ' + dotCls + '"></span></div>' +
+      '<div class="tl-body">' +
+        '<div class="tl-title">' + TRACE_KIND[n.kind] +
+          '<span class="tag ' + traceTagCls(t) + '">' + tagTxt + "</span>" +
+          (n.flag ? '<span class="tag tag-bad">' + escapeHtml(n.flag) + "</span>" : "") +
+        "</div>" +
+        '<div class="tl-meta">' + escapeHtml(n.desc) + " · <code>" + escapeHtml(n.who) + "</code></div>" +
+        (n.gap != null
+          ? '<div class="tl-seg ' + (crit ? "crit" : "") + '"><span>⏱ ' + (n.waiting ? "已等待 " : "") +
+            traceFmtDur(n.gap) + (n.waiting ? "（进行中）" : "") + "</span>" +
+            (crit ? '<span class="tl-crit">🔴 最长卡点</span>' : "") + "</div>"
+          : "") +
+      "</div></div>";
+  }).join("");
+}
+function renderTraceTable(recs) {
+  const fields = ["放行物品名称", "数量", "实际放行门岗", "_申请日期", "_放行日期", "_接收日期"];
+  const heads = ["物品", "数量", "放行门岗", "申请时间", "放行时间", "接收时间"];
+  const td = 'padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  const th = 'text-align:left;color:var(--txt2);font-weight:500;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap';
+  return '<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>' +
+    heads.map(h => '<th style="' + th + '">' + h + "</th>").join("") +
+    '<th style="' + th + '">状态</th></tr></thead><tbody>' +
+    recs.map(r => {
+      const cells = fields.map(f => {
+        const v = r[f];
+        if (v == null || v === "") return "—";
+        if (dayjs.isDayjs && dayjs.isDayjs(v)) return escapeHtml(v.format("MM-DD HH:mm"));
+        return escapeHtml(String(v));
+      });
+      const st = r._放行超时 ? { t: "放行超时", c: "tag-bad" }
+        : (r._接收日期 ? { t: "已接收", c: "tag-ok" }
+          : ((r._接收超时未接收 || r._接收超时) ? { t: "超时未接收", c: "tag-warn" } : { t: "在途", c: "tag-mute" }));
+      return "<tr>" + cells.map(c => '<td style="' + td + '">' + c + "</td>").join("") +
+        '<td style="padding:7px 8px;border-bottom:1px solid var(--line)"><span class="tag ' + st.c + '">' + st.t + "</span></td></tr>";
+    }).join("") + "</tbody></table>";
+}
+function renderTrace(o, recs) {
+  const nodes = traceNodes(o, recs);
+  const gaps = nodes.filter(n => n.gap != null);
+  const totalSec = gaps.reduce((s, n) => s + n.gap, 0);
+  const st = traceState(o);
+  $("detailChips").innerHTML = [
+    ["记录数", o.记录数 + " 条", "var(--txt)"],
+    ["已完成节点", nodes.filter(n => n.time).length + " / " + nodes.length, "var(--accent)"],
+    ["总耗时", traceFmtDur(totalSec), "var(--txt)"],
+    ["当前状态", st.name, traceToneVar(st.tone)]
+  ].map(([k, v, c]) =>
+    '<div class="detailChip"><div class="dc-label">' + escapeHtml(k) + '</div>' +
+    '<div class="dc-value" style="color:' + c + '">' + escapeHtml(String(v)) + "</div></div>").join("");
+  const first = recs[0] || {};
+  $("detailTraceBox").innerHTML =
+    '<div id="traceHead">' +
+      '<span class="tag ' + (o.特保 ? "tag-purple" : "tag-mute") + '">' + (o.特保 ? "特级安保单" : "普通单") + "</span>" +
+      '<span class="trace-no">' + escapeHtml(o.单号) + "</span>" +
+      "<span>·</span><span>申请部门 <b>" + escapeHtml(o.申请部门 || "-") + "</b></span>" +
+      "<span>·</span><span>物品分类 <b>" + escapeHtml(o.物品分类 || "-") + "</b></span>" +
+      "<span>·</span><span>申请人 <b>" + escapeHtml(first.申请人 || "-") + "</b></span>" +
+      '<span style="margin-left:auto"></span><span class="tag ' + traceTagCls(st.tone) + '">' + escapeHtml(st.name) + "</span>" +
+    "</div>" +
+    '<div id="traceAxis">' + renderTraceAxis(nodes) + "</div>" +
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">' +
+      '<h4 style="font-size:13px;font-weight:600;margin:0 0 10px">该单记录明细 ' +
+        '<span style="color:var(--txt2);font-weight:400">（' + recs.length + " 条 · 记录级）</span></h4>" +
+      '<div style="overflow:auto;max-width:100%">' + renderTraceTable(recs) + "</div>" +
+    "</div>";
+}
+function openTrace(no) {
+  no = String(no == null ? "" : no).trim();
+  const o = orders[no];
+  if (!o) { toast("未找到单号「" + no + "」，请确认当前数据包含该单", false); return false; }
+  const recs = rows.filter(r => r.放行单号 === no).sort((a, b) => {
+    const av = a._申请日期 ? a._申请日期.valueOf() : Infinity;
+    const bv = b._申请日期 ? b._申请日期.valueOf() : Infinity;
+    return av - bv;
+  });
+  if (!recs.length) { toast("该单没有可显示的记录", false); return false; }
+  // 与 openDetail 共用定时器状态：进入前清掉未触发的，避免互相干扰（Issue #7·#5 同类问题）
+  if (detailDisposeTimer) { clearTimeout(detailDisposeTimer); detailDisposeTimer = null; }
+  if (detailDrawTimer) { clearTimeout(detailDrawTimer); detailDrawTimer = null; }
+  if (detailResizeTimer) { clearTimeout(detailResizeTimer); detailResizeTimer = null; }
+  if (detailTableInst) { try { detailTableInst.destroy(); } catch (e) { } detailTableInst = null; }
+  traceMode = true;
+  detailPanelOpening = true;
+  $("detailPanel").classList.add("trace-mode");
+  $("detailPanelTitle").textContent = "🕓 单据追踪 · " + no;
+  $("detailOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  // 切换到追踪内容：隐藏图表 / 维度 / 常规明细表
+  $("detailDims").style.display = "none";
+  $("detailDims").innerHTML = "";
+  $("detailCatFilters").innerHTML = "";
+  if (detailChartInst) { try { detailChartInst.dispose(); } catch (e) { } detailChartInst = null; }
+  $("detailChartBox").style.display = "none";
+  $("detailTableBox").style.display = "none";
+  $("detailTraceBox").style.display = "";
+  renderTrace(o, recs);
+  detailResizeTimer = setTimeout(() => {
+    detailResizeTimer = null;
+    detailPanelOpening = false;
+    if (detailChartInst) detailChartInst.resize();
+  }, 1750);
+  return true;
+}
+
+// —— 入口 ①：顶栏单号直查（任何时候可用）——
+function traceLookup() {
+  const inp = $("traceInput"), box = $("traceSearch");
+  const q = String(inp.value || "").trim();
+  box.classList.remove("ok", "err");
+  if (!q) { box.classList.add("err"); toast("请输入放行单号", false); return; }
+  if (openTrace(q)) {
+    box.classList.add("ok"); inp.value = "";
+    setTimeout(() => box.classList.remove("ok"), 1600);
+  } else {
+    box.classList.add("err");
+  }
+}
+$("traceInput").addEventListener("keydown", e => { if (e.key === "Enter") traceLookup(); });
+$("traceInput").addEventListener("input", () => $("traceSearch").classList.remove("ok", "err"));
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    if ($("traceSearch").classList.contains("hidden")) return;   // 未加载数据时不抢快捷键
+    e.preventDefault(); $("traceInput").focus(); $("traceInput").select();
+  }
+});
+// —— 入口 ④：告警卡 / 未结案表的单号（全局委托，避免逐处绑定；并阻止冒泡以免触发卡片下钻）——
+document.addEventListener("click", e => {
+  const el = e.target.closest ? e.target.closest(".orderLink") : null;
+  if (!el) return;
+  e.stopPropagation();
+  openTrace(el.dataset.order);
+});
 
 // ---------- 实时流入动态栏 ----------
 function pushFeedItems(newRows, eventText) {
