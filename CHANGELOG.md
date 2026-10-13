@@ -9,9 +9,11 @@
 
 ## 进行中
 
-- **单据全生命周期时间线**：设计原型已出 → `docs/prototypes/order-timeline/`（`index.html` + `HANDOFF.md`，`status: draft`，含 5 种单据状态演示、深浅色切换，零依赖）。
-  **下一步**：用户审核原型 → 把 HANDOFF 改 `approved` 并填 `freeze` → 实现（主文件新增 `#detailTraceBox` + `openTrace/renderTrace`，4 处单号入口）。
+- **单据全生命周期时间线**：设计原型已出，并**吸收首轮评审反馈** → `docs/prototypes/order-timeline/`（`index.html` + `HANDOFF.md`，`status: draft`，零依赖）。
+  首轮反馈已落实：① 新增**顶栏「单号直查」**（时间范围右侧独立栏位，`Ctrl+K` 聚焦，任何时候可查）② **严重度配色对调**（放行超时 / 在途超时 → 红，接收超时 / 未接收 → 黄）③ 视觉照抄默认主题规格（顶栏 / 抽屉 / chips / 按钮）。
+  **下一步**：用户复审原型 → 把 HANDOFF 改 `approved` 并填 `freeze` → 实现（顶栏 `#traceSearch` + 抽屉 `#detailTraceBox` + `openTrace/renderTrace` + 5 处入口）。
   **暂时不要动**：现有 `#detailOverlay` 的定时器时序（HANDOFF §5.2）、`CARD_DEFS` 里任何现有卡、CONTEXT 口径。口径不新增——时间线是纯展示层，只读 `orders` / `rows`。
+  **注意**：本次「放行类=红、接收类=黄」**只作用于时间线**；看板现有 KPI / 告警卡仍是「在途=橙、未接收=红」，若要全局统一需另立一条 D-xx。
 
 <!-- 明天接着改时：把未做完的写在这里（做到哪、下一步、不要动什么）。做完后删掉或迁到当日记录。 -->
 
