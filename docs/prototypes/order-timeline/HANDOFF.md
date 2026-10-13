@@ -1,7 +1,8 @@
 # HANDOFF：单据全生命周期时间线（订单追踪抽屉）
 
-配套原型：同目录 `index.html`（自包含、零依赖，浏览器直接打开；顶部按钮可切换 5 种典型单据状态，右上角可切深浅色）。
-先在浏览器打开原型确认视觉与信息层级，再按本说明书改主文件。
+配套原型：同目录 `index.html`（自包含、零依赖，浏览器直接打开）。
+原型里可试：① 顶栏「单号直查」输入示例单号回车 ② 点顶部 5 个示例按钮看不同状态 ③ 右上角切深浅色。
+先在浏览器打开确认视觉与信息层级，再按本说明书改主文件。
 
 ```yaml
 status: draft          # draft | approved | implementing | shipped
@@ -9,9 +10,9 @@ owner_design: DSH（本次由实现侧代笔原型，待用户审核）
 owner_impl: Grok Build
 approved_by:
 approved_at:           # YYYY-MM-DD
-freeze:                # 审批后不得改：时间轴三态圆点 / 段耗时胶囊 / 最长卡点红色高亮 / 摘要 chips 顺序
-must_not_change:       # 口径不动（CONTEXT §3 的超时与特保定义）；不改 CARD_DEFS 任何现有卡；不改 buildKpiProps；不碰结算率水球
-impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay 内新增容器 + CSS + openTrace/renderTrace；ARCHITECTURE §3/§6
+freeze:                # 审批后不得改：顶栏搜索框位置（时间范围右侧） / 时间轴三态圆点 / 段耗时胶囊 / 最长卡点红色高亮 / 严重度配色 / 摘要 chips 顺序
+must_not_change:       # 口径不动（CONTEXT §3 的超时与特保定义）；不改 CARD_DEFS 任何现有卡；不改 buildKpiProps；不碰结案率水球
+impl_touch:            # 主文件：① 顶栏 .metaRow 加 #traceSearch（输入框 + Ctrl+K）② #detailOverlay 内加 #detailTraceBox + CSS + openTrace/renderTrace ③ 4 处单号入口；ARCHITECTURE §3/§5/§6
 ```
 
 > 实现 Agent：`status` 不是 `approved`（或 `implementing`）就不要改主文件。
@@ -27,8 +28,9 @@ impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay �
 | 项 | 内容 |
 |---|---|
 | 谁用 | 安保 / 物流管理员；追单、回复现场询问、定位责任环节 |
+| 从哪进 | ① **顶栏「单号直查」**（时间范围右侧独立栏位，任何时候可查，`Ctrl+K` 聚焦）② 主看板明细卡点单号 ③ 二级详情明细表点单号 ④ 告警卡 / 未结案卡预览点单号 |
 | 在哪看 | 复用现有二级详情抽屉 `#detailOverlay`（不新开弹层、不改抽屉骨架） |
-| 本次不做 | 不做新卡片、不改任何 KPI 口径、不做全局搜索（后续可加） |
+| 本次不做 | 不做新卡片、不改任何 KPI 口径；不做按人 / 门岗的模糊搜索（本期只按**单号精确**查） |
 
 **与现有卡片的关系**：`alert_transit` / `alert_receive` / `gdms_unclosed` / `table_detail` 的单号从"纯文本"变为"可点入口"。
 
@@ -40,19 +42,34 @@ impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay �
 
 | Token | 值（默认主题） | 用途 |
 |---|---|---|
-| `--accent` | `#0071e3` | 申请节点、进行中主色 |
+| `--accent` | `#0071e3` | 申请节点 |
+| `--bad` | `#ff3b30` | **放行超时（含在途超时）**、最长卡点 ← 最严重，统一红 |
+| `--warn` | `#ff9f0a` | **接收超时 / 超时未接收** ← 黄 |
 | `--ok` | `#34c759` | 正常 / 已接收 |
-| `--warn` | `#ff9f0a` | 放行超时（含在途超时） |
-| `--bad` | `#ff3b30` | 接收超时 / 未接收 / 最长卡点 |
 | `--purple` | `#5e5ce6` | 特级安保单（WF9897） |
-| `--txt` `--txt2` `--txt3` | 主 / 次 / 弱文本 | 节点标题 / 元信息 / 未开始时间 |
+| `--txt` `--txt2` | 主 / 次文本 | 节点标题 / 元信息与未完成时间 |
 | `--line` `--track` | 分隔线 / 浅底 | 时间轴竖线、胶囊底色 |
 
-原型 `:root` 里另有 `--card` `--card-strong` `--shadow` 仅用于原型外壳演示，实现时用主文件现有卡片面即可。
+**严重度排序（本次定稿）**：在途超时 > 到达超时（放行超时）> 接收超时 / 超时未接收 > 正常。
+放行类超时一律 `--bad` 红，接收类一律 `--warn` 黄。
+
+> ⚠️ 这与看板现有卡片的口径**相反**（现行 KPI/告警卡是「在途=橙、未接收=红」）。本次**只作用于时间线**；
+> 若将来要全局统一，需单独提一条 D-xx 并同步改 KPI 卡与告警卡，不在本 HANDOFF 范围。
+
+**视觉一律复用主文件默认主题的真实规格**（原型已照抄，实现时直接引用现有变量/样式，不要另写一套）：
+
+| 元素 | 规格 |
+|---|---|
+| 顶栏 | `padding:16px 18px; border:1px solid rgba(255,255,255,.40); border-radius:16px; background:rgba(255,255,255,.08); backdrop-filter:blur(6px) saturate(140%)` |
+| 搜索框（与 `#fileMeta` 同族） | `height:26px; border-radius:20px; border:1px solid var(--line); background:rgba(255,255,255,.5); font-size:12px`；聚焦 `border-color:var(--accent)` + `box-shadow:0 0 0 2px rgba(0,113,227,.15)`；错误态 `border-color:var(--bad)` |
+| 抽屉 | `background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.45); border-radius:20px; backdrop-filter:blur(16px) saturate(160%)`；标题前 4px 竖条（复用 `#detailPanelTitle::before`） |
+| 摘要 chip（复用 `.detailChip`） | `background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.35); border-radius:12px; padding:10px 16px`；标签 11px / 值 20px 700 |
+| 按钮 | 复用现有 `button`（胶囊 `border-radius:980px`、`backdrop-filter:blur(12px)`） |
 
 - 圆角：抽屉内面板 `12px`，胶囊 / 徽章 `999px`，圆点 `50%`
-- 字号：节点标题 `13.5`、元信息 `12`、时间 `12.5`（等宽 `tabular-nums`）、徽章 `11.5`、chips 键 `11` / 值 `15`
+- 字号：节点标题 `13.5`、元信息 `12`、时间 `12.5`（等宽 + `tabular-nums`）、徽章 `11.5`、chips 标签 `11` / 值 `20`
 - 单号与时间使用等宽字体（`Consolas / SF Mono / Menlo`）
+- 深浅色：仅靠 `[data-mode="dark"]` 变量覆写（`--bg:#0d1117`、`--accent:#58a6ff`、`--bad:#f85149`、`--warn:#d29922`…），**禁止写死十六进制**
 - 动效：节点与段耗时依次淡入（`≤ 180ms`，间隔 `40ms`），尊重 `prefers-reduced-motion`
 
 ---
@@ -128,13 +145,14 @@ impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay �
 | 优先级 | 条件 | 徽章 | 色 |
 |---|---|---|---|
 | 1 | `o.在途超时` | 在途超时 | `bad` |
-| 2 | `o.超时未接收` | 超时未接收 | `bad` |
-| 3 | `o.放行超时 && o.已到达` | 到达超时 | `warn` |
-| 4 | `o.放行异常` | 放行异常 | `bad` |
-| 5 | `o.已接收` | 已接收 | `ok` |
-| 6 | 其余 | 在途 | `mute` |
+| 2 | `o.放行超时 && o.已到达` | 到达超时 | `bad` 红 |
+| 3 | `o.超时未接收` | 超时未接收 | `warn` 黄 |
+| 4 | `o.放行异常` | 放行异常 | `bad` 红 |
+| 5 | `o.已接收` | 已接收 | `ok` 绿 |
+| 6 | 其余 | 在途 | `mute` 灰 |
 
-> 口径依据 CONTEXT §3：「在途超时」与「到达超时」互斥且之和 = 放行超时单数；「超时未接收」⊂ 接收超时。**本表只做徽章文案选择，不重算任何统计。**
+> 排序依据严重度（放行类 > 接收类）：一单同时命中时取更严重的一条。
+> 口径依据 CONTEXT §3：「在途超时」与「到达超时」互斥且之和 = 放行超时单数；「超时未接收」⊂ 接收超时。**本表只做徽章文案与配色选择，不重算任何统计。**
 
 ### 4.3 时间格式化
 
@@ -146,14 +164,17 @@ impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay �
 
 ## 5. 交互
 
-### 5.1 入口（4 处）
+### 5.1 入口（5 处）
 
 | 入口 | 改法 |
 |---|---|
-| 主看板明细表 `#detailTable`（`table_detail` 卡） | 单号列加 `cellClick` → `openTrace(单号)` |
-| 二级详情明细表 `#detailTable2` | 同上 |
-| 告警卡 / 未结案卡预览列表（`analysisTransitHTML` / `analysisReceiveHTML` / `gdms_unclosed`） | 单号包成 `<span class="orderLink" data-order="…">`，容器上做**事件委托**；点击需 `stopPropagation()`（避免触发卡片自身的 `detailKey` 下钻） |
+| **① 顶栏「单号直查」`#traceSearch`**（本次新增） | 放在顶栏 `.metaRow` 内、`#fileMeta` **右侧**，与 `#fileMeta` 同族胶囊（`height:26px; border-radius:20px; border:1px solid var(--line); background:rgba(255,255,255,.5)`）。结构：`🔍` 图标 + `<input placeholder="单号直查，如 WF…">` + `Ctrl K` 角标。回车 → 命中则 `openTrace(单号)`，未命中则红边 + 文案「未找到「××」，请核对单号」；输入变化清错误态。`Ctrl+K` / `⌘K` 聚焦并全选。**任何时候可用**（不依赖当前视图、不必先打开二级页） |
+| ② 主看板明细表 `#detailTable`（`table_detail` 卡） | 单号列加 `cellClick` → `openTrace(单号)` |
+| ③ 二级详情明细表 `#detailTable2` | 同上 |
+| ④ 告警卡 / 未结案卡预览列表（`analysisTransitHTML` / `analysisReceiveHTML` / `gdms_unclosed`） | 单号包成 `<span class="orderLink" data-order="…">`，容器上做**事件委托**；点击需 `stopPropagation()`（避免触发卡片自身的 `detailKey` 下钻） |
 | 单号样式 | `.orderLink`：虚线下划线 + `cursor:pointer` + hover 变 `--accent` |
+
+> 单号匹配：`trim()` + 大写比较，**精确等值**（本期不做前缀 / 模糊匹配）。查询只查已加载的那一份数据（缓存恢复的数据同样可查）。
 
 ### 5.2 抽屉状态（★ 易踩坑）
 
@@ -174,11 +195,15 @@ impl_touch:            # dashboard-release-monitor-v5.6.html：#detailOverlay �
 ## 6. 验收（file://）
 
 - [ ] 打开主文件 → 载入示例数据 → 控制台无报错
+- [ ] **顶栏「单号直查」**：输入存在的单号回车 → 打开该单时间线；输入不存在的 → 红边 + 「未找到」文案，**不误开、不报错**；继续输入时错误态自动清除
+- [ ] **`Ctrl+K`** 聚焦搜索框并全选；焦点态描边为 `--accent`
+- [ ] 搜索框与 `#fileMeta` 同一行、同族样式（高度 26 / 圆角 20 / 半透明底），深浅色下都协调
+- [ ] **严重度配色**：在途超时 / 到达超时 = **红**，超时未接收 = **黄**（chips、节点圆点、徽章三处一致）
 - [ ] 明细表点单号 → 抽屉出现时间线；**再点另一个单号**能正确切换（不残留上一个单的内容）
 - [ ] 告警卡（在途超时 / 超时未接收）点单号 → 打开时间线且**不误弹**该卡的详情页
 - [ ] 五类单据各验一次：正常已接收 / 到达超时 / 在途超时（未放行） / 超时未接收 / 特保多记录
-- [ ] 未完成节点显示「已等待 …（进行中）」，且不是假时间
+- [ ] 未完成节点显示「已等待 …（进行中）」或「超时」，且不是假时间
 - [ ] 最长卡点仅在该单 ≥2 段时出现，且与各段耗时比对正确
 - [ ] 切换主题（至少 Terminal / 新拟态 / 瑞士极简）与深浅色：时间线颜色跟随、无写死色穿帮
 - [ ] 追踪后关闭抽屉 → 再打开任一 KPI 详情：图表与表格正常（定时器未串）
-- [ ] 拖入 `物品放行监控_生成_100k.xlsx`：点单号仍能打开（大数据量下不卡死）
+- [ ] 拖入 `物品放行监控_生成_100k.xlsx`：点单号 / 用直查框都能打开（大数据量下不卡死）

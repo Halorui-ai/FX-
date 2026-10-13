@@ -7,109 +7,153 @@
 <!--
   设计原型（不是交付物）。现行产品仍是根目录 dashboard-release-monitor-v5.6.html。
   自包含、零依赖：双击即可打开，无任何外部请求。
-  用途：确认「单据追踪」抽屉的视觉与信息层级 → 见同目录 HANDOFF.md（status: draft）。
+  本次修订：① 新增「单号直查」（顶栏 · 时间范围右侧独立栏位，任何时候可查）
+            ② 严重度配色对调：放行超时（含在途超时）→ 红；接收超时 / 未接收 → 黄
+            ③ 视觉对齐默认主题（液态玻璃：顶栏 / 抽屉 / chip / 按钮均照主文件规格）
+  规格见同目录 HANDOFF.md（status: draft）。
 -->
 <style>
-/* ===== Token（取自现行看板语义色，实现时直接复用主题变量） ===== */
+/* ===== Token：与主文件默认主题 :root 完全一致（9 套主题只是换这组变量） ===== */
 :root{
+  --bg:#eef1f6;
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
   --accent:#0071e3; --accent2:#2997ff;
-  --ok:#34c759; --warn:#ff9f0a; --bad:#ff3b30; --purple:#5e5ce6; --cyan:#00b8d4;
-  --bg:#eef1f6; --card:rgba(255,255,255,.74); --card-strong:rgba(255,255,255,.92);
-  --line:rgba(31,41,55,.10); --track:rgba(31,41,55,.08);
-  --txt:#1d1d1f; --txt2:rgba(0,0,0,.52); --txt3:rgba(0,0,0,.36);
-  --shadow:0 10px 30px rgba(28,45,74,.10), inset 0 1px 0 rgba(255,255,255,.55);
-  --radius:16px;
+  --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a; --purple:#5e5ce6; --cyan:#00b8d4;
+  --track:rgba(0,0,0,0.06);
 }
 [data-mode="dark"]{
-  --bg:#0e1116; --card:rgba(255,255,255,.06); --card-strong:rgba(255,255,255,.10);
-  --line:rgba(255,255,255,.12); --track:rgba(255,255,255,.10);
-  --txt:#f2f4f8; --txt2:rgba(255,255,255,.62); --txt3:rgba(255,255,255,.40);
-  --shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  --bg:#0d1117; --line:rgba(255,255,255,0.10);
+  --txt:#e6edf3; --txt2:rgba(255,255,255,0.55);
+  --accent:#58a6ff; --accent2:#79c0ff;
+  --ok:#3fb950; --bad:#f85149; --warn:#d29922; --purple:#bc8cff; --cyan:#39d2e0;
+  --track:rgba(220,230,245,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font-size:14px;padding:22px;
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
-  -webkit-font-smoothing:antialiased;min-height:100vh}
+html{background:var(--bg)}
+body{background:none;color:var(--txt);font-size:14px;padding:18px 22px;min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased}
+h1{font-size:23px;letter-spacing:-0.3px;font-weight:600}
+.sub{color:var(--txt2);font-size:12px;margin-top:4px}
+button{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--txt);border-radius:980px;padding:7px 14px;font-size:13px;transition:.18s;white-space:nowrap;font-family:inherit}
+button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,255,255,0.85)}
+[data-mode="dark"] button{background:rgba(255,255,255,0.08)}
+[data-mode="dark"] button:hover{background:rgba(255,255,255,0.14)}
 
-/* ===== 页头 ===== */
-.page-head{max-width:1180px;margin:0 auto 18px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
-.page-head h1{font-size:19px;font-weight:600;letter-spacing:-.2px}
-.page-head .sub{color:var(--txt2);font-size:12.5px;flex:1 1 320px;line-height:1.6}
-.head-tools{display:flex;gap:8px;align-items:center}
-button{cursor:pointer;font-family:inherit;border:1px solid var(--line);background:var(--card);
-  color:var(--txt);border-radius:10px;padding:7px 13px;font-size:13px;transition:.18s}
-button:hover{border-color:var(--accent);color:var(--accent);background:var(--card-strong)}
-button.sample{border-radius:999px;font-size:12.5px;padding:6px 12px}
-button.sample.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
-button.ghost{padding:6px 10px}
+/* ===== 顶栏：照主文件 #topbar ===== */
+#topbar{display:flex;flex-direction:column;gap:0;
+  padding:16px 18px;border:1px solid rgba(255,255,255,0.40);border-radius:16px;
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(6px) saturate(140%);
+  -webkit-backdrop-filter:blur(6px) saturate(140%);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35);margin-bottom:16px}
+[data-mode="dark"] #topbar{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.03)}
+.tb-head{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%}
+.tb-identity{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.metaRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:26px;width:100%}
+#perfTag{font-size:12px;color:var(--txt2);display:inline-flex;align-items:center;gap:4px}
+#fileMeta{color:var(--txt2);font-size:12px;display:inline-flex;align-items:center;height:26px;padding:0 10px;
+  border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,0.5);line-height:1}
+#fileMeta b{color:var(--accent);font-weight:600}
+[data-mode="dark"] #fileMeta{background:rgba(255,255,255,0.06)}
+#liveBadge{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;
+  border:1px solid rgba(52,199,89,0.4);border-radius:20px;background:rgba(52,199,89,0.12);color:#1a7f37;font-size:12px}
+.liveDot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.tb-drawer-btn{width:34px;height:34px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
 
-/* ===== 布局 ===== */
-.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+/* ★ 新增：单号直查（顶栏 · 时间范围右侧独立栏位） */
+#traceSearch{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 6px 0 10px;
+  border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,0.5);
+  transition:border-color .18s, background .18s, box-shadow .18s}
+[data-mode="dark"] #traceSearch{background:rgba(255,255,255,0.06)}
+#traceSearch .ico{font-size:12px;opacity:.7;flex:none}
+#traceSearch input{border:none;outline:none;background:transparent;color:var(--txt);
+  font-size:12px;font-family:inherit;width:172px;line-height:1}
+#traceSearch input::placeholder{color:var(--txt2)}
+#traceSearch .kbd{font-size:10px;color:var(--txt2);border:1px solid var(--line);border-radius:5px;
+  padding:1px 5px;line-height:1.5;flex:none}
+#traceSearch:focus-within{border-color:var(--accent);background:rgba(255,255,255,0.9);
+  box-shadow:0 0 0 2px rgba(0,113,227,0.15)}
+[data-mode="dark"] #traceSearch:focus-within{background:rgba(255,255,255,0.10)}
+#traceSearch.err{border-color:var(--bad);box-shadow:0 0 0 2px rgba(255,59,48,0.14)}
+#traceSearch.ok{border-color:var(--ok);box-shadow:0 0 0 2px rgba(52,199,89,0.16)}
+#searchMsg{font-size:12px;color:var(--txt2);display:none}
+#searchMsg.show{display:inline}
+
+/* 原型专用：示例切换 */
+.protoBar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.protoBar .tag{font-size:11.5px;color:var(--txt2);border:1px dashed var(--line);border-radius:999px;padding:4px 10px}
+.sample{border-radius:999px;font-size:12.5px;padding:6px 12px}
+.sample.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+
+/* ===== 抽屉：照主文件 #detailPanel ===== */
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:18px;align-items:start}
 @media (max-width:1000px){.wrap{grid-template-columns:1fr}}
+#detailPanel{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.45);border-radius:20px;
+  backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
+  box-shadow:0 24px 80px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.45);overflow:hidden}
+[data-mode="dark"] #detailPanel{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.04)}
+#detailPanelHead{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.30)}
+#detailPanelTitle{font-size:17px;font-weight:600;display:flex;align-items:center;gap:10px}
+#detailPanelTitle::before{content:"";width:4px;height:20px;background:var(--accent);border-radius:2px;flex:none}
+#btnDetailClose{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.40);
+  background:rgba(255,255,255,0.10);color:var(--txt2);font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+#btnDetailClose:hover{background:rgba(255,59,48,0.12);border-color:rgba(255,59,48,0.4);color:var(--bad)}
+#detailPanelBody{padding:18px 22px}
 
-/* ===== 抽屉（模拟现有 #detailPanel 的形态） ===== */
-.drawer{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
-  overflow:hidden}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:14px 18px;border-bottom:1px solid var(--line)}
-.drawer-head h2{font-size:15px;font-weight:600}
-.drawer-head .close{border:none;background:transparent;font-size:16px;color:var(--txt2);padding:4px 8px;border-radius:8px}
-.drawer-head .close:hover{background:var(--track);color:var(--txt)}
-.drawer-body{padding:16px 18px 20px}
+/* 摘要 chips：照主文件 .detailChip */
+.detailChips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.detailChip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.35);border-radius:12px;
+  padding:10px 16px;min-width:110px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+[data-mode="dark"] .detailChip{border-color:rgba(255,255,255,0.12)}
+.detailChip .dc-label{font-size:11px;color:var(--txt2);margin-bottom:4px}
+.detailChip .dc-value{font-size:20px;font-weight:700;font-family:"Segoe UI",monospace;font-variant-numeric:tabular-nums;line-height:1.2}
+.dc-value.ok{color:var(--ok)} .dc-value.warn{color:var(--warn)} .dc-value.bad{color:var(--bad)}
+.dc-value.purple{color:var(--purple)} .dc-value.accent{color:var(--accent)}
 
-/* ===== 摘要 chips ===== */
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
-.chip{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:12px;
-  background:var(--card-strong);border:1px solid var(--line);min-width:96px}
-.chip .k{font-size:11px;color:var(--txt2)}
-.chip .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-.chip .v.ok{color:var(--ok)} .chip .v.warn{color:var(--warn)} .chip .v.bad{color:var(--bad)}
-.chip .v.purple{color:var(--purple)} .chip .v.accent{color:var(--accent)}
-.headline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 16px;
+.headline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;
   padding:10px 12px;border-radius:12px;background:var(--track);font-size:12.5px;color:var(--txt2)}
 .headline b{color:var(--txt);font-weight:600}
 .headline .order-no{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:13px;color:var(--txt);letter-spacing:.2px}
 
-/* ===== 徽章 ===== */
+/* 徽章 */
 .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;
   font-size:11.5px;font-weight:500;line-height:1.7;white-space:nowrap}
 .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
 .badge.ok{color:#137a3f;background:rgba(52,199,89,.14)}
-.badge.warn{color:#9a6200;background:rgba(255,159,10,.16)}
+.badge.warn{color:#8a5a00;background:rgba(255,159,10,.18)}
 .badge.bad{color:#c0392b;background:rgba(255,59,48,.13)}
 .badge.purple{color:#4b46c9;background:rgba(94,92,230,.13)}
 .badge.mute{color:var(--txt2);background:var(--track)}
-.badge.plain::before{display:none}
 [data-mode="dark"] .badge.ok{color:#5ee08a}
-[data-mode="dark"] .badge.warn{color:#ffc453}
+[data-mode="dark"] .badge.warn{color:#e8b339}
 [data-mode="dark"] .badge.bad{color:#ff8b80}
-[data-mode="dark"] .badge.purple{color:#a9a6ff}
+[data-mode="dark"] .badge.purple{color:#b9b6ff}
 
 /* ===== 时间轴 ===== */
-.axis{margin-top:4px}
 .tl-row{display:grid;grid-template-columns:62px 26px minmax(0,1fr);align-items:flex-start}
 .tl-time{font-size:12.5px;color:var(--txt);font-variant-numeric:tabular-nums;padding-top:1px;
   font-family:Consolas,"SF Mono",Menlo,monospace}
-.tl-time.pending{color:var(--txt3)}
+.tl-time.pending{color:var(--txt2)}
 .tl-rail{position:relative;display:flex;justify-content:center;min-height:22px}
-/* 竖线：贯穿 rail 列 */
 .tl-row.node .tl-rail::before{content:"";position:absolute;top:14px;bottom:-6px;width:2px;background:var(--line)}
 .tl-row.node:last-child .tl-rail::before{display:none}
 .tl-row.gap .tl-rail::before{content:"";position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--line)}
-.tl-row.gap.alert .tl-rail::before{background:linear-gradient(180deg,var(--bad),rgba(255,59,48,.35))}
 .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;position:relative;z-index:1;
   background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
 .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
 .dot.purple{background:var(--purple)}
-.dot.pending{background:var(--bg);border:2px solid var(--txt3);box-shadow:0 0 0 3px var(--bg)}
-.tl-row.node.done .dot.pending{border-color:var(--warn)}
+/* 进行中 / 未完成：空心圈，边色按严重度（红=放行超时，黄=接收超时） */
+.dot.pending{background:transparent;border:2px solid var(--txt2);box-shadow:0 0 0 3px var(--bg)}
+.dot.pending.p-bad{border-color:var(--bad)}
+.dot.pending.p-warn{border-color:var(--warn)}
 .tl-body{padding:0 0 14px 4px;min-width:0}
 .tl-title{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:13.5px;font-weight:600}
 .tl-meta{color:var(--txt2);font-size:12px;margin-top:3px;line-height:1.6;word-break:break-all}
 .tl-meta code{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:11.5px;background:var(--track);padding:1px 5px;border-radius:5px}
-
-/* 段耗时 */
 .tl-row.gap{min-height:30px}
 .tl-row.gap .tl-body{padding:0 0 10px 4px}
 .dur{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2);
@@ -120,9 +164,9 @@ button.ghost{padding:6px 10px}
   background:rgba(255,59,48,.13);padding:2px 9px;border-radius:999px}
 [data-mode="dark"] .critflag{color:#ff8b80}
 
-/* ===== 记录明细 ===== */
+/* 记录明细 */
 .records{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-.records h3{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--txt)}
+.records h3{font-size:13px;font-weight:600;margin-bottom:10px}
 .records h3 span{color:var(--txt2);font-weight:400}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;color:var(--txt2);font-weight:500;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -131,46 +175,65 @@ tr:last-child td{border-bottom:none}
 td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
 .scroll{overflow:auto;max-width:100%}
 
-/* ===== 侧栏说明 ===== */
+/* 侧栏说明 */
 .notes{display:flex;flex-direction:column;gap:12px}
-.note{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;
-  box-shadow:var(--shadow);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.note h4{font-size:12.5px;font-weight:600;margin-bottom:9px;color:var(--txt)}
+.note{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.35);border-radius:16px;
+  padding:14px 15px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  box-shadow:0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.35)}
+[data-mode="dark"] .note{border-color:rgba(255,255,255,0.12);background:rgba(255,255,255,0.03)}
+.note h4{font-size:12.5px;font-weight:600;margin-bottom:9px}
 .note ul{list-style:none;display:flex;flex-direction:column;gap:7px}
 .note li{font-size:12px;color:var(--txt2);line-height:1.6;display:flex;gap:7px}
 .note li b{color:var(--txt);font-weight:600}
 .swatch{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:none}
-.legend-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt2)}
-.legend-row .name{color:var(--txt)}
-.footnote{max-width:1180px;margin:16px auto 0;color:var(--txt3);font-size:11.5px;line-height:1.7}
+.footnote{color:var(--txt2);font-size:11.5px;line-height:1.7;margin-top:16px}
+.footnote code{font-family:Consolas,monospace;background:var(--track);padding:1px 5px;border-radius:5px}
 </style>
 </head>
 <body>
 
-<div class="page-head">
-  <h1>🕓 单据全生命周期时间线 · 设计原型</h1>
-  <div class="sub">抽屉形态：单号 → 申请 / 放行（各门岗）/ 接收 全链路 + 每段耗时 + 最长卡点。<br>
-    切换下方示例可看四种典型状态；这是原型，数字均为演示值。</div>
-  <div class="head-tools">
-    <button class="ghost" id="btnMode" title="切换深浅色，确认主题适配">🌗 深色</button>
+<!-- ================= 顶栏（还原主文件 #topbar） ================= -->
+<div id="topbar">
+  <div class="tb-head">
+    <div class="tb-identity">
+      <h1>🚪 物品放行监控数据看板</h1>
+      <div class="sub">内网离线版 · 数据仅在本地浏览器处理，不会外传 · 支持上传「物品放行监控.xlsx」实时分析</div>
+      <div class="metaRow">
+        <span id="perfTag">🖥️ <b>高画质模式</b></span>
+        <span id="fileMeta">文件：<b>物品放行监控.xlsx</b> ｜ 共 <b>100,002</b> 条记录 / <b>34,550</b> 单 ｜ 时间范围：<b>2026-07-01 ~ 2026-07-28</b></span>
+
+        <!-- ★ 新增：单号直查（独立栏位，任何时候可用） -->
+        <span id="traceSearch" title="输入放行单号，回车直达该单全链路时间线（快捷键 Ctrl+K）">
+          <span class="ico">🔍</span>
+          <input id="traceInput" type="text" placeholder="单号直查，如 WF7501260728000001" autocomplete="off" spellcheck="false">
+          <span class="kbd">Ctrl K</span>
+        </span>
+        <span id="searchMsg"></span>
+
+        <span id="liveBadge"><span class="liveDot"></span>LIVE 演示数据流 · 最后更新 <b>15:04:21</b></span>
+      </div>
+    </div>
+    <button type="button" class="tb-drawer-btn" id="btnMode" title="切换深色 / 浅色（原型演示）">🌗</button>
   </div>
 </div>
 
-<div class="page-head" style="margin-top:-4px">
-  <div class="head-tools" id="samples"></div>
+<!-- 原型专用：示例切换 -->
+<div class="protoBar">
+  <span class="tag">原型演示 · 点示例看不同状态，或在顶栏搜索框输入单号回车</span>
+  <span id="samples" style="display:flex;gap:8px;flex-wrap:wrap"></span>
 </div>
 
 <div class="wrap">
-  <!-- ============ 抽屉 ============ -->
-  <div class="drawer">
-    <div class="drawer-head">
-      <h2 id="dTitle">🕓 单据追踪</h2>
-      <button class="close" title="关闭（Esc）">✕</button>
+  <!-- ================= 抽屉（还原主文件 #detailPanel） ================= -->
+  <div id="detailPanel">
+    <div id="detailPanelHead">
+      <h2 id="detailPanelTitle">单据追踪</h2>
+      <button id="btnDetailClose" title="关闭（Esc）">✕</button>
     </div>
-    <div class="drawer-body">
-      <div class="chips" id="chips"></div>
+    <div id="detailPanelBody">
+      <div class="detailChips" id="chips"></div>
       <div class="headline" id="headline"></div>
-      <div class="axis" id="axis"></div>
+      <div id="axis"></div>
       <div class="records">
         <h3>该单记录明细 <span id="recCount"></span></h3>
         <div class="scroll"><table id="recTable"></table></div>
@@ -178,40 +241,41 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
     </div>
   </div>
 
-  <!-- ============ 说明 ============ -->
+  <!-- ================= 设计说明 ================= -->
   <aside class="notes">
     <div class="note">
-      <h4>节点三态</h4>
+      <h4>入口（本次新增第 1 条）</h4>
       <ul>
-        <li><span class="swatch" style="background:var(--accent)"></span><span><b>实心</b>：已完成（有时间）</span></li>
-        <li><span class="swatch" style="background:var(--bg);border:2px solid var(--warn)"></span><span><b>空心橙</b>：进行中（未完成，显示已等待）</span></li>
-        <li><span class="swatch" style="background:var(--bg);border:2px solid var(--txt3)"></span><span><b>空心灰</b>：未开始</span></li>
+        <li><b>① 顶栏单号直查</b><br>时间范围右侧独立栏位，随开随查（Ctrl+K 聚焦）</li>
+        <li>② 主看板明细卡 · 点单号</li>
+        <li>③ 二级详情明细表 · 点单号</li>
+        <li>④ 告警卡 / 未结案卡预览 · 点单号</li>
       </ul>
     </div>
     <div class="note">
-      <h4>状态色语义</h4>
+      <h4>严重度配色（本次调整）</h4>
       <ul>
-        <li><span class="swatch" style="background:var(--ok)"></span><span>正常 / 已接收</span></li>
-        <li><span class="swatch" style="background:var(--warn)"></span><span>放行超时（含在途超时）</span></li>
-        <li><span class="swatch" style="background:var(--bad)"></span><span>接收超时 / 未接收</span></li>
-        <li><span class="swatch" style="background:var(--purple)"></span><span>特级安保单（WF9897）</span></li>
+        <li><span class="swatch" style="background:var(--bad)"></span><span><b>红</b>：放行超时（含<b>在途超时</b>）—— 最严重</span></li>
+        <li><span class="swatch" style="background:var(--warn)"></span><span><b>黄</b>：接收超时 / 超时未接收</span></li>
+        <li><span class="swatch" style="background:var(--ok)"></span><span><b>绿</b>：正常 / 已接收</span></li>
+        <li><span class="swatch" style="background:var(--purple)"></span><span><b>紫</b>：特级安保单（WF9897）</span></li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>节点三态</h4>
+      <ul>
+        <li><span class="swatch" style="background:var(--accent)"></span><span><b>实心</b>：已完成（按严重度着色）</span></li>
+        <li><span class="swatch" style="background:transparent;border:2px solid var(--bad)"></span><span><b>空心红</b>：进行中且已超时（放行类）</span></li>
+        <li><span class="swatch" style="background:transparent;border:2px solid var(--warn)"></span><span><b>空心黄</b>：进行中（接收类）</span></li>
+        <li><span class="swatch" style="background:transparent;border:2px solid var(--txt2)"></span><span><b>空心灰</b>：未开始</span></li>
       </ul>
     </div>
     <div class="note">
       <h4>耗时与卡点</h4>
       <ul>
-        <li>每段耗时 = 相邻节点时间差；未完成段显示<b>已等待</b>（now − 上一节点）。</li>
-        <li><b>最长卡点</b>：所有段取最大，整段标红并加「🔴 最长卡点」。</li>
-        <li>段耗时 &lt; 1 小时显示分钟，≥ 1 小时显示「x 小时 y 分」。</li>
-      </ul>
-    </div>
-    <div class="note">
-      <h4>入口（4 处）</h4>
-      <ul>
-        <li>主看板明细表单号列</li>
-        <li>二级详情明细表单号列</li>
-        <li>告警卡 / 未结案卡的单号</li>
-        <li>（后续）全局搜索</li>
+        <li>段耗时 = 相邻节点时间差；未完成段显示<b>已等待</b></li>
+        <li><b>最长卡点</b>整段标红 + 「🔴 最长卡点」</li>
+        <li>&lt;1 小时显示分钟，≥1 小时显示「x 小时 y 分」</li>
       </ul>
     </div>
   </aside>
@@ -224,7 +288,8 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
 
 <script>
 /* ============================================================
-   演示数据（原型用；实现时全部来自 computeOrders() 与 rows）
+   演示数据（原型用；实现时全部来自 orders[] 与 rows[]）
+   配色：放行超时（含在途超时）= bad 红；接收超时 / 未接收 = warn 黄
    ============================================================ */
 const SAMPLES = {
   normal: {
@@ -241,54 +306,54 @@ const SAMPLES = {
     }
   },
   arrivedTimeout: {
-    label: "② 到达超时",
+    label: "② 到达超时（红）",
     order: {
       no: "WF7501260728000002", special: false, records: 2,
       dept: "MLB A線_鄭州", cat: "生產物料(A類)", applicant: "張偉",
-      state: "到达超时", stateTone: "warn",
+      state: "到达超时", stateTone: "bad",
       nodes: [
         { kind: "apply", time: "08:20", who: "張偉 · MLB A線_鄭州", desc: "提交放行申请", tone: "accent" },
-        { kind: "release", time: "09:05", who: "陳鵬 · 北二门 ZZ-D03-1F", desc: "放行核验完成", tone: "warn", gap: 45 * 60, flag: "放行超时" },
+        { kind: "release", time: "09:05", who: "陳鵬 · 北二门 ZZ-D03-1F", desc: "放行核验完成", tone: "bad", gap: 45 * 60, flag: "放行超时" },
         { kind: "release", time: "11:40", who: "陳鵬 · 北二门 ZZ-D03-1F", desc: "第 2 笔记录放行", tone: "ok", gap: 2 * 3600 + 35 * 60 },
         { kind: "receive", time: "18:05", who: "劉洋 · 收貨部", desc: "接收确认", tone: "ok", gap: 6 * 3600 + 25 * 60 }
       ]
     }
   },
   transitTimeout: {
-    label: "③ 在途超时（未放行）",
+    label: "③ 在途超时（红 · 最严重）",
     order: {
       no: "WF7501260728000003", special: false, records: 1,
       dept: "FATP 二課_鄭州", cat: "非物料類", applicant: "趙敏",
       state: "在途超时", stateTone: "bad",
       nodes: [
         { kind: "apply", time: "07:30", who: "趙敏 · FATP 二課_鄭州", desc: "提交放行申请", tone: "accent" },
-        { kind: "release", time: null, who: "目的地 中碼頭崗 ZZ-L07-1F", desc: "尚未放行", tone: "pending", gap: 8 * 3600 + 20 * 60, waiting: true }
+        { kind: "release", time: null, who: "目的地 中碼頭崗 ZZ-L07-1F", desc: "尚未放行", tone: "bad", gap: 8 * 3600 + 20 * 60, waiting: true, flag: "在途超时" }
       ]
     }
   },
   receiveTimeout: {
-    label: "④ 超时未接收",
+    label: "④ 超时未接收（黄）",
     order: {
       no: "WF7501260728000004", special: false, records: 1,
       dept: "周邊採購部_鄭州", cat: "生產物料(非A類)", applicant: "孙丽",
-      state: "超时未接收", stateTone: "bad",
+      state: "超时未接收", stateTone: "warn",
       nodes: [
         { kind: "apply", time: "09:00", who: "孙丽 · 周邊採購部_鄭州", desc: "提交放行申请", tone: "accent" },
         { kind: "release", time: "09:40", who: "周杰 · 南一门 ZZ-D07-1F", desc: "放行核验完成", tone: "ok", gap: 40 * 60 },
-        { kind: "receive", time: null, who: "待 收貨部（接收人未登记）", desc: "尚未接收", tone: "pending", gap: 5 * 3600 + 5 * 60, waiting: true, flag: "超时未接收" }
+        { kind: "receive", time: null, who: "待 收貨部（接收人未登记）", desc: "尚未接收", tone: "warn", gap: 5 * 3600 + 5 * 60, waiting: true, flag: "超时未接收" }
       ]
     }
   },
   special: {
-    label: "⑤ 特保单 · 多门岗",
+    label: "⑤ 特保单 · 多门岗（含放行超时）",
     order: {
       no: "WF9897260728000005", special: true, records: 3,
       dept: "新產品試製線_鄭州", cat: "新产品A级物料", applicant: "韓雪",
-      state: "已接收 · 含超时", stateTone: "warn",
+      state: "含放行超时", stateTone: "bad",
       nodes: [
         { kind: "apply", time: "08:00", who: "韓雪 · 新產品試製線_鄭州", desc: "提交放行申请（特保）", tone: "purple" },
         { kind: "release", time: "08:30", who: "李四 · 南一门 ZZ-D07-1F", desc: "第 1 笔放行", tone: "purple", gap: 30 * 60 },
-        { kind: "release", time: "10:15", who: "陳鵬 · 中碼頭崗 ZZ-L07-1F", desc: "第 2 笔放行", tone: "warn", gap: 1 * 3600 + 45 * 60, flag: "放行超时" },
+        { kind: "release", time: "10:15", who: "陳鵬 · 中碼頭崗 ZZ-L07-1F", desc: "第 2 笔放行", tone: "bad", gap: 1 * 3600 + 45 * 60, flag: "放行超时" },
         { kind: "release", time: "11:20", who: "周杰 · 物流門 ZZ-W02-1F", desc: "第 3 笔放行", tone: "purple", gap: 65 * 60 },
         { kind: "receive", time: "14:00", who: "王強 · 收貨部", desc: "接收确认", tone: "ok", gap: 2 * 3600 + 40 * 60 }
       ]
@@ -298,34 +363,27 @@ const SAMPLES = {
 
 const RECORDS = {
   normal: [
-    { no: "WF7501260728000001", item: "石墨片", qty: 12, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 08:15", rel: "07-28 08:57", recv: "07-28 15:10", st: "已接收", tone: "ok" }
+    { item: "石墨片", qty: 12, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 08:15", rel: "07-28 08:57", recv: "07-28 15:10", st: "已接收", tone: "ok" }
   ],
   arrivedTimeout: [
-    { no: "WF7501260728000002", item: "鋁合金支架", qty: 30, out: "ZZ-D03-1F-北二門", inG: "ZZ-D03-1F-北二門", act: "ZZ-D03-1F-北二門", apply: "07-28 08:20", rel: "07-28 09:05", recv: "07-28 18:05", st: "放行超时", tone: "warn" },
-    { no: "WF7501260728000002", item: "鋁合金支架", qty: 18, out: "ZZ-D03-1F-北二門", inG: "ZZ-D03-1F-北二門", act: "ZZ-D03-1F-北二門", apply: "07-28 08:20", rel: "07-28 11:40", recv: "07-28 18:05", st: "已接收", tone: "ok" }
+    { item: "鋁合金支架", qty: 30, out: "ZZ-D03-1F-北二門", inG: "ZZ-D03-1F-北二門", act: "ZZ-D03-1F-北二門", apply: "07-28 08:20", rel: "07-28 09:05", recv: "07-28 18:05", st: "放行超时", tone: "bad" },
+    { item: "鋁合金支架", qty: 18, out: "ZZ-D03-1F-北二門", inG: "ZZ-D03-1F-北二門", act: "ZZ-D03-1F-北二門", apply: "07-28 08:20", rel: "07-28 11:40", recv: "07-28 18:05", st: "已接收", tone: "ok" }
   ],
   transitTimeout: [
-    { no: "WF7501260728000003", item: "治具箱", qty: 2, out: "ZZ-D07-1F-南一門", inG: "ZZ-L07-1F-中碼頭崗", act: "", apply: "07-28 07:30", rel: "—", recv: "—", st: "在途超时", tone: "bad" }
+    { item: "治具箱", qty: 2, out: "ZZ-D07-1F-南一門", inG: "ZZ-L07-1F-中碼頭崗", act: "", apply: "07-28 07:30", rel: "—", recv: "—", st: "在途超时", tone: "bad" }
   ],
   receiveTimeout: [
-    { no: "WF7501260728000004", item: "包材", qty: 200, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 09:00", rel: "07-28 09:40", recv: "—", st: "超时未接收", tone: "bad" }
+    { item: "包材", qty: 200, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 09:00", rel: "07-28 09:40", recv: "—", st: "超时未接收", tone: "warn" }
   ],
   special: [
-    { no: "WF9897260728000005", item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 08:00", rel: "07-28 08:30", recv: "07-28 14:00", st: "已接收", tone: "ok" },
-    { no: "WF9897260728000005", item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-L07-1F-中碼頭崗", act: "ZZ-L07-1F-中碼頭崗", apply: "07-28 08:00", rel: "07-28 10:15", recv: "07-28 14:00", st: "放行超时", tone: "warn" },
-    { no: "WF9897260728000003", item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-W02-1F-物流門", act: "ZZ-W02-1F-物流門", apply: "07-28 08:00", rel: "07-28 11:20", recv: "07-28 14:00", st: "已接收", tone: "ok" }
+    { item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-D07-1F-南一門", act: "ZZ-D07-1F-南一門", apply: "07-28 08:00", rel: "07-28 08:30", recv: "07-28 14:00", st: "已接收", tone: "ok" },
+    { item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-L07-1F-中碼頭崗", act: "ZZ-L07-1F-中碼頭崗", apply: "07-28 08:00", rel: "07-28 10:15", recv: "07-28 14:00", st: "放行超时", tone: "bad" },
+    { item: "新產品樣機", qty: 1, out: "ZZ-D07-1F-南一門", inG: "ZZ-W02-1F-物流門", act: "ZZ-W02-1F-物流門", apply: "07-28 08:00", rel: "07-28 11:20", recv: "07-28 14:00", st: "已接收", tone: "ok" }
   ]
 };
 
-/* ============================================================
-   渲染
-   ============================================================ */
-const KIND = {
-  apply:   { name: "申请", dot: "" },
-  release: { name: "放行", dot: "" },
-  receive: { name: "接收", dot: "" }
-};
-
+/* ============ 渲染 ============ */
+const KIND = { apply: "申请", release: "放行", receive: "接收" };
 function fmtDur(sec) {
   if (sec == null) return "—";
   const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
@@ -333,94 +391,118 @@ function fmtDur(sec) {
   return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
 }
 function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-function toneClass(t) { return ({ accent: "accent", ok: "ok", warn: "warn", bad: "bad", purple: "purple", pending: "pending" })[t] || "accent"; }
+function toneOf(t) { return ({ accent: "accent", ok: "ok", warn: "warn", bad: "bad", purple: "purple" })[t] || "accent"; }
+function badgeText(n, pend) {
+  if (pend) return n.tone === "bad" ? "超时" : "进行中";
+  return ({ accent: "正常", ok: "正常", warn: "超时", bad: "超时", purple: "特保" })[n.tone] || "正常";
+}
 
 function render(key) {
-  const cfg = SAMPLES[key], o = cfg.order;
-  const recs = RECORDS[key];
+  const o = SAMPLES[key].order, recs = RECORDS[key];
 
-  // —— 摘要 chips ——
-  const totalSec = o.nodes.filter(n => n.time && n.gap != null).reduce((s, n) => s + (n.gap || 0), 0)
-                 + (o.nodes.find(n => n.waiting) ? o.nodes.find(n => n.waiting).gap : 0);
-  const done = o.nodes.filter(n => n.time).length;
+  const allGaps = o.nodes.filter(n => n.gap != null);
+  const totalSec = allGaps.reduce((s, n) => s + n.gap, 0);
+  const doneN = o.nodes.filter(n => n.time).length;
+
+  document.getElementById("detailPanelTitle").textContent = "🕓 单据追踪 · " + o.no;
   document.getElementById("chips").innerHTML = [
     ["记录数", o.records + " 条", ""],
-    ["已完成节点", done + " / " + o.nodes.length, "accent"],
+    ["已完成节点", doneN + " / " + o.nodes.length, "accent"],
     ["总耗时", fmtDur(totalSec), ""],
     ["当前状态", o.state, o.stateTone]
   ].map(([k, v, tone]) =>
-    `<div class="chip"><div class="k">${esc(k)}</div><div class="v ${tone}">${esc(v)}</div></div>`).join("");
+    `<div class="detailChip"><div class="dc-label">${esc(k)}</div><div class="dc-value ${tone}">${esc(v)}</div></div>`).join("");
 
-  // —— 单号与身份行 ——
   document.getElementById("headline").innerHTML =
     `<span class="badge ${o.special ? "purple" : "mute"}">${o.special ? "特级安保单" : "普通单"}</span>` +
-    (o.special ? `<span class="badge purple plain">安全等级：高</span>` : "") +
     `<span class="order-no">${esc(o.no)}</span>` +
     `<span>·</span><span>申请部门 <b>${esc(o.dept)}</b></span>` +
     `<span>·</span><span>物品分类 <b>${esc(o.cat)}</b></span>` +
     `<span>·</span><span>申请人 <b>${esc(o.applicant)}</b></span>` +
-    `<span style="margin-left:auto"></span>` +
-    `<span class="badge ${o.stateTone}">${esc(o.state)}</span>`;
+    `<span style="margin-left:auto"></span><span class="badge ${o.stateTone}">${esc(o.state)}</span>`;
 
-  // —— 时间轴（找最长卡点）——
-  const gaps = o.nodes.filter(n => n.gap != null);
-  const maxGap = gaps.length && gaps.length > 1 ? Math.max(...gaps.map(n => n.gap)) : null;
+  const maxGap = allGaps.length > 1 ? Math.max(...allGaps.map(n => n.gap)) : null;
   let html = "";
-  o.nodes.forEach((n, i) => {
-    const isCrit = maxGap != null && n.gap === maxGap;
-    // 段耗时（位于节点之间，画在上一个节点下方）
-    if (n.gap != null) {
-      html += `<div class="tl-row gap ${isCrit ? "alert" : ""}">
-        <div class="tl-time"></div>
-        <div class="tl-rail"></div>
-        <div class="tl-body">
-          <span class="dur ${isCrit ? "crit" : ""}">⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
-          ${isCrit ? `<span class="critflag" style="margin-left:8px">🔴 最长卡点</span>` : ""}
-        </div></div>`;
-    }
+  o.nodes.forEach(n => {
     const pend = !n.time;
-    html += `<div class="tl-row node ${pend ? "pending" : "done"}">
+    const isCrit = maxGap != null && n.gap === maxGap;
+    const t = toneOf(n.tone);
+    if (n.gap != null) {
+      html += `<div class="tl-row gap">
+        <div class="tl-time"></div><div class="tl-rail"></div>
+        <div class="tl-body"><span class="dur ${isCrit ? "crit" : ""}">⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
+          ${isCrit ? `<span class="critflag" style="margin-left:8px">🔴 最长卡点</span>` : ""}</div></div>`;
+    }
+    const dotCls = pend ? `pending p-${t === "bad" ? "bad" : t === "warn" ? "warn" : "mute"}` : t;
+    html += `<div class="tl-row node">
       <div class="tl-time ${pend ? "pending" : ""}">${n.time ? esc(n.time) : "--:--"}</div>
-      <div class="tl-rail"><span class="dot ${pend ? "pending" : toneClass(n.tone)}"></span></div>
+      <div class="tl-rail"><span class="dot ${dotCls}"></span></div>
       <div class="tl-body">
-        <div class="tl-title">${KIND[n.kind].name}
-          <span class="badge ${toneClass(n.tone)}">${pend ? "进行中" : n.tone === "warn" ? "超时" : n.tone === "purple" ? "特保" : "正常"}</span>
-          ${n.flag ? `<span class="badge bad">${esc(n.flag)}</span>` : ""}
+        <div class="tl-title">${KIND[n.kind]}
+          <span class="badge ${t}">${badgeText(n, pend)}</span>
+          ${n.flag ? `<span class="badge ${t}">${esc(n.flag)}</span>` : ""}
         </div>
         <div class="tl-meta">${esc(n.desc)} · <code>${esc(n.who)}</code></div>
       </div></div>`;
   });
   document.getElementById("axis").innerHTML = html;
 
-  // —— 记录明细 ——
   document.getElementById("recCount").textContent = `（${recs.length} 条 · 记录级）`;
   document.getElementById("recTable").innerHTML =
     `<thead><tr><th>#</th><th>放行单号</th><th>物品</th><th>数量</th><th>流出门岗</th><th>流入门岗</th><th>实际放行门岗</th>
       <th>申请时间</th><th>放行时间</th><th>接收时间</th><th>状态</th></tr></thead><tbody>` +
-    recs.map((r, i) => `<tr>
-      <td>${i + 1}</td><td class="mono">${esc(r.no)}</td><td>${esc(r.item)}</td><td>${esc(r.qty)}</td>
+    recs.map((r, i) => `<tr><td>${i + 1}</td><td class="mono">${esc(o.no)}</td><td>${esc(r.item)}</td><td>${esc(r.qty)}</td>
       <td>${esc(r.out)}</td><td>${esc(r.inG)}</td><td>${esc(r.act) || "—"}</td>
       <td class="mono">${esc(r.apply)}</td><td class="mono">${esc(r.rel)}</td><td class="mono">${esc(r.recv)}</td>
       <td><span class="badge ${r.tone}">${esc(r.st)}</span></td></tr>`).join("") + "</tbody>";
+
+  document.querySelectorAll("#samples .sample").forEach(b => b.classList.toggle("on", b.dataset.k === key));
 }
 
-// —— 示例切换 ——
-const samplesBox = document.getElementById("samples");
-samplesBox.innerHTML = Object.keys(SAMPLES).map((k, i) =>
-  `<button class="sample ${i === 0 ? "on" : ""}" data-k="${k}">${esc(SAMPLES[k].label)}</button>`).join("");
-samplesBox.addEventListener("click", e => {
+/* ============ 示例切换 ============ */
+const box = document.getElementById("samples");
+box.innerHTML = Object.keys(SAMPLES).map(k => `<button class="sample" data-k="${k}">${esc(SAMPLES[k].label)}</button>`).join("");
+box.addEventListener("click", e => {
   const b = e.target.closest("button.sample"); if (!b) return;
-  samplesBox.querySelectorAll("button.sample").forEach(x => x.classList.toggle("on", x === b));
-  render(b.dataset.k);
+  setSearchMsg(""); render(b.dataset.k);
 });
-render("normal");
 
-// —— 深浅色 ——
+/* ============ 单号直查 ============ */
+const searchWrap = document.getElementById("traceSearch");
+const searchInput = document.getElementById("traceInput");
+const searchMsg = document.getElementById("searchMsg");
+function setSearchMsg(text, cls) {
+  searchMsg.textContent = text || "";
+  searchMsg.classList.toggle("show", !!text);
+  searchWrap.classList.remove("ok", "err");
+  if (cls) searchWrap.classList.add(cls);
+}
+function lookup() {
+  const q = searchInput.value.trim().toUpperCase();
+  if (!q) { setSearchMsg("请输入放行单号", "err"); return; }
+  const hit = Object.keys(SAMPLES).find(k => SAMPLES[k].order.no.toUpperCase() === q);
+  if (hit) {
+    render(hit); setSearchMsg("已定位该单 ✅", "ok");
+    setTimeout(() => setSearchMsg("", null), 1400);
+  } else {
+    setSearchMsg(`未找到「${q}」—— 可试 ${SAMPLES.normal.order.no}`, "err");
+  }
+}
+searchInput.addEventListener("keydown", e => { if (e.key === "Enter") lookup(); });
+searchInput.addEventListener("input", () => { if (searchMsg.classList.contains("show")) setSearchMsg("", null); });
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); searchInput.focus(); searchInput.select(); }
+});
+document.getElementById("btnDetailClose").onclick = () => { setSearchMsg(""); document.getElementById("detailPanelBody").style.opacity = "0.35"; setTimeout(() => document.getElementById("detailPanelBody").style.opacity = "1", 180); };
+
+/* ============ 深浅色 ============ */
 document.getElementById("btnMode").onclick = () => {
   const dark = document.documentElement.getAttribute("data-mode") === "dark";
   document.documentElement.setAttribute("data-mode", dark ? "light" : "dark");
-  document.getElementById("btnMode").textContent = dark ? "🌗 深色" : "☀️ 浅色";
+  document.getElementById("btnMode").textContent = dark ? "🌗" : "☀️";
 };
+
+render("normal");
 </script>
 </body>
 </html>
