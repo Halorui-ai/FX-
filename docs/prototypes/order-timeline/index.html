@@ -143,7 +143,6 @@ button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,
 .tl-rail{position:relative;display:flex;justify-content:center;min-height:22px}
 .tl-row.node .tl-rail::before{content:"";position:absolute;top:14px;bottom:-6px;width:2px;background:var(--line)}
 .tl-row.node:last-child .tl-rail::before{display:none}
-.tl-row.gap .tl-rail::before{content:"";position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--line)}
 .dot{width:12px;height:12px;border-radius:50%;margin-top:5px;position:relative;z-index:1;
   background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
 .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
@@ -152,16 +151,15 @@ button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,
 .dot.pending{background:transparent;border:2px solid var(--txt2);box-shadow:0 0 0 3px var(--bg)}
 .dot.pending.p-bad{border-color:var(--bad)}
 .dot.pending.p-warn{border-color:var(--warn)}
-.tl-body{padding:0 0 14px 4px;min-width:0}
-.tl-title{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:13.5px;font-weight:600}
-.tl-meta{color:var(--txt2);font-size:12px;margin-top:3px;line-height:1.6;word-break:break-all}
+/* 节点行内容横向铺开：标题+徽章 │ 描述·人员·门岗 │ 距上一节点耗时（右端对齐） */
+.tl-body{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:0 0 14px 4px;min-width:0}
+.tl-title{display:flex;flex:none;align-items:center;gap:7px;font-size:13.5px;font-weight:600}
+.tl-meta{color:var(--txt2);font-size:12px;flex:1 1 auto;min-width:0;line-height:1.6;word-break:break-all}
 .tl-meta code{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:11.5px;background:var(--track);padding:1px 5px;border-radius:5px}
-.tl-row.gap{min-height:30px}
-.tl-row.gap .tl-body{padding:0 0 10px 4px}
-.dur{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2);
-  padding:3px 9px;border-radius:999px;background:var(--track)}
-.dur.crit{color:#c0392b;background:rgba(255,59,48,.12);font-weight:600}
-[data-mode="dark"] .dur.crit{color:#ff8b80}
+.tl-seg{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--txt2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tl-seg.crit{color:#c0392b;font-weight:600}
+[data-mode="dark"] .tl-seg.crit{color:#ff8b80}
 .critflag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#c0392b;
   background:rgba(255,59,48,.13);padding:2px 9px;border-radius:999px}
 [data-mode="dark"] .critflag{color:#ff8b80}
@@ -356,9 +354,9 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
     <div class="note">
       <h4>呈现形态（三选一）</h4>
       <ul>
-        <li><b>A 纵向</b>：列表式，节点再多也不挤；右侧留白</li>
-        <li><b>B 横向</b>：流转图，铺满宽度、方向感强；节点 ≥6 需横向滚动</li>
-        <li><b>C 纵向+右栏</b>：宽度用满，右栏 = 各段耗时排行 + 超时判定</li>
+        <li><b>A 纵向</b>：节点竖排，但每行内「标题 │ 描述·人员·门岗 │ 耗时」横向铺开 —— 宽度用满且不怕节点多</li>
+        <li><b>B 横向</b>：真流转图（申请→放行→接收 一条线），方向感最强；节点 ≥6 需横向滚动</li>
+        <li><b>C 纵向+右栏</b>：在 A 基础上加右栏 = 各段耗时排行 + 超时判定</li>
         <li>三者共用同一份数据与配色，只是排版不同；切换按钮在页面顶部</li>
       </ul>
     </div>
@@ -499,12 +497,6 @@ function axisHTMLV(o, maxGap) {
     const pend = !n.time;
     const isCrit = maxGap != null && n.gap === maxGap;
     const t = toneOf(n.tone);
-    if (n.gap != null) {
-      html += `<div class="tl-row gap">
-        <div class="tl-time"></div><div class="tl-rail"></div>
-        <div class="tl-body"><span class="dur ${isCrit ? "crit" : ""}">⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
-          ${isCrit ? `<span class="critflag" style="margin-left:8px">🔴 最长卡点</span>` : ""}</div></div>`;
-    }
     const dotCls = pend ? `pending p-${t === "bad" ? "bad" : t === "warn" ? "warn" : "mute"}` : t;
     html += `<div class="tl-row node">
       <div class="tl-time ${pend ? "pending" : ""}">${n.time ? esc(n.time) : "--:--"}</div>
@@ -515,6 +507,10 @@ function axisHTMLV(o, maxGap) {
           ${n.flag ? `<span class="badge ${t}">${esc(n.flag)}</span>` : ""}
         </div>
         <div class="tl-meta">${esc(n.desc)} · <code>${esc(n.who)}</code></div>
+        ${n.gap != null ? `<div class="tl-seg ${isCrit ? "crit" : ""}">
+          <span>⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
+          ${isCrit ? '<span class="critflag">🔴 最长卡点</span>' : ""}
+        </div>` : ""}
       </div></div>`;
   });
   return html;
@@ -652,10 +648,10 @@ function syncAxisBtns() {
   document.getElementById("axisH").classList.toggle("on", viewMode === "h");
   document.getElementById("axisC").classList.toggle("on", viewMode === "c");
   document.getElementById("axisHint").textContent = viewMode === "v"
-    ? "纵向：列表式 · 节点再多也不挤 · 右侧留白"
+    ? "纵向：节点竖排，行内「标题 │ 描述 │ 耗时」横向铺开，宽度用满"
     : viewMode === "h"
     ? "横向：流转图 · 铺满宽度 · 节点 ≥6 需横向滚动"
-    : "纵向 + 右栏：宽度用满，右栏给耗时排行与超时判定";
+    : "纵向 + 右栏：行内铺开 + 右栏耗时排行与超时判定";
 }
 document.getElementById("axisV").onclick = () => { viewMode = "v"; syncAxisBtns(); render(currentKey); };
 document.getElementById("axisH").onclick = () => { viewMode = "h"; syncAxisBtns(); render(currentKey); };
