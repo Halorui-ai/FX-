@@ -166,6 +166,34 @@ button:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,
   background:rgba(255,59,48,.13);padding:2px 9px;border-radius:999px}
 [data-mode="dark"] .critflag{color:#ff8b80}
 
+/* ===== 横向时间轴（备选形态：铺满宽度、流程方向感强；节点多时横向滚动） ===== */
+.axis-h{display:flex;align-items:flex-start;overflow-x:auto;padding:8px 2px 2px;margin-bottom:4px}
+.h-col{flex:0 0 auto;width:172px;display:flex;flex-direction:column;align-items:center}
+.h-time{height:18px;line-height:18px;font-size:12.5px;color:var(--txt);
+  font-family:Consolas,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+.h-time.pending{color:var(--txt2)}
+.h-rail{position:relative;height:24px;width:100%;display:flex;align-items:center;justify-content:center}
+.h-dot{width:12px;height:12px;border-radius:50%;background:var(--accent);position:relative;z-index:1;box-shadow:0 0 0 3px var(--bg)}
+.h-dot.ok{background:var(--ok)} .h-dot.warn{background:var(--warn)} .h-dot.bad{background:var(--bad)} .h-dot.purple{background:var(--purple)}
+.h-dot.pending{background:transparent;border:2px solid var(--txt2)}
+.h-dot.pending.p-bad{border-color:var(--bad)}
+.h-dot.pending.p-warn{border-color:var(--warn)}
+.h-body{width:100%;text-align:center;padding:8px 6px 0}
+.h-title{font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.h-meta{font-size:11.5px;color:var(--txt2);margin-top:5px;line-height:1.55;word-break:break-word}
+.h-meta code{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:11px;background:var(--track);padding:1px 4px;border-radius:4px}
+/* 段：两条短线夹一枚耗时胶囊（横线天然断开，胶囊无需遮挡底色） */
+.h-seg{flex:1 1 auto;min-width:74px;display:flex;flex-direction:column;align-items:center}
+.h-seg .sp{height:18px}
+.h-seg .rail{height:24px;width:100%;display:flex;align-items:center;gap:6px}
+.h-seg .line{flex:1;height:2px;background:var(--line);border-radius:1px}
+.h-seg.crit .line{background:var(--bad)}
+.h-dur{flex:none;font-size:11.5px;color:var(--txt2);white-space:nowrap;padding:2px 8px;border-radius:999px;background:var(--track)}
+.h-seg.crit .h-dur{color:#c0392b;background:rgba(255,59,48,.12);font-weight:600}
+[data-mode="dark"] .h-seg.crit .h-dur{color:#ff8b80}
+.h-segnote{font-size:11px;font-weight:600;color:#c0392b;margin-top:4px;white-space:nowrap}
+[data-mode="dark"] .h-segnote{color:#ff8b80}
+
 /* 记录明细 */
 .records{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
 .records h3{font-size:13px;font-weight:600;margin-bottom:10px}
@@ -219,10 +247,16 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
   </div>
 </div>
 
-<!-- 原型专用：示例切换 -->
+<!-- 原型专用：示例切换 + 时间轴形态对比 -->
 <div class="protoBar">
   <span class="tag">原型演示 · 点示例看不同状态，或在顶栏搜索框输入单号回车</span>
   <span id="samples" style="display:flex;gap:8px;flex-wrap:wrap"></span>
+</div>
+<div class="protoBar">
+  <span class="tag">时间轴形态（对比用）</span>
+  <button class="sample on" id="axisV">纵向</button>
+  <button class="sample" id="axisH">横向</button>
+  <span class="tag" id="axisHint"></span>
 </div>
 
 <div class="wrap">
@@ -278,6 +312,14 @@ td.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12px}
         <li><span class="swatch" style="background:transparent;border:2px solid var(--bad)"></span><span><b>空心红</b>：进行中且已超时（放行类）</span></li>
         <li><span class="swatch" style="background:transparent;border:2px solid var(--warn)"></span><span><b>空心黄</b>：进行中（接收类）</span></li>
         <li><span class="swatch" style="background:transparent;border:2px solid var(--txt2)"></span><span><b>空心灰</b>：未开始</span></li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>时间轴形态（待你定）</h4>
+      <ul>
+        <li><b>纵向</b>：列表式，节点再多也不挤；但右侧会留白</li>
+        <li><b>横向</b>：流转图，铺满宽度、方向感强；节点 ≥6 时横向滚动</li>
+        <li>建议按典型节点数取舍：普通单 3 节点横向更好看；多门岗单（5–7 节点）纵向更稳</li>
       </ul>
     </div>
     <div class="note">
@@ -407,7 +449,65 @@ function badgeText(n, pend) {
   return ({ accent: "正常", ok: "正常", warn: "超时", bad: "超时", purple: "特保" })[n.tone] || "正常";
 }
 
+/* —— 时间轴两种形态：v=纵向列表（默认）/ h=横向流转图 —— */
+let axisMode = "v";
+let currentKey = "normal";
+
+function axisHTMLV(o, maxGap) {
+  let html = "";
+  o.nodes.forEach(n => {
+    const pend = !n.time;
+    const isCrit = maxGap != null && n.gap === maxGap;
+    const t = toneOf(n.tone);
+    if (n.gap != null) {
+      html += `<div class="tl-row gap">
+        <div class="tl-time"></div><div class="tl-rail"></div>
+        <div class="tl-body"><span class="dur ${isCrit ? "crit" : ""}">⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
+          ${isCrit ? `<span class="critflag" style="margin-left:8px">🔴 最长卡点</span>` : ""}</div></div>`;
+    }
+    const dotCls = pend ? `pending p-${t === "bad" ? "bad" : t === "warn" ? "warn" : "mute"}` : t;
+    html += `<div class="tl-row node">
+      <div class="tl-time ${pend ? "pending" : ""}">${n.time ? esc(n.time) : "--:--"}</div>
+      <div class="tl-rail"><span class="dot ${dotCls}"></span></div>
+      <div class="tl-body">
+        <div class="tl-title">${KIND[n.kind]}
+          <span class="badge ${t}">${badgeText(n, pend)}</span>
+          ${n.flag ? `<span class="badge ${t}">${esc(n.flag)}</span>` : ""}
+        </div>
+        <div class="tl-meta">${esc(n.desc)} · <code>${esc(n.who)}</code></div>
+      </div></div>`;
+  });
+  return html;
+}
+
+function axisHTMLH(o, maxGap) {
+  let html = '<div class="axis-h">';
+  o.nodes.forEach((n, i) => {
+    const t = toneOf(n.tone);
+    if (i > 0 && n.gap != null) {
+      const isCrit = maxGap != null && n.gap === maxGap;
+      html += `<div class="h-seg ${isCrit ? "crit" : ""}">
+        <div class="sp"></div>
+        <div class="rail"><i class="line"></i><span class="h-dur">${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}</span><i class="line"></i></div>
+        ${isCrit ? '<div class="h-segnote">🔴 最长卡点</div>' : ""}
+      </div>`;
+    }
+    const pend = !n.time;
+    const dotCls = pend ? `pending p-${t === "bad" ? "bad" : t === "warn" ? "warn" : "mute"}` : t;
+    html += `<div class="h-col">
+      <div class="h-time ${pend ? "pending" : ""}">${n.time ? esc(n.time) : "--:--"}</div>
+      <div class="h-rail"><span class="h-dot ${dotCls}"></span></div>
+      <div class="h-body">
+        <div class="h-title">${KIND[n.kind]}<span class="badge ${t}">${badgeText(n, pend)}</span></div>
+        <div class="h-meta">${esc(n.desc)}<br><code>${esc(n.who)}</code>${n.flag ? `<br><span class="badge ${t}" style="margin-top:3px">${esc(n.flag)}</span>` : ""}</div>
+      </div>
+    </div>`;
+  });
+  return html + "</div>";
+}
+
 function render(key) {
+  currentKey = key;
   const o = SAMPLES[key].order, recs = RECORDS[key];
 
   const allGaps = o.nodes.filter(n => n.gap != null);
@@ -432,30 +532,7 @@ function render(key) {
     `<span style="margin-left:auto"></span><span class="badge ${o.stateTone}">${esc(o.state)}</span>`;
 
   const maxGap = allGaps.length > 1 ? Math.max(...allGaps.map(n => n.gap)) : null;
-  let html = "";
-  o.nodes.forEach(n => {
-    const pend = !n.time;
-    const isCrit = maxGap != null && n.gap === maxGap;
-    const t = toneOf(n.tone);
-    if (n.gap != null) {
-      html += `<div class="tl-row gap">
-        <div class="tl-time"></div><div class="tl-rail"></div>
-        <div class="tl-body"><span class="dur ${isCrit ? "crit" : ""}">⏱ ${n.waiting ? "已等待 " : ""}${fmtDur(n.gap)}${n.waiting ? "（进行中）" : ""}</span>
-          ${isCrit ? `<span class="critflag" style="margin-left:8px">🔴 最长卡点</span>` : ""}</div></div>`;
-    }
-    const dotCls = pend ? `pending p-${t === "bad" ? "bad" : t === "warn" ? "warn" : "mute"}` : t;
-    html += `<div class="tl-row node">
-      <div class="tl-time ${pend ? "pending" : ""}">${n.time ? esc(n.time) : "--:--"}</div>
-      <div class="tl-rail"><span class="dot ${dotCls}"></span></div>
-      <div class="tl-body">
-        <div class="tl-title">${KIND[n.kind]}
-          <span class="badge ${t}">${badgeText(n, pend)}</span>
-          ${n.flag ? `<span class="badge ${t}">${esc(n.flag)}</span>` : ""}
-        </div>
-        <div class="tl-meta">${esc(n.desc)} · <code>${esc(n.who)}</code></div>
-      </div></div>`;
-  });
-  document.getElementById("axis").innerHTML = html;
+  document.getElementById("axis").innerHTML = axisMode === "h" ? axisHTMLH(o, maxGap) : axisHTMLV(o, maxGap);
 
   document.getElementById("recCount").textContent = `（${recs.length} 条 · 记录级）`;
   document.getElementById("recTable").innerHTML =
@@ -475,6 +552,17 @@ box.addEventListener("click", e => {
   const b = e.target.closest("button.sample"); if (!b) return;
   setSearchMsg(""); render(b.dataset.k);
 });
+
+/* ============ 时间轴形态切换（纵向 / 横向） ============ */
+function syncAxisBtns() {
+  document.getElementById("axisV").classList.toggle("on", axisMode === "v");
+  document.getElementById("axisH").classList.toggle("on", axisMode === "h");
+  document.getElementById("axisHint").textContent = axisMode === "v"
+    ? "纵向：列表式 · 节点再多也不挤 · 右侧会留白"
+    : "横向：流转图 · 铺满宽度 · 节点多时横向滚动";
+}
+document.getElementById("axisV").onclick = () => { axisMode = "v"; syncAxisBtns(); render(currentKey); };
+document.getElementById("axisH").onclick = () => { axisMode = "h"; syncAxisBtns(); render(currentKey); };
 
 /* ============ 单号直查 ============ */
 const searchWrap = document.getElementById("traceSearch");
@@ -511,6 +599,7 @@ document.getElementById("btnMode").onclick = () => {
   document.getElementById("btnMode").textContent = dark ? "🌗" : "☀️";
 };
 
+syncAxisBtns();
 render("normal");
 </script>
 </body>
