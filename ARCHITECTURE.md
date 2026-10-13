@@ -21,6 +21,22 @@
 
 渲染层不得修改 `rows` / `orders`。
 
+### 数据缓存（IndexedDB，v5.6 起）
+
+解析是整条链路最贵的一步（10 万行 xlsx 约 20s），故把 `rows` 留在本机，下次直接恢复（约 1~2s）：
+
+| 项 | 现行 |
+|----|------|
+| 存储 | IndexedDB `dashCacheData`（`meta` + `rows` 两个 store），**只保留最近一份**（`metaKey: "latest"`） |
+| 分块 | 每 2000 行一条记录（`CACHE.chunk`），写入时逐块让出主线程 |
+| 序列化 | **`_申请日期/_放行日期/_接收日期` 必须转时间戳**（结构化克隆会丢 dayjs 原型，直接存会让恢复后 `.format()` 报错），读取时用 `dayjs(ts)` 重建 |
+| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废 |
+| 写入时机 | `processData()` 渲染完成后异步执行；**演示数据（`demoMode`）不写** |
+| 恢复 | `cacheRestore()` 重建 rows + `currentFileName` + `currentColOf`，并按 `_rowId` 最大值复位 `_rowSeq`（防与演示新增行撞 ID），然后 `renderAll()` |
+| 开关 | 默认开启，功能抽屉「💾 数据缓存」可关（`localStorage.dashCacheOff`）；关闭时同时清除已留存数据 |
+| 降级 | 启动探活 `indexedDB.open()`；不可用/被禁用 → 隐藏恢复入口与开关行，看板功能不受影响 |
+| 失败自愈 | 写入配额超限、缓存行数与元数据不符 → 清缓存 + 提示，不污染当前 `rows` |
+
 ### 解析线程
 
 | 项 | 现行 |
@@ -51,6 +67,7 @@
 | 解析 | `handleFile` / `findHeaderRow` / `firstNonEmptySheet` / `sheetToRowsChunked` |
 | Worker（保留未启用） | `PARSER_WORKER_SRC` / `parseViaWorker` |
 | 标准化 | `processData` / `normalizeRow` / `mapColumns` |
+| 数据缓存 | `CACHE` / `cacheSave` / `cacheRestore` / `cacheClear` / `renderCacheRestore`（IndexedDB，只留最近一份） |
 | 计算 | `computeOrders` / `computeStats` |
 | 卡片 | `CARD_DEFS` / `optionBuilders` / `BUILTIN_LAYOUTS` |
 | 详情 | `KPI_DETAIL` / `openDetail` |
@@ -133,12 +150,14 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 ## 6. 关键运行约束
 
 - `file://` 必须可用；禁止引入必须 HTTP 的能力（除非保留 file:// 兑底）。
-- 大 xlsx 的硬瓶颈是 `XLSX.read` 同步阻塞；产品侧引导转存 CSV。
+- 大 xlsx 的硬瓶颈是 `XLSX.read` 同步阻塞；产品侧引导转存 CSV，本机重复打开走 IndexedDB 缓存恢复。
+- **IndexedDB 只存"最近一份数据"**，不得用它承载业务状态；业务状态仍走 `localStorage`。现有键：`dashLayouts`（视图）、`dashTheme`（主题）、`dashMode`（深浅色）、`perfMode`（性能档）、`dashCacheOff`（数据缓存开关）。file:// 下这些存储由**所有本地 HTML 共享**，故键名与 DB 名都带项目前缀，改动需谨慎。
+- 缓存写入必须分块让出主线程，且**任何失败都要自愈**（清缓存 + 不污染当前 `rows`）；探活失败时相关入口整块隐藏。
 - 派生字段 `_` 前缀，导出前 `stripPrivate()` 剥离。
 - 新图表动画走 `withAnim()` / `animOpt()`，大数据与 lite 自动降级。
 - 拼进 `innerHTML`（含 tooltip formatter 返回的 HTML）的单元格文本与文件名必须先经 `escapeHtml`。
 
-常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；**视图比保存时宽一倍 → 该布局/插件缺 `cols: 24`，被当成旧 12 列 ×2（D-30）**；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
+常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；**视图比保存时宽一倍 → 该布局/插件缺 `cols: 24`，被当成旧 12 列 ×2（D-30）**；**没有「恢复上次数据」按钮 → IndexedDB 被禁用/被关掉开关，或上一份数据写入失败**；不想在本机留数据 → 抽屉「🗑 清除缓存」或关掉「💾 数据缓存」；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。
 
 ---
 
