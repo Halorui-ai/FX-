@@ -1708,8 +1708,8 @@ const optionBuilders = {
       label: { color: "#1d1d1f", formatter: "{b}\n{c} 单 ({d}%)" },
       data: [
         { name: "已接收", value: S.statusDist.已接收, itemStyle: { color: "#34c759" } },
-        { name: "放行超时", value: S.statusDist.放行超时, itemStyle: { color: "#ff9f0a" } },
-        { name: "接收超时", value: S.statusDist.接收超时, itemStyle: { color: "#ff3b30" } },
+        { name: "放行超时", value: S.statusDist.放行超时, itemStyle: { color: "#ff3b30" } },
+        { name: "接收超时", value: S.statusDist.接收超时, itemStyle: { color: "#ff9f0a" } },
         { name: "放行异常", value: S.statusDist.放行异常, itemStyle: { color: "#af52de" } }
       ] }]
   }),
@@ -1815,7 +1815,7 @@ const optionBuilders = {
       xAxis: { type: "value", ...baseAxis },
       yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
       series: [{ type: "bar", data: vals.reverse(), barWidth: "50%",
-        itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#34c759", "#ff9f0a", "#ff3b30", "#af52de"][p.dataIndex % 4] },
+        itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#ffb3ab", "#ff7d70", "#ff3b30", "#c62828"][p.dataIndex % 4] },
         label: { show: true, position: "right", color: "#1d1d1f", formatter: p => p.value + "单" } }]
     };
   }
@@ -2079,7 +2079,7 @@ function htmlRateMedium(S) {
     '<div class="rate-ball-center"><div class="rate-ball-label">放行结案完成率</div><div class="rate-ball-val">' + pctTxt + "</div></div></div>" +
     '<div class="rate-m-metrics">' +
     '<div class="rate-m-row"><i class="dot" style="--dc:var(--ok)"></i><span class="metric-label">正常结案</span><span class="metric-val ok">' + b.closed + "<small>单</small></span></div>" +
-    '<div class="rate-m-row"><i class="dot" style="--dc:var(--warn)"></i><span class="metric-label">到达超时</span><span class="metric-val warn">' + b.arrivedTO + "<small>单</small></span></div>" +
+    '<div class="rate-m-row"><i class="dot" style="--dc:var(--danger)"></i><span class="metric-label">到达超时</span><span class="metric-val danger">' + b.arrivedTO + "<small>单</small></span></div>" +
     '<div class="rate-m-row"><i class="dot" style="--dc:var(--danger)"></i><span class="metric-label">在途超时</span><span class="metric-val danger">' + b.transitTO + "<small>单</small></span></div>" +
     '<div class="rate-m-foot">纳入统计 ' + b.scoped + " 单</div></div></div>" +
     '<div class="rate-m-bar"><span class="footer-note">在途未超 ' + b.inOk + ' 单不计入分母</span><span class="footer-link rate-foot-link">查看明细 →</span></div></div>';
@@ -2088,7 +2088,7 @@ function htmlRateProg(b) {
   const scoped = b.scoped || 0;
   const rows = [
     { name: "正常结案", n: b.closed, cls: "ok", color: "var(--ok)" },
-    { name: "到达超时", n: b.arrivedTO, cls: "warn", color: "var(--warn)" },
+    { name: "到达超时", n: b.arrivedTO, cls: "danger", color: "var(--danger)" },
     { name: "在途超时", n: b.transitTO, cls: "danger", color: "var(--danger)" }
   ];
   return '<div class="rate-progress">' + rows.map(r => {
@@ -2219,40 +2219,40 @@ function buildKpiProps(id, S) {
     });
   }
   if (id === "kpi_transit") {
-    return Object.assign({ tone: "v-warn", tab: "overtime" }, common, {
-      hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--warn)">' + transit + "</b> 单",
+    return Object.assign({ tone: "v-danger", tab: "overtime" }, common, {
+      hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--danger)">' + transit + "</b> 单",
       visual: "stack",
       cells: [
         { name: "其中特保", val: overtimeSp, dc: "var(--cat-purple)", dot: "var(--cat-purple)" },
         { name: "在途未超", val: inOk },
-        { name: "占在途", val: kpiPct(overtime, transit), dc: "var(--warn)" }
+        { name: "占在途", val: kpiPct(overtime, transit), dc: "var(--danger)" }
       ],
       bars: [
         { name: "其中特保", val: overtimeSp, pct: overtime ? overtimeSp / overtime : 0, color: "var(--cat-purple)" },
         { name: "在途未超", val: inOk, pct: inOk / (transit || 1), color: "var(--brand)" },
-        { name: "占在途", val: kpiPct(overtime, transit), pct: overtime / (transit || 1), color: "var(--warn)" }
+        { name: "占在途", val: kpiPct(overtime, transit), pct: overtime / (transit || 1), color: "var(--danger)" }
       ],
       dims: {
         type: { small: { n: "特保超时", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通超时", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
-        arrive: { small: { n: "在途超时", v: overtime, c: "#f59a26" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } },
-        overtime: { small: { n: "超时未放行", v: overtime, c: "#f59a26" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } }
+        arrive: { small: { n: "在途超时", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } },
+        overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } }
       },
       recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时"
     });
   }
   if (id === "kpi_receive") {
-    return Object.assign({ tone: "v-danger", tab: "overtime", cta: true }, common, {
+    return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
       bars: [
-        { name: "涉及部门", val: recDepts, pct: 1, color: "var(--danger)" },
-        { name: "占总单", val: kpiPct(receive, total), pct: receive / (total || 1), color: "var(--danger)" },
-        { name: ">4h 待接收", val: b3, pct: recRows.length ? b3 / recRows.length : 0, color: "var(--danger)" }
+        { name: "涉及部门", val: recDepts, pct: 1, color: "var(--warn)" },
+        { name: "占总单", val: kpiPct(receive, total), pct: receive / (total || 1), color: "var(--warn)" },
+        { name: ">4h 待接收", val: b3, pct: recRows.length ? b3 / recRows.length : 0, color: "var(--warn)" }
       ],
       dims: {
-        type: { small: { n: "<1h", v: b1, c: "#f7b14c" }, big: { n: "≥1h", v: b2 + b3, c: "#f04d3e" } },
-        arrive: { small: { n: "1–4h", v: b2, c: "#f59a26" }, big: { n: "其余", v: b1 + b3, c: "#f04d3e" } },
-        overtime: { small: { n: "<1h", v: b1, c: "#f7b14c" }, big: { n: "1–4h", v: b2, c: "#f59a26" }, extra: { n: ">4h", v: b3, c: "#f04d3e" } }
+        type: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "≥1h", v: b2 + b3, c: "#e0820a" } },
+        arrive: { small: { n: "1–4h", v: b2, c: "#ff9f0a" }, big: { n: "其余", v: b1 + b3, c: "#e0820a" } },
+        overtime: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "1–4h", v: b2, c: "#ff9f0a" }, extra: { n: ">4h", v: b3, c: "#e0820a" } }
       },
       recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收"
     });
@@ -2303,8 +2303,8 @@ function htmlMediumVisual(p) {
   if (p.visual === "stack") {
     const a = Math.max(p.overtime, 0.01), b = Math.max(p.inOk, 0.01);
     return '<div class="m-visual m-visual-stack"><div class="stack-wrap"><div class="stackbar">' +
-      '<i style="flex:' + a + ';background:var(--warn)"></i><i style="flex:' + b + ';background:var(--brand)"></i></div>' +
-      '<div class="stack-lg"><span><i class="dot" style="--dc:var(--warn)"></i>超时未放行 <b>' + p.overtime + "</b></span>" +
+      '<i style="flex:' + a + ';background:var(--danger)"></i><i style="flex:' + b + ';background:var(--brand)"></i></div>' +
+      '<div class="stack-lg"><span><i class="dot" style="--dc:var(--danger)"></i>超时未放行 <b>' + p.overtime + "</b></span>" +
       "<span><i class=\"dot\" style=\"--dc:var(--brand)\"></i>在途未超 <b>" + p.inOk + "</b></span></div></div></div>";
   }
   if (p.visual === "alert") return '<div class="m-visual"><div class="medallion"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div></div>';
@@ -2582,7 +2582,7 @@ const CARD_DEFS = {
     id: "kpi_transit", title: "在途超时未放行", icon: "🚧", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "transitTimeout", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
-        id: "kpi_transit", label: "在途超时未放行", color: "var(--warn)",
+        id: "kpi_transit", label: "在途超时未放行", color: "var(--danger)",
         value: S => S.transitTimeoutOrders.length,
         chips: S => {
           const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
@@ -2594,7 +2594,7 @@ const CARD_DEFS = {
     },
     update(body, ctx) {
       updateKpiAdaptive(body, ctx, {
-        id: "kpi_transit", label: "在途超时未放行", color: "var(--warn)",
+        id: "kpi_transit", label: "在途超时未放行", color: "var(--danger)",
         value: S => S.transitTimeoutOrders.length,
         chips: S => {
           const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
@@ -2609,7 +2609,7 @@ const CARD_DEFS = {
     id: "kpi_receive", title: "超时未接收", icon: "📦", cat: "KPI指标", w: 4, h: 4, minW: 4, maxW: 24, minH: 4, maxH: 12, detailKey: "receiveTimeout", kpiAdaptive: true,
     render(body, ctx) {
       renderKpiAdaptive(body, ctx, {
-        id: "kpi_receive", label: "超时未接收", color: "var(--bad)",
+        id: "kpi_receive", label: "超时未接收", color: "var(--warn)",
         value: S => S.receiveTimeoutOrders.length,
         chips: S => {
           const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
@@ -2621,7 +2621,7 @@ const CARD_DEFS = {
     },
     update(body, ctx) {
       updateKpiAdaptive(body, ctx, {
-        id: "kpi_receive", label: "超时未接收", color: "var(--bad)",
+        id: "kpi_receive", label: "超时未接收", color: "var(--warn)",
         value: S => S.receiveTimeoutOrders.length,
         chips: S => {
           const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
@@ -3746,14 +3746,14 @@ function analysisTransitHTML(S) {
   } else {
     preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
-      `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
+      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
       `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
       `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
     `<span style="font-size:12px;color:var(--txt2)">在途超时单数</span>` +
-    `<span class="ac-count" style="color:var(--warn)">${S.transitTimeoutOrders.length}</span></div>` +
+    `<span class="ac-count" style="color:var(--danger)">${S.transitTimeoutOrders.length}</span></div>` +
     `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。点击卡片查看完整明细。</div>` +
     `<div class="ac-preview">${preview}</div>`;
 }
@@ -3764,14 +3764,14 @@ function analysisReceiveHTML(S) {
   } else {
     preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
-      `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
+      `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
       `<b style="color:var(--txt)">${escapeHtml(o.单号)}</b></span>` +
       `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
       (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
     `<span style="font-size:12px;color:var(--txt2)">超时未接收单数</span>` +
-    `<span class="ac-count" style="color:var(--bad)">${S.receiveTimeoutOrders.length}</span></div>` +
+    `<span class="ac-count" style="color:var(--warn)">${S.receiveTimeoutOrders.length}</span></div>` +
     `<div class="ac-desc">流入门岗已放行，但接收人超过规定时间仍未接收。点击卡片查看完整明细。</div>` +
     `<div class="ac-preview">${preview}</div>`;
 }
@@ -3854,7 +3854,7 @@ const KPI_DETAIL = {
     title: "🚧 在途超时 · 流入门岗未放行 · 详情",
     chips(S) {
       const sp = S.transitTimeoutOrders.filter(o => o.特保).length;
-      return [["在途超时单数", S.transitTimeoutOrders.length, "var(--warn)"], ["其中特保单", sp, "var(--purple)"],
+      return [["在途超时单数", S.transitTimeoutOrders.length, "var(--danger)"], ["其中特保单", sp, "var(--purple)"],
         ["占全部单比", S.orderCount ? (S.transitTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
     },
     chart(S) {
@@ -3864,7 +3864,7 @@ const KPI_DETAIL = {
         xAxis: { type: "value", ...baseAxis },
         yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
         series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
-          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff9f0a" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff3b30" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
     },
     tableTitle: "在途超时单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.在途超时; }
   },
@@ -3872,7 +3872,7 @@ const KPI_DETAIL = {
     title: "📭 超时未接收 · 详情",
     chips(S) {
       const depts = new Set(S.receiveTimeoutOrders.map(o => o.申请部门).filter(Boolean)).size;
-      return [["超时未接收单数", S.receiveTimeoutOrders.length, "var(--bad)"],
+      return [["超时未接收单数", S.receiveTimeoutOrders.length, "var(--warn)"],
         ["涉及部门", depts, "var(--txt)"],
         ["占全部单比", S.orderCount ? (S.receiveTimeoutOrders.length / S.orderCount * 100).toFixed(1) + "%" : "0%", "var(--txt2)"]];
     },
@@ -3883,7 +3883,7 @@ const KPI_DETAIL = {
         xAxis: { type: "value", ...baseAxis },
         yAxis: { type: "category", data: d.map(x => x.name).reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)", width: 140, overflow: "truncate" } },
         series: [{ type: "bar", data: d.map(x => x.value).reverse(), barWidth: "55%",
-          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff3b30" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
+          itemStyle: { borderRadius: [0, 5, 5, 0], color: "#ff9f0a" }, label: { show: true, position: "right", color: "#1d1d1f" } }] };
     },
     tableTitle: "超时未接收单据明细", filter(r) { const o = orders[r.放行单号]; return o && o.超时未接收; }
   },
