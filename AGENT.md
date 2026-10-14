@@ -13,7 +13,7 @@
 | 实现 | Grok Build | 主文件、`style/`、`views/`；按对照表改 CONTEXT / ARCHITECTURE / DECISIONS / CHANGELOG | 改已批准视觉方向；再复制一份主 HTML；`status` 不是 `approved` 时改对应卡片 |
 | 测试 | 实现 Agent + 用户 | CHANGELOG、HANDOFF 验收勾 | 把 Playwright 等测试脚本当交付物入库 |
 
-**开工闸门是文件里的 `status: approved`，不是 GitHub 标签。** 没有 `approved`，实现 Agent 必须停。Issue / 分支 / PR 是推荐渠道（D-25），不卡死 `file://` 本机流程；改一句文案仍可直接推 `main`。
+**开工闸门是文件里的 `status: approved`，不是 GitHub 标签。** 没有 `approved`，实现 Agent 必须停。Issue / 分支 / PR 是推荐渠道（D-25），不卡死 `file://` 本机流程。**合进 `main` 的闸门见 D-35**：新功能 / 行为变化 / 口径改动必须开 PR，由仓库哨兵复核后再合并；仅纯文档错别字 / 注释 / 体积数字等无行为变化的小改可直推 `main`。
 
 已交付样板：`kpi-card-redesign/`（D-22）。新原型只进 `docs/prototypes/`。
 
@@ -53,6 +53,7 @@ Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR�
 - **一单仅一种物品分类**。禁止对分类 `split("/")`。
 - 渲染层不得改 `rows` / `orders`（单向数据流）。
 - 不要把现行口径公式复制进 DECISIONS；那边只记结论与禁令。
+- **功能 / 行为 / 口径禁止直推 `main`（D-35）。** 这类改动必须开 PR，仓库哨兵复核后再合并；仅纯文档错别字 / 注释 / 体积数字可直推。
 - **禁止只提交代码、不改文档。** 用户说「提交 git」或「今天先到这 / 明天继续」时，若本回合改过仓库文件，必须先按下面对照表补完文档（**至少写 CHANGELOG**），**同一笔提交里带上**，再 push。
 - 用户满意收工、或没时间明天接着干，**两种都要提交**；后者必须把未做完的写进 CHANGELOG「进行中」，不要让下一班以为已经做完。
 
@@ -101,4 +102,4 @@ Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR�
 
 ## 推荐、不强制
 
-本机 `file://` 双击交付是正式用法。新布局走上面的 Issue / PR；小改不卡死本机直推 `main`。PR **不能**代替上表的文档同步。不要用 Actions / `grok -p` 被标签自动开工。
+本机 `file://` 双击交付是正式用法。新布局走上面的 Issue / PR。**功能 / 行为 / 口径必须开 PR，哨兵复核后合并（D-35）**；仅纯文档错别字 / 注释 / 体积数字可直推 `main`。PR **不能**代替上表的文档同步。不要用 Actions / `grok -p` 被标签自动开工。
