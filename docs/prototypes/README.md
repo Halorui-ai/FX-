@@ -21,7 +21,8 @@ docs/prototypes/
 
 | slug | status | 内容 |
 |---|---|---|
-| [`order-timeline/`](order-timeline/HANDOFF.md) | `draft` | 单据全生命周期时间线（订单追踪抽屉）：申请 → 放行各门岗 → 接收 + 段耗时 + 最长卡点。待用户审核转 `approved` 后实现进主文件。 |
+| [`completion-rate-card/`](completion-rate-card/HANDOFF.md) | `shipped` | 结案率水球图中卡(M)/大卡(L)；S 小卡不变。已实现进主文件（2026-09-23）。 |
+| [`order-timeline/`](order-timeline/HANDOFF.md) | `shipped` | 单据全生命周期时间线（形态 A）：申请 → 放行各门岗 → 接收 + 段耗时 + 最长卡点。已按 D-34 落地进主文件（2026-10-13）；形态 B/C 规格仍在 HANDOFF §3，未实现。 |
 
 ## 流程
 
