@@ -633,7 +633,7 @@ body.editing .cardRemove{display:flex}
 .donut{width:100%;height:min(100%,calc(100cqh - 44px));max-width:100%;flex:1 1 auto;min-height:0;overflow:visible}
 .donut svg{overflow:visible;display:block;width:100%;height:100%}
 .donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
-.legend{display:flex;flex-wrap:nowrap;gap:8px;justify-content:center}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .l-mid .lg-pill{white-space:nowrap;padding:3px 10px}
 .lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--txt2);
   background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
@@ -2060,12 +2060,15 @@ function fmtKpiTime(v) {
 function kpiLatestRows(pred, n) {
   return rows.filter(pred).sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-function kpiWaitHours(r) {
-  const t = parseKpiTime(r.实际放行时间 || r.申请日期);
-  if (!t) return 0;
-  return Math.max(0, (Date.now() - t) / 3600000);
+function kpiLatestOrders(pred, n) {
+  const best = new Map();
+  rows.forEach(r => {
+    if (!pred(r)) return;
+    const prev = best.get(r.放行单号);
+    if (!prev || parseKpiTime(r.实际放行时间) >= parseKpiTime(prev.实际放行时间)) best.set(r.放行单号, r);
+  });
+  return [...best.values()].sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-
 function fmtRateDur(mins) {
   mins = Math.max(0, Math.round(Number(mins) || 0));
   if (mins < 60) return "超 " + mins + "m";
@@ -2258,9 +2261,6 @@ function buildKpiProps(id, S) {
   const relTo = Object.values(orders).filter(o => o.放行超时).length;
   const relOk = Math.max(0, total - relTo);
   const recDepts = new Set((S.receiveTimeoutOrders || []).map(o => o.申请部门).filter(Boolean)).size;
-  const recRows = rows.filter(r => { const o = orders[r.放行单号]; return o && o.超时未接收; });
-  let b1 = 0, b2 = 0, b3 = 0;
-  recRows.forEach(r => { const h = kpiWaitHours(r); if (h < 1) b1++; else if (h <= 4) b2++; else b3++; });
   const common = { total, special, normal, overtime, inOk, transit, receive, specialRec, overtimeSp, arrived, relTo, relOk, recDepts, records: S.total || 0 };
   if (id === "kpi_special") {
     return Object.assign({ tone: "v-purple", tab: "type" }, common, {
@@ -2307,20 +2307,39 @@ function buildKpiProps(id, S) {
     });
   }
   if (id === "kpi_receive") {
+    const recOrders = S.receiveTimeoutOrders || [];
+    const recSp = recOrders.filter(o => o.特保).length;
+    const recArrived = recOrders.filter(o => o.已到达).length;
+    const recNos = new Set(recOrders.map(o => o.单号));
+    const lastRel = {};
+    rows.forEach(r => {
+      if (!recNos.has(r.放行单号)) return;
+      const t = parseKpiTime(r.实际放行时间 || r.申请日期);
+      if (t > (lastRel[r.放行单号] || 0)) lastRel[r.放行单号] = t;
+    });
+    const now = Date.now();
+    let b1 = 0, b2 = 0, b3 = 0;
+    recOrders.forEach(o => {
+      const t = lastRel[o.单号] || 0;
+      const h = t ? Math.max(0, (now - t) / 3600000) : 0;
+      if (h < 1) b1++;
+      else if (h <= 4) b2++;
+      else b3++;
+    });
     return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
       bars: [
         { name: "涉及部门", val: recDepts, pct: 1, color: "var(--warn)" },
         { name: "占总单", val: kpiPct(receive, total), pct: receive / (total || 1), color: "var(--warn)" },
-        { name: ">4h 待接收", val: b3, pct: recRows.length ? b3 / recRows.length : 0, color: "var(--warn)" }
+        { name: ">4h 待接收", val: b3, pct: receive ? b3 / receive : 0, color: "var(--warn)" }
       ],
       dims: {
-        type: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "≥1h", v: b2 + b3, c: "#e0820a" } },
-        arrive: { small: { n: "1–4h", v: b2, c: "#ff9f0a" }, big: { n: "其余", v: b1 + b3, c: "#e0820a" } },
+        type: { small: { n: "特级安保单", v: recSp, c: "#7a63f5" }, big: { n: "普通单", v: Math.max(0, receive - recSp), c: "#2f7cf6" } },
+        arrive: { small: { n: "在途", v: Math.max(0, receive - recArrived), c: "#f59a26" }, big: { n: "已到达", v: recArrived, c: "#2f7cf6" } },
         overtime: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "1–4h", v: b2, c: "#ff9f0a" }, extra: { n: ">4h", v: b3, c: "#e0820a" } }
       },
-      recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收"
+      recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收", recOrderLevel: true
     });
   }
   const specialInTransit = Object.values(orders).filter(o => o.特保 && o.在途).length;
@@ -2400,29 +2419,33 @@ function htmlBars(bars) {
   }).join("") + "</div>";
 }
 function htmlRecords(p) {
-  const list = kpiLatestRows(p.recFilter, 4);
+  const list = p.recOrderLevel ? kpiLatestOrders(p.recFilter, 4) : kpiLatestRows(p.recFilter, 4);
   const col3 = p.recTag === "超时" ? "流出门岗" : p.recTag === "未接收" ? "流入门岗" : "放行物品";
   const cells = list;
   const body = cells.map(r => {
     const abn = /异常|異常/.test(r.放行状态 || "");
     let tag = '<span class="tag tag-ok">已核驗</span>';
     if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
-    else if (p.recTag === "未接收") tag = '<span class="tag tag-bad">未接收</span>';
+    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">未接收</span>';
     else if (p.recTag === "安保") tag = '<span class="tag tag-bad">特保</span>';
     else if (abn) tag = '<span class="tag tag-bad">門崗異常</span>';
     const col3v = p.recTag === "超时" ? (r.流出门岗 || "—") : p.recTag === "未接收" ? (r.流入门岗 || "—") : (r.放行物品名称 || r.物品分类 || "—");
     return "<tr><td class=\"mono\">" + kpiEsc(r.放行单号) + "</td><td class=\"t-time\">" + fmtKpiTime(r.申请日期) + "</td><td>" + kpiEsc(col3v) + "</td><td>" + tag + "</td></tr>";
   }).join("") || '<tr><td colspan="4" class="t-time">暂无记录</td></tr>';
-  const allN = rows.filter(p.recFilter).length;
-  return '<section class="l-panel"><div class="lp-head"><span class="lp-title">' + kpiEsc(p.recTitle) + '</span><span class="lp-link">全部 ' + allN + " 条 →</span></div>" +
+  const allN = p.recOrderLevel
+    ? new Set(rows.filter(p.recFilter).map(r => r.放行单号)).size
+    : rows.filter(p.recFilter).length;
+  const allTxt = p.recOrderLevel ? ("全部 " + allN + " 单 →") : ("全部 " + allN + " 条 →");
+  return '<section class="l-panel"><div class="lp-head"><span class="lp-title">' + kpiEsc(p.recTitle) + '</span><span class="lp-link">' + allTxt + "</span></div>" +
     '<div class="lp-scroll"><table class="tbl"><colgroup><col style="width:32%"><col style="width:22%"><col style="width:22%"><col style="width:24%"></colgroup>' +
     "<thead><tr><th>放行单号</th><th>申请时间</th><th>" + col3 + "</th><th>状态</th></tr></thead><tbody>" + body + "</tbody></table></div>" +
     '<div class="lp-foot">点击查看完整明细页 →</div></section>';
 }
-function donutPair(p, tab) {
+function donutSlices(p, tab) {
   const d = (p.dims && p.dims[tab]) || p.dims.type;
-  const tot = Math.max(1, (d.small.v || 0) + (d.big.v || 0));
-  return { small: d.small, big: d.big, tot, pS: kpiPct(d.small.v, tot, 2), pB: kpiPct(d.big.v, tot, 2) };
+  const slices = [d.small, d.big].concat(d.extra ? [d.extra] : []).filter(Boolean);
+  const raw = slices.reduce((s, x) => s + (x.v || 0), 0);
+  return { slices, raw, tot: Math.max(1, raw) };
 }
 function donutPolar(degFromTop, radius) {
   const a = (degFromTop - 90) * Math.PI / 180;
@@ -2442,29 +2465,34 @@ function htmlDonutLeader(midDeg, name, line2) {
 }
 function donutCenterLabel(p, tab) {
   if (p.id === "kpi_transit") return "在途单";
-  if (p.id === "kpi_receive") return "待接收";
+  if (p.id === "kpi_receive") return "超时未接收";
   if (p.id === "kpi_special" && tab !== "type") return "特保单";
   return "总单数";
 }
 function htmlLargeDonut(p, tab) {
-  const { small, big, tot, pS, pB } = donutPair(p, tab);
-  const r = 86, C = 2 * Math.PI * r, GAP = 7;
-  const lenS = Math.max(0, small.v / tot * C - GAP);
-  const lenB = Math.max(0, big.v / tot * C - GAP);
-  const midS = (lenS / 2) / C * 360;
-  const midB = (lenS + GAP + lenB / 2) / C * 360;
+  const { slices, raw, tot } = donutSlices(p, tab);
+  const C = 2 * Math.PI * 86, GAP = 7;
+  let offset = 0;
+  const arcs = [];
+  const leaders = [];
+  slices.forEach((sl, i) => {
+    const len = Math.max(0, (sl.v || 0) / tot * C - GAP);
+    const mid = ((offset + len / 2) / C) * 360;
+    arcs.push('<circle class="d-s' + i + '" cx="110" cy="110" r="86" fill="none" stroke="' + sl.c +
+      '" stroke-width="27" stroke-dasharray="' + len + " " + (C - len) + '" stroke-dashoffset="-' + offset + '"/>');
+    leaders.push(htmlDonutLeader(mid, sl.n, sl.v + " 单 (" + kpiPct(sl.v, tot, 2) + ")"));
+    offset += len + GAP;
+  });
+  const legend = slices.map(sl =>
+    '<span class="lg-pill"><i class="dot" style="--dc:' + sl.c + '"></i>' + kpiEsc(sl.n) + " <b>" + sl.v + "</b></span>"
+  ).join("");
   return '<div class="donut"><svg viewBox="-28 -18 276 256" width="100%" height="100%">' +
     '<circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>' +
-    '<g transform="rotate(-90 110 110)">' +
-    '<circle class="d-small" cx="110" cy="110" r="86" fill="none" stroke="' + small.c + '" stroke-width="27" stroke-dasharray="' + lenS + " " + (C - lenS) + '"/>' +
-    '<circle class="d-big" cx="110" cy="110" r="86" fill="none" stroke="' + big.c + '" stroke-width="27" stroke-dasharray="' + lenB + " " + (C - lenB) + '" stroke-dashoffset="-' + (lenS + GAP) + '"/>' +
-    "</g>" +
-    htmlDonutLeader(midS, small.n, small.v + " 单 (" + pS + ")") +
-    htmlDonutLeader(midB, big.n, big.v + " 单 (" + pB + ")") +
-    '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + tot + "</text>" +
+    '<g transform="rotate(-90 110 110)">' + arcs.join("") + "</g>" +
+    leaders.join("") +
+    '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + raw + "</text>" +
     '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg></div>" +
-    '<div class="legend"><span class="lg-pill"><i class="dot" style="--dc:' + small.c + '"></i>' + kpiEsc(small.n) + " <b>" + small.v + "</b></span>" +
-    '<span class="lg-pill"><i class="dot" style="--dc:' + big.c + '"></i>' + kpiEsc(big.n) + " <b>" + big.v + "</b></span></div>";
+    '<div class="legend">' + legend + "</div>";
 }
 function htmlKpiLarge(p, tab) {
   tab = tab || p.tab || "type";
