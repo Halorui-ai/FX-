@@ -2069,6 +2069,25 @@ function kpiLatestOrders(pred, n) {
   });
   return [...best.values()].sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
+function kpiOrderWaitBuckets(orderList) {
+  const nos = new Set(orderList.map(o => o.单号));
+  const lastRel = {};
+  rows.forEach(r => {
+    if (!nos.has(r.放行单号)) return;
+    const t = parseKpiTime(r.实际放行时间 || r.申请日期);
+    if (t > (lastRel[r.放行单号] || 0)) lastRel[r.放行单号] = t;
+  });
+  const now = Date.now();
+  let b1 = 0, b2 = 0, b3 = 0;
+  orderList.forEach(o => {
+    const t = lastRel[o.单号] || 0;
+    const h = t ? Math.max(0, (now - t) / 3600000) : 0;
+    if (h < 1) b1++;
+    else if (h <= 4) b2++;
+    else b3++;
+  });
+  return { b1, b2, b3 };
+}
 function fmtRateDur(mins) {
   mins = Math.max(0, Math.round(Number(mins) || 0));
   if (mins < 60) return "超 " + mins + "m";
@@ -2179,7 +2198,7 @@ function htmlRateAttention(list) {
       '<span class="rate-dur">' + fmtRateDur(a.超时时长) + "</span></div></div>";
   }).join("") || '<div class="rate-attn-item"><span class="rate-attn-gate">暂无待关注单据</span></div>';
   return '<div class="rate-attn"><div class="rate-attn-head"><span class="rate-attn-title">待关注单据</span>' +
-    '<span class="rate-attn-more">全部 ' + n + " 条 →</span></div>" +
+    '<span class="rate-attn-more">全部 ' + n + " 单 →</span></div>" +
     '<div class="rate-attn-list">' + body + "</div>" +
     '<div class="rate-attn-foot">点击查看完整明细 →</div></div>';
 }
@@ -2263,6 +2282,21 @@ function buildKpiProps(id, S) {
   const recDepts = new Set((S.receiveTimeoutOrders || []).map(o => o.申请部门).filter(Boolean)).size;
   const common = { total, special, normal, overtime, inOk, transit, receive, specialRec, overtimeSp, arrived, relTo, relOk, recDepts, records: S.total || 0 };
   if (id === "kpi_special") {
+    const specOrders = Object.values(orders).filter(o => o.特保);
+    const specArrived = specOrders.filter(o => o.已到达).length;
+    const specRelTo = specOrders.filter(o => o.放行超时).length;
+    let specMat = 0, specMach = 0;
+    specOrders.forEach(o => {
+      const c = o.物品分类 || "";
+      if (c.includes("机台") || c.includes("機台")) specMach++;
+      else if (c.includes("物料")) specMat++;
+    });
+    const specOther = Math.max(0, special - specMat - specMach);
+    const specType = {
+      small: { n: "A级物料", v: specMat, c: "#7a63f5" },
+      big: { n: "机台", v: specMach, c: "#2f7cf6" }
+    };
+    if (specOther) specType.extra = { n: "其他", v: specOther, c: "#9aa5b5" };
     return Object.assign({ tone: "v-purple", tab: "type" }, common, {
       hero: special, unit: "单", subHtml: '占放行单总数 <b style="color:var(--cat-purple)">' + kpiPct(special, total) + "</b>",
       visual: "progress",
@@ -2272,19 +2306,21 @@ function buildKpiProps(id, S) {
         { name: "普通单对照", val: normal, dc: "var(--txt2)", dot: "var(--faint)" }
       ],
       bars: [
-        { name: "特保记录", val: specialRec, pct: total ? specialRec / Math.max(specialRec, 1) : 0, color: "var(--cat-purple)" },
+        { name: "特保记录", val: specialRec, pct: (S.total || 1) ? specialRec / (S.total || 1) : 0, color: "var(--cat-purple)" },
         { name: "占总单", val: kpiPct(special, total), pct: special / (total || 1), color: "var(--cat-purple)" },
         { name: "普通单对照", val: normal, pct: normal / (total || 1), color: "var(--brand)" }
       ],
       dims: {
-        type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
-        arrive: { small: { n: "特保在途", v: Object.values(orders).filter(o => o.特保 && o.在途).length, c: "#f59a26" }, big: { n: "特保已到达", v: Object.values(orders).filter(o => o.特保 && o.已到达).length, c: "#2f7cf6" } },
-        overtime: { small: { n: "特保超时", v: overtimeSp, c: "#f04d3e" }, big: { n: "特保未超时", v: Math.max(0, special - overtimeSp), c: "#2f7cf6" } }
+        type: specType,
+        arrive: { small: { n: "在途", v: Math.max(0, special - specArrived), c: "#f59a26" }, big: { n: "已到达", v: specArrived, c: "#2f7cf6" } },
+        overtime: { small: { n: "放行超时", v: specRelTo, c: "#ff3b30" }, big: { n: "正常", v: Math.max(0, special - specRelTo), c: "#2f7cf6" } }
       },
-      recTitle: "最新特保记录", recFilter: r => r._特保, recTag: "安保"
+      recTitle: "最新特保记录", recFilter: r => r._特保, recTag: "安保", recOrderLevel: true
     });
   }
   if (id === "kpi_transit") {
+    const tOrders = S.transitTimeoutOrders || [];
+    const tw = kpiOrderWaitBuckets(tOrders);
     return Object.assign({ tone: "v-danger", tab: "overtime" }, common, {
       hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--danger)">' + transit + "</b> 单",
       visual: "stack",
@@ -2299,33 +2335,18 @@ function buildKpiProps(id, S) {
         { name: "占在途", val: kpiPct(overtime, transit), pct: overtime / (transit || 1), color: "var(--danger)" }
       ],
       dims: {
-        type: { small: { n: "特保超时", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通超时", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
-        arrive: { small: { n: "在途超时", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } },
-        overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } }
+        type: { small: { n: "特级安保单", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通单", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
+        arrive: { small: { n: "在途", v: overtime, c: "#f59a26" }, big: { n: "已到达", v: 0, c: "#2f7cf6" } },
+        overtime: { small: { n: "<1h", v: tw.b1, c: "#ff8a80" }, big: { n: "1–4h", v: tw.b2, c: "#ff5252" }, extra: { n: ">4h", v: tw.b3, c: "#c62828" } }
       },
-      recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时"
+      recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时", recOrderLevel: true
     });
   }
   if (id === "kpi_receive") {
     const recOrders = S.receiveTimeoutOrders || [];
     const recSp = recOrders.filter(o => o.特保).length;
     const recArrived = recOrders.filter(o => o.已到达).length;
-    const recNos = new Set(recOrders.map(o => o.单号));
-    const lastRel = {};
-    rows.forEach(r => {
-      if (!recNos.has(r.放行单号)) return;
-      const t = parseKpiTime(r.实际放行时间 || r.申请日期);
-      if (t > (lastRel[r.放行单号] || 0)) lastRel[r.放行单号] = t;
-    });
-    const now = Date.now();
-    let b1 = 0, b2 = 0, b3 = 0;
-    recOrders.forEach(o => {
-      const t = lastRel[o.单号] || 0;
-      const h = t ? Math.max(0, (now - t) / 3600000) : 0;
-      if (h < 1) b1++;
-      else if (h <= 4) b2++;
-      else b3++;
-    });
+    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders);
     return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
@@ -2359,9 +2380,13 @@ function buildKpiProps(id, S) {
     dims: {
       type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
       arrive: { small: { n: "在途", v: transit, c: "#f59a26" }, big: { n: "已到达", v: arrived, c: "#2f7cf6" } },
-      overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "正常", v: relOk, c: "#2f7cf6" } }
+      overtime: {
+        small: { n: "在途超时", v: overtime, c: "#ff3b30" },
+        big: { n: "到达超时", v: S.arrivedTimeout || 0, c: "#ff6b5a" },
+        extra: { n: "正常", v: relOk, c: "#2f7cf6" }
+      }
     },
-    recTitle: "最新放行记录", recFilter: () => true, recTag: null, specialInTransit
+    recTitle: "最新放行记录", recFilter: () => true, recTag: null, recOrderLevel: true, specialInTransit
   });
 }
 function svgDualDonut(ratio, cBig, cSmall, center, sub) {
@@ -2464,9 +2489,9 @@ function htmlDonutLeader(midDeg, name, line2) {
     "<text x=\"" + lx.toFixed(1) + "\" y=\"" + y2.toFixed(1) + "\" text-anchor=\"" + anchor + "\" font-size=\"12\" fill=\"var(--txt2)\">" + kpiEsc(line2) + "</text></g>";
 }
 function donutCenterLabel(p, tab) {
-  if (p.id === "kpi_transit") return "在途单";
+  if (p.id === "kpi_transit") return "在途超时";
   if (p.id === "kpi_receive") return "超时未接收";
-  if (p.id === "kpi_special" && tab !== "type") return "特保单";
+  if (p.id === "kpi_special") return "特保单";
   return "总单数";
 }
 function htmlLargeDonut(p, tab) {
