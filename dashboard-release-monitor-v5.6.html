@@ -634,12 +634,15 @@ body.editing .cardRemove{display:flex}
   border-left:1px solid var(--line);border-right:1px solid var(--line);padding:8px 8px 4px;min-width:0;min-height:0;overflow:hidden;container-type:size}
 .donut{width:100%;flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .donut-stage{position:relative;flex:0 1 auto;width:min(100%,calc(100cqh - 44px));max-height:calc(100cqh - 44px);aspect-ratio:1;margin:0 auto}
-.donut-stage svg{position:absolute;inset:3%;width:94%;height:94%;display:block;overflow:visible}
-.d-c-tr,.d-c-br,.d-c-bl,.d-c-tl{position:absolute;z-index:1;max-width:46%;pointer-events:none}
-.d-c-tr{top:0;right:0;text-align:right}
-.d-c-br{bottom:0;right:0;text-align:right}
-.d-c-bl{bottom:0;left:0;text-align:left}
-.d-c-tl{top:0;left:0;text-align:left}
+.donut-stage svg{position:absolute;inset:15%;width:70%;height:70%;display:block;overflow:visible}
+@container (max-width: 260px){
+  .donut-stage svg{inset:26%;width:48%;height:48%}
+}
+.d-c-tr,.d-c-br,.d-c-bl,.d-c-tl{position:absolute;z-index:1;max-width:42%;pointer-events:none}
+.d-c-tr{top:2px;right:2px;text-align:right}
+.d-c-br{bottom:2px;right:2px;text-align:right}
+.d-c-bl{bottom:2px;left:2px;text-align:left}
+.d-c-tl{top:2px;left:2px;text-align:left}
 .cardSlot .d-call{font-size:13px;line-height:1.25;color:var(--txt)!important;font-weight:600;
   padding:0!important;border:0!important;border-radius:0!important;background:none!important;
   box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
@@ -2531,9 +2534,9 @@ function donutAssignCorners(mids) {
 function htmlDonutLeader(midDeg, cornerIdx) {
   const a = (midDeg - 90) * Math.PI / 180;
   const x1 = 110 + 100 * Math.cos(a), y1 = 110 + 100 * Math.sin(a);
-  const x2 = 110 + 116 * Math.cos(a), y2 = 110 + 116 * Math.sin(a);
+  const x2 = 110 + 112 * Math.cos(a), y2 = 110 + 112 * Math.sin(a);
   const left = cornerIdx === 2 || cornerIdx === 3;
-  const x3 = left ? x2 - 12 : x2 + 12;
+  const x3 = left ? x2 - 10 : x2 + 10;
   return '<path d="M' + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) +
     " L" + x3.toFixed(1) + " " + y2.toFixed(1) + '" fill="none" stroke="var(--muted)" stroke-width="1"/>';
 }
