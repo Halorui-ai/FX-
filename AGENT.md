@@ -15,6 +15,8 @@
 
 **开工闸门是文件里的 `status: approved`，不是 GitHub 标签。** 没有 `approved`，实现 Agent 必须停。Issue / 分支 / PR 是推荐渠道（D-25），不卡死 `file://` 本机流程。**合进 `main` 的闸门见 D-35**：新功能 / 行为变化 / 口径改动必须开 PR，由仓库哨兵复核后再合并；仅纯文档错别字 / 注释 / 体积数字等无行为变化的小改可直推 `main`。
 
+**开 PR 必须写明是哪个 Agent 开的**（本机常有多个 Agent 改同一仓库，列表里要分得清）。正文第一行写 `Agent: <工具名>`，标题前加 `[工具名]`。工具名用角色表里的默认工具，例如 `Grok Build`、`Trae Design`，不要写「AI」这种笼统称呼。后续往该 PR 推提交的 Agent 若换了，在正文补一行 `后续提交: <工具名>`。
+
 已交付样板：`kpi-card-redesign/`（D-22）。新原型只进 `docs/prototypes/`。
 
 ## 推荐卡片流程（新布局 / 改主文件）
@@ -22,9 +24,9 @@
 新布局或要改主 HTML 时按这条走。没开 Issue 不算违禁；没打 `ready-for-build` 不算禁止开工。设计文件只放 `docs/prototypes/<slug>/`。
 
 1. **（推荐）** 开 Issue，标题写清改哪张卡。可选标签 `design/trae`。
-2. **Trae** 从 `main` 开 `design/<slug>`，只提交 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`，`status: draft`）。禁止提 `.trae-html-share-packages/`、`.uploads/`。开 PR 指向 `main`。
+2. **Trae** 从 `main` 开 `design/<slug>`，只提交 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`，`status: draft`）。禁止提 `.trae-html-share-packages/`、`.uploads/`。开 PR 指向 `main`（标题 `[Trae Design] …`，正文第一行 `Agent: Trae Design`）。
 3. **用户** 打开原型。通过：在该 PR 里把 HANDOFF 改成 `approved` 并填 freeze → 合并设计 PR → （可选）Issue 标签改 `ready-for-build`。
-4. **Grok** `git pull origin main`，确认 HANDOFF 已是 `approved`，再开 `feat/<slug>` 改主文件，开工可把 HANDOFF 改 `implementing`，提 PR。
+4. **Grok** `git pull origin main`，确认 HANDOFF 已是 `approved`，再开 `feat/<slug>` 改主文件，开工可把 HANDOFF 改 `implementing`，提 PR（标题 `[Grok Build] …`，正文第一行 `Agent: Grok Build`）。
 5. **用户** 审 PR + 本机 `file://` 验收 → 合并 → HANDOFF 改 `shipped` → 关 Issue。
 
 Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR，实现只基于 `main`。
@@ -90,16 +92,17 @@ Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR�
 3. 主文件 `<title>`、页脚、README 顶部三个版本字符串相同。
 4. 点「载入示例数据预览」：卡片能出来；点顶栏右侧圆形箭头打开功能抽屉，切一次主题、点开一个 KPI 下钻；控制台无报错。（若本次只改文档、未改看板，本条可跳过。）
 5. 改了解析 / 口径 / 主题机制时：用根目录 `物品放行监控_生成_100k.xlsx` 拖入加载，应能完成解析；特保须按 WF9897 识别。
+6. 若本回合开了 PR：标题带 `[工具名]`，正文第一行 `Agent: <工具名>`。
 
 ## 推荐提示词（可复制）
 
 **Trae / 设计**
 
-> 从 `main` 开分支 `design/<slug>`。只在 `docs/prototypes/<slug>/` 写自包含 `index.html` 和 `HANDOFF.md`（先拷 `_template`，`status: draft`）。先读 AGENT.md、ARCHITECTURE §4/§7.3、CONTEXT 里相关口径。禁止改 `dashboard-release-monitor-v5.6.html`，禁止复制主文件，禁止改特保/超时公式，禁止提交 `.trae-html-share-packages/` 与 `.uploads/`。数字用演示值，但 HANDOFF 必须写出对应的 `computeStats` / `buildKpiProps` 字段名。开 PR 指向 `main`。
+> 从 `main` 开分支 `design/<slug>`。只在 `docs/prototypes/<slug>/` 写自包含 `index.html` 和 `HANDOFF.md`（先拷 `_template`，`status: draft`）。先读 AGENT.md、ARCHITECTURE §4/§7.3、CONTEXT 里相关口径。禁止改 `dashboard-release-monitor-v5.6.html`，禁止复制主文件，禁止改特保/超时公式，禁止提交 `.trae-html-share-packages/` 与 `.uploads/`。数字用演示值，但 HANDOFF 必须写出对应的 `computeStats` / `buildKpiProps` 字段名。开 PR 指向 `main`，标题 `[Trae Design] …`，正文第一行 `Agent: Trae Design`。
 
 **Grok Build / 实现**
 
-> `git pull origin main`。读 AGENT.md、CHANGELOG「进行中」、指定 HANDOFF。仅当 `status: approved` 才改主文件（不要只看 Issue 标签）。从 `main` 开 `feat/<slug>`。视觉按 HANDOFF，数据只走 `buildKpiProps`，禁止写死原型数字。先出计划：要动的 `CARD_DEFS` / render / update。用户确认后再改代码。收工按 AGENT 对照表改 CHANGELOG（以及需要的 ARCHITECTURE/CONTEXT/DECISIONS），开 PR。
+> `git pull origin main`。读 AGENT.md、CHANGELOG「进行中」、指定 HANDOFF。仅当 `status: approved` 才改主文件（不要只看 Issue 标签）。从 `main` 开 `feat/<slug>`。视觉按 HANDOFF，数据只走 `buildKpiProps`，禁止写死原型数字。先出计划：要动的 `CARD_DEFS` / render / update。用户确认后再改代码。收工按 AGENT 对照表改 CHANGELOG（以及需要的 ARCHITECTURE/CONTEXT/DECISIONS），开 PR：标题 `[Grok Build] …`，正文第一行 `Agent: Grok Build`。
 
 ## 推荐、不强制
 
