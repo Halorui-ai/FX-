@@ -20,6 +20,10 @@
 - 从全部历史移除所有 `.pptx`（含 `trae/agent-Lfe0qA` 上的大赛 PPT 与 `.uploads` 模板）；`.gitignore` 增加 `*.pptx`，AGENT 同步。此前同日已清 `docs/参赛PPT/` 路径。
 - 从仓库移除 `docs/参赛PPT/`（含 `8b6711f` 入库的 A 事业群 PPT 模板）；该目录改由 `.gitignore` 忽略，本地可继续保留，以后不再推送。AGENT 同步。
 
+## 2026-10-22
+
+- 无行为变化：同步 `docs/prototypes/README.md`「当前原型」表——`completion-rate-card` 与 `order-timeline` 均已与各自 HANDOFF 一致标为 `shipped`（此前 order-timeline 仍写 `draft`，且表里缺结案率卡一行）。
+
 ## 2026-10-14
 
 - 修正 2026-10-07 原型 `docs/prototypes/order-timeline/` 条目：去掉过时的「尚未实现进主文件」；注明当时仅为原型，**2026-10-13 已按 D-34（形态 A）落地进主文件**（见同日 CHANGELOG）；形态 B/C 仍未实现。
