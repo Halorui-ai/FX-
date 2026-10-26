@@ -33,3 +33,6 @@ tests/
 # PPT（本地可保留，不入库）
 *.pptx
 docs/参赛PPT/
+
+# workbuddy 参赛相关视频（本地可保留，不入库）
+video/
