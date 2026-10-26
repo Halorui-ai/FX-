@@ -630,27 +630,20 @@ body.editing .cardRemove{display:flex}
 .lrow-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace}
 .ltrack{height:5px;border-radius:999px;background:var(--track);overflow:hidden}
 .ltrack i{display:block;height:100%;border-radius:999px;transition:width .4s ease}
-.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
-  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 10px;min-width:0;min-height:0;overflow:hidden;container-type:size}
-.donut{width:100%;height:min(100%,calc(100cqh - 44px));max-width:100%;flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column}
-.donut-board{flex:1 1 auto;min-height:0;min-width:0;width:100%;display:grid;gap:2px 8px;
-  grid-template-columns:minmax(70px,.85fr) minmax(0,1.35fr) minmax(70px,.85fr);
-  grid-template-rows:auto minmax(0,1fr) auto;
-  grid-template-areas:". top ." "left ring right" ". bot ."}
-.d-top{grid-area:top;text-align:center;align-self:end}
-.d-bot{grid-area:bot;text-align:center;align-self:start}
-.d-left{grid-area:left;text-align:right;align-self:center}
-.d-right{grid-area:right;text-align:left;align-self:center}
-.d-ring{grid-area:ring;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center}
-.d-ring svg{width:100%;height:100%;max-width:100%;max-height:100%;display:block;overflow:visible}
-.d-call{font-size:13px;line-height:1.25;color:var(--txt);font-weight:600;white-space:nowrap}
+.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:8px 8px 4px;min-width:0;min-height:0;overflow:hidden;container-type:size}
+.donut{width:100%;flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.donut-stage{position:relative;flex:0 1 auto;width:min(100%,calc(100cqh - 44px));max-height:calc(100cqh - 44px);aspect-ratio:1;margin:0 auto}
+.donut-stage svg{position:absolute;inset:3%;width:94%;height:94%;display:block;overflow:visible}
+.d-c-tr,.d-c-br,.d-c-bl,.d-c-tl{position:absolute;z-index:1;max-width:46%;pointer-events:none}
+.d-c-tr{top:0;right:0;text-align:right}
+.d-c-br{bottom:0;right:0;text-align:right}
+.d-c-bl{bottom:0;left:0;text-align:left}
+.d-c-tl{top:0;left:0;text-align:left}
+.d-call{font-size:13px;line-height:1.25;color:var(--txt);font-weight:600;padding:3px 7px;border-radius:8px;
+  background:color-mix(in srgb,var(--card-face) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .d-call small{display:block;font-size:12px;font-weight:500;color:var(--txt2);font-variant-numeric:tabular-nums}
 .donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
-@container (max-width: 220px){
-  .donut-board{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"ring" "bot";gap:6px}
-  .d-top,.d-left,.d-right{display:none}
-  .d-bot{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-}
 .legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .l-mid .lg-pill{white-space:nowrap;padding:3px 10px}
 .lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--txt2);
@@ -2495,26 +2488,48 @@ function donutSlices(p, tab) {
   const raw = slices.reduce((s, x) => s + (x.v || 0), 0);
   return { slices, raw, tot: Math.max(1, raw) };
 }
-function donutSlot(midDeg) {
-  if (midDeg < 45 || midDeg >= 315) return "top";
-  if (midDeg < 135) return "right";
-  if (midDeg < 225) return "bot";
-  return "left";
+const DONUT_CORNERS = [
+  { cls: "d-c-tr", deg: 45 },
+  { cls: "d-c-br", deg: 135 },
+  { cls: "d-c-bl", deg: 225 },
+  { cls: "d-c-tl", deg: 315 }
+];
+function donutAngDiff(a, b) {
+  let d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
 }
-function donutSlotFree(midDeg, slots) {
-  const pref = donutSlot(midDeg);
-  if (!slots[pref].length) return pref;
-  const alt = pref === "top" ? (midDeg < 45 ? ["right", "left", "bot"] : ["left", "right", "bot"])
-    : pref === "right" ? ["bot", "top", "left"]
-    : pref === "bot" ? (midDeg < 180 ? ["right", "left", "top"] : ["left", "right", "top"])
-    : ["top", "bot", "right"];
-  for (let i = 0; i < alt.length; i++) if (!slots[alt[i]].length) return alt[i];
-  return pref;
+function donutAssignCorners(mids) {
+  if (!mids.length) return { rot: 0, corner: [] };
+  if (mids.length === 1) {
+    const rot = (45 - mids[0] + 360) % 360;
+    return { rot: rot, corner: [0] };
+  }
+  let best = { cost: 1e9, rot: 0, corner: [] };
+  for (let rot = 0; rot < 360; rot += 3) {
+    const used = {};
+    const corner = [];
+    let cost = 0, ok = true;
+    for (let i = 0; i < mids.length; i++) {
+      const a = (mids[i] + rot) % 360;
+      let bi = -1, bd = 1e9;
+      for (let c = 0; c < 4; c++) {
+        if (used[c]) continue;
+        const d = donutAngDiff(a, DONUT_CORNERS[c].deg);
+        if (d < bd) { bd = d; bi = c; }
+      }
+      if (bi < 0) { ok = false; break; }
+      used[bi] = 1;
+      corner.push(bi);
+      cost += bd;
+    }
+    if (ok && cost < best.cost) best = { cost: cost, rot: rot, corner: corner.slice() };
+  }
+  return best;
 }
 function htmlDonutTick(midDeg) {
   const a = (midDeg - 90) * Math.PI / 180;
-  const x1 = (110 + 99 * Math.cos(a)).toFixed(1), y1 = (110 + 99 * Math.sin(a)).toFixed(1);
-  const x2 = (110 + 108 * Math.cos(a)).toFixed(1), y2 = (110 + 108 * Math.sin(a)).toFixed(1);
+  const x1 = (110 + 86 * Math.cos(a)).toFixed(1), y1 = (110 + 86 * Math.sin(a)).toFixed(1);
+  const x2 = (110 + 104 * Math.cos(a)).toFixed(1), y2 = (110 + 104 * Math.sin(a)).toFixed(1);
   return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--muted)" stroke-width="1.2"/>';
 }
 function donutCenterLabel(p, tab) {
@@ -2528,37 +2543,34 @@ function htmlLargeDonut(p, tab) {
   const C = 2 * Math.PI * 86, GAP = 7;
   let offset = 0;
   const arcs = [];
-  const ticks = [];
-  const slots = { top: [], right: [], bot: [], left: [] };
-  slices.forEach((sl, i) => {
+  const labeled = [];
+  slices.forEach(sl => {
     const frac = (sl.v || 0) / tot;
     const len = Math.max(0, frac * C - GAP);
     const mid = ((offset + len / 2) / C) * 360;
-    arcs.push('<circle class="d-s' + i + '" cx="110" cy="110" r="86" fill="none" stroke="' + sl.c +
+    arcs.push('<circle class="d-s" cx="110" cy="110" r="86" fill="none" stroke="' + sl.c +
       '" stroke-width="27" stroke-dasharray="' + len + " " + (C - len) + '" stroke-dashoffset="-' + offset + '"/>');
-    if ((sl.v || 0) > 0 && frac >= 0.03) {
-      ticks.push(htmlDonutTick(mid));
-      slots[donutSlotFree(mid, slots)].push(
-        '<div class="d-call">' + kpiEsc(sl.n) + "<small>" + sl.v + " 单 (" + kpiPct(sl.v, tot, 2) + ")</small></div>"
-      );
-    }
+    if ((sl.v || 0) > 0 && frac >= 0.03) labeled.push({ sl: sl, mid: mid });
     offset += len + GAP;
   });
-  const slotHtml = k => slots[k].join("");
+  const asg = donutAssignCorners(labeled.map(x => x.mid));
+  const ticks = labeled.map(x => htmlDonutTick((x.mid + asg.rot) % 360));
+  const cornerHtml = ["", "", "", ""];
+  labeled.forEach((x, i) => {
+    const c = asg.corner[i];
+    cornerHtml[c] = '<div class="d-call">' + kpiEsc(x.sl.n) + "<small>" + x.sl.v + " 单 (" + kpiPct(x.sl.v, tot, 2) + ")</small></div>";
+  });
   const legend = slices.map(sl =>
     '<span class="lg-pill"><i class="dot" style="--dc:' + sl.c + '"></i>' + kpiEsc(sl.n) + " <b>" + sl.v + "</b></span>"
   ).join("");
-  return '<div class="donut"><div class="donut-board">' +
-    '<div class="d-slot d-top">' + slotHtml("top") + "</div>" +
-    '<div class="d-slot d-left">' + slotHtml("left") + "</div>" +
-    '<div class="d-ring"><svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">' +
+  return '<div class="donut"><div class="donut-stage">' +
+    '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">' +
     '<circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>' +
-    '<g transform="rotate(-90 110 110)">' + arcs.join("") + "</g>" +
+    '<g transform="rotate(' + (-90 + asg.rot) + ' 110 110)">' + arcs.join("") + "</g>" +
     ticks.join("") +
     '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + raw + "</text>" +
-    '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg></div>" +
-    '<div class="d-slot d-right">' + slotHtml("right") + "</div>" +
-    '<div class="d-slot d-bot">' + slotHtml("bot") + "</div>" +
+    '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg>" +
+    DONUT_CORNERS.map((c, i) => '<div class="' + c.cls + '">' + cornerHtml[i] + "</div>").join("") +
     "</div>" +
     '<div class="legend">' + legend + "</div></div>";
 }
