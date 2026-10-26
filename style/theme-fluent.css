@@ -684,3 +684,9 @@ html[data-theme="fluent"] button.tb-drawer-btn:hover{
   background:var(--surface-h)!important;border-color:var(--accent)!important;color:var(--txt)!important}
 html[data-theme="fluent"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
+
+[data-theme="fluent"] .kpi-seg{
+  border-radius:var(--btn-r)!important;border:1px solid var(--border-theme)!important;background:var(--surface)!important}
+[data-theme="fluent"] .kpi-seg button.on,
+[data-theme="fluent"] .kpi-seg button.on:hover{
+  background:var(--surface-h)!important;color:var(--accent)!important;box-shadow:none!important}

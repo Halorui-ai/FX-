@@ -579,9 +579,11 @@ body.editing .cardRemove{display:flex}
 .cardSlot.kpi-rate-large .cardHead{gap:10px;margin-bottom:12px}
 .cardSlot.kpi-rate-large .cardTitle{flex:none;max-width:42%}
 .kpi-seg.rate-seg{position:static;left:auto;transform:none;margin-left:auto;margin-right:0}
-.kpi-seg.rate-seg button.on{color:var(--ok)}
-.cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on{color:var(--cat-purple)}
-.cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on{color:var(--brand)}
+.cardSlot .kpi-seg.rate-seg button.on,.cardSlot .kpi-seg.rate-seg button.on:hover{color:var(--ok)!important}
+.cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on,
+.cardSlot.kpi-rate-large.tab-special .kpi-seg.rate-seg button.on:hover{color:var(--cat-purple)!important}
+.cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on,
+.cardSlot.kpi-rate-large.tab-normal .kpi-seg.rate-seg button.on:hover{color:var(--brand)!important}
 @keyframes rate-wave-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-12px)}}
 .rate-ball .wave-g,.rate-l-ball .wave-g{animation:rate-wave-drift 4.5s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.rate-ball .wave-g,.rate-l-ball .wave-g,.rate-prog-track>i{animation:none!important;transition:none!important}}
@@ -628,12 +630,26 @@ body.editing .cardRemove{display:flex}
 .lrow-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;font-family:"Segoe UI",monospace}
 .ltrack{height:5px;border-radius:999px;background:var(--track);overflow:hidden}
 .ltrack i{display:block;height:100%;border-radius:999px;transition:width .4s ease}
-.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 20px;min-width:0;min-height:0;overflow:hidden;container-type:size}
-.donut{width:100%;height:min(100%,calc(100cqh - 44px));max-width:100%;flex:1 1 auto;min-height:0;overflow:visible}
-.donut svg{overflow:visible;display:block;width:100%;height:100%}
+.l-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  border-left:1px solid var(--line);border-right:1px solid var(--line);padding:8px 8px 4px;min-width:0;min-height:0;overflow:hidden;container-type:size}
+.donut{width:100%;flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.donut-stage{position:relative;flex:0 1 auto;width:min(100%,calc(100cqh - 44px));max-height:calc(100cqh - 44px);aspect-ratio:1;margin:0 auto}
+.donut-stage svg{position:absolute;inset:15%;width:70%;height:70%;display:block;overflow:visible}
+@container (max-width: 260px){
+  .donut-stage svg{inset:26%;width:48%;height:48%}
+}
+.d-c-tr,.d-c-br,.d-c-bl,.d-c-tl{position:absolute;z-index:1;max-width:42%;pointer-events:none}
+.d-c-tr{top:2px;right:2px;text-align:right}
+.d-c-br{bottom:2px;right:2px;text-align:right}
+.d-c-bl{bottom:2px;left:2px;text-align:left}
+.d-c-tl{top:2px;left:2px;text-align:left}
+.cardSlot .d-call{font-size:13px;line-height:1.25;color:var(--txt)!important;font-weight:600;
+  padding:0!important;border:0!important;border-radius:0!important;background:none!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.cardSlot .d-call small{display:block;font-size:12px;font-weight:500;color:var(--txt2)!important;
+  font-variant-numeric:tabular-nums;background:none!important}
 .donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
-.legend{display:flex;flex-wrap:nowrap;gap:8px;justify-content:center}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .l-mid .lg-pill{white-space:nowrap;padding:3px 10px}
 .lg-pill{display:flex;align-items:center;gap:7px;font-size:12px;line-height:18px;color:var(--txt2);
   background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums}
@@ -693,12 +709,17 @@ body.editing .cardRemove{display:flex}
   border:2px dashed #2f7cf6;background:rgba(47,124,246,.10)}
 .kpi-tier-ghost-label{position:absolute;right:10px;bottom:8px;padding:3px 10px;border-radius:999px;
   background:#2f7cf6;color:#fff;font-size:12px;line-height:18px;white-space:nowrap}
-.cardSlot.kpi-large .cardHead{gap:10px;margin-bottom:16px}
-.cardSlot.kpi-large .cardTitle{flex:none;max-width:40%}
-.kpi-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);margin-left:auto;flex:none}
-.kpi-seg button{border:0;background:transparent;font-size:13px;line-height:18px;color:var(--txt2);padding:6px 16px;border-radius:999px;cursor:pointer;font-weight:500;white-space:nowrap}
-.kpi-seg button.on{background:rgba(255,255,255,.9);color:var(--brand);box-shadow:0 2px 8px rgba(28,45,74,.12)}
-[data-mode="dark"] .kpi-seg button.on{background:rgba(255,255,255,.1);color:var(--brand)}
+.cardSlot.kpi-large .cardHead{gap:10px;margin-bottom:16px;min-width:0}
+.cardSlot.kpi-large .cardTitle{flex:1 1 auto;max-width:42%;min-width:0}
+.kpi-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);margin-left:auto;flex:0 1 auto;min-width:0;isolation:isolate;box-sizing:border-box}
+.cardSlot .kpi-seg button{border:0!important;background:transparent!important;box-shadow:none!important;transform:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  font-size:12px!important;line-height:18px;color:var(--txt2)!important;padding:5px 11px!important;border-radius:999px!important;
+  cursor:pointer;font-weight:500!important;white-space:nowrap;text-transform:none!important;letter-spacing:normal!important;
+  font-family:inherit!important}
+.cardSlot .kpi-seg button:hover{background:transparent!important;color:var(--txt)!important;transform:none!important;box-shadow:none!important;border:0!important}
+.cardSlot .kpi-seg button.on,.cardSlot .kpi-seg button.on:hover{background:rgba(255,255,255,.9)!important;color:var(--brand)!important;box-shadow:0 2px 8px rgba(28,45,74,.12)!important;border:0!important}
+[data-mode="dark"] .cardSlot .kpi-seg button.on,[data-mode="dark"] .cardSlot .kpi-seg button.on:hover{background:rgba(255,255,255,.1)!important;color:var(--brand)!important}
 [data-mode="dark"] .tbl tbody tr:hover{background:rgba(255,255,255,.06)}
 @container (max-width: 560px) and (min-height: 460px){
   .l-body{grid-template-columns:1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:16px}
@@ -2060,12 +2081,34 @@ function fmtKpiTime(v) {
 function kpiLatestRows(pred, n) {
   return rows.filter(pred).sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-function kpiWaitHours(r) {
-  const t = parseKpiTime(r.实际放行时间 || r.申请日期);
-  if (!t) return 0;
-  return Math.max(0, (Date.now() - t) / 3600000);
+function kpiLatestOrders(pred, n) {
+  const best = new Map();
+  rows.forEach(r => {
+    if (!pred(r)) return;
+    const prev = best.get(r.放行单号);
+    if (!prev || parseKpiTime(r.实际放行时间) >= parseKpiTime(prev.实际放行时间)) best.set(r.放行单号, r);
+  });
+  return [...best.values()].sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-
+function kpiOrderWaitBuckets(orderList) {
+  const nos = new Set(orderList.map(o => o.单号));
+  const lastRel = {};
+  rows.forEach(r => {
+    if (!nos.has(r.放行单号)) return;
+    const t = parseKpiTime(r.实际放行时间 || r.申请日期);
+    if (t > (lastRel[r.放行单号] || 0)) lastRel[r.放行单号] = t;
+  });
+  const now = Date.now();
+  let b1 = 0, b2 = 0, b3 = 0;
+  orderList.forEach(o => {
+    const t = lastRel[o.单号] || 0;
+    const h = t ? Math.max(0, (now - t) / 3600000) : 0;
+    if (h < 1) b1++;
+    else if (h <= 4) b2++;
+    else b3++;
+  });
+  return { b1, b2, b3 };
+}
 function fmtRateDur(mins) {
   mins = Math.max(0, Math.round(Number(mins) || 0));
   if (mins < 60) return "超 " + mins + "m";
@@ -2176,7 +2219,7 @@ function htmlRateAttention(list) {
       '<span class="rate-dur">' + fmtRateDur(a.超时时长) + "</span></div></div>";
   }).join("") || '<div class="rate-attn-item"><span class="rate-attn-gate">暂无待关注单据</span></div>';
   return '<div class="rate-attn"><div class="rate-attn-head"><span class="rate-attn-title">待关注单据</span>' +
-    '<span class="rate-attn-more">全部 ' + n + " 条 →</span></div>" +
+    '<span class="rate-attn-more">全部 ' + n + " 单 →</span></div>" +
     '<div class="rate-attn-list">' + body + "</div>" +
     '<div class="rate-attn-foot">点击查看完整明细 →</div></div>';
 }
@@ -2258,11 +2301,23 @@ function buildKpiProps(id, S) {
   const relTo = Object.values(orders).filter(o => o.放行超时).length;
   const relOk = Math.max(0, total - relTo);
   const recDepts = new Set((S.receiveTimeoutOrders || []).map(o => o.申请部门).filter(Boolean)).size;
-  const recRows = rows.filter(r => { const o = orders[r.放行单号]; return o && o.超时未接收; });
-  let b1 = 0, b2 = 0, b3 = 0;
-  recRows.forEach(r => { const h = kpiWaitHours(r); if (h < 1) b1++; else if (h <= 4) b2++; else b3++; });
   const common = { total, special, normal, overtime, inOk, transit, receive, specialRec, overtimeSp, arrived, relTo, relOk, recDepts, records: S.total || 0 };
   if (id === "kpi_special") {
+    const specOrders = Object.values(orders).filter(o => o.特保);
+    const specArrived = specOrders.filter(o => o.已到达).length;
+    const specRelTo = specOrders.filter(o => o.放行超时).length;
+    let specMat = 0, specMach = 0;
+    specOrders.forEach(o => {
+      const c = o.物品分类 || "";
+      if (c.includes("机台") || c.includes("機台")) specMach++;
+      else if (c.includes("物料")) specMat++;
+    });
+    const specOther = Math.max(0, special - specMat - specMach);
+    const specType = {
+      small: { n: "A级物料", v: specMat, c: "#7a63f5" },
+      big: { n: "机台", v: specMach, c: "#2f7cf6" }
+    };
+    if (specOther) specType.extra = { n: "其他", v: specOther, c: "#9aa5b5" };
     return Object.assign({ tone: "v-purple", tab: "type" }, common, {
       hero: special, unit: "单", subHtml: '占放行单总数 <b style="color:var(--cat-purple)">' + kpiPct(special, total) + "</b>",
       visual: "progress",
@@ -2272,19 +2327,21 @@ function buildKpiProps(id, S) {
         { name: "普通单对照", val: normal, dc: "var(--txt2)", dot: "var(--faint)" }
       ],
       bars: [
-        { name: "特保记录", val: specialRec, pct: total ? specialRec / Math.max(specialRec, 1) : 0, color: "var(--cat-purple)" },
+        { name: "特保记录", val: specialRec, pct: (S.total || 1) ? specialRec / (S.total || 1) : 0, color: "var(--cat-purple)" },
         { name: "占总单", val: kpiPct(special, total), pct: special / (total || 1), color: "var(--cat-purple)" },
         { name: "普通单对照", val: normal, pct: normal / (total || 1), color: "var(--brand)" }
       ],
       dims: {
-        type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
-        arrive: { small: { n: "特保在途", v: Object.values(orders).filter(o => o.特保 && o.在途).length, c: "#f59a26" }, big: { n: "特保已到达", v: Object.values(orders).filter(o => o.特保 && o.已到达).length, c: "#2f7cf6" } },
-        overtime: { small: { n: "特保超时", v: overtimeSp, c: "#f04d3e" }, big: { n: "特保未超时", v: Math.max(0, special - overtimeSp), c: "#2f7cf6" } }
+        type: specType,
+        arrive: { small: { n: "在途", v: Math.max(0, special - specArrived), c: "#f59a26" }, big: { n: "已到达", v: specArrived, c: "#2f7cf6" } },
+        overtime: { small: { n: "放行超时", v: specRelTo, c: "#ff3b30" }, big: { n: "正常", v: Math.max(0, special - specRelTo), c: "#2f7cf6" } }
       },
-      recTitle: "最新特保记录", recFilter: r => r._特保, recTag: "安保"
+      recTitle: "最新特保记录", recFilter: r => r._特保, recTag: "安保", recOrderLevel: true
     });
   }
   if (id === "kpi_transit") {
+    const tOrders = S.transitTimeoutOrders || [];
+    const tw = kpiOrderWaitBuckets(tOrders);
     return Object.assign({ tone: "v-danger", tab: "overtime" }, common, {
       hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--danger)">' + transit + "</b> 单",
       visual: "stack",
@@ -2299,28 +2356,32 @@ function buildKpiProps(id, S) {
         { name: "占在途", val: kpiPct(overtime, transit), pct: overtime / (transit || 1), color: "var(--danger)" }
       ],
       dims: {
-        type: { small: { n: "特保超时", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通超时", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
-        arrive: { small: { n: "在途超时", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } },
-        overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "在途未超", v: inOk, c: "#2f7cf6" } }
+        type: { small: { n: "特级安保单", v: overtimeSp, c: "#7a63f5" }, big: { n: "普通单", v: Math.max(0, overtime - overtimeSp), c: "#2f7cf6" } },
+        arrive: { small: { n: "在途", v: overtime, c: "#f59a26" }, big: { n: "已到达", v: 0, c: "#2f7cf6" } },
+        overtime: { small: { n: "<1h", v: tw.b1, c: "#ff8a80" }, big: { n: "1–4h", v: tw.b2, c: "#ff5252" }, extra: { n: ">4h", v: tw.b3, c: "#c62828" } }
       },
-      recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时"
+      recTitle: "超时在途单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.在途超时; }, recTag: "超时", recOrderLevel: true
     });
   }
   if (id === "kpi_receive") {
+    const recOrders = S.receiveTimeoutOrders || [];
+    const recSp = recOrders.filter(o => o.特保).length;
+    const recArrived = recOrders.filter(o => o.已到达).length;
+    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders);
     return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
       bars: [
         { name: "涉及部门", val: recDepts, pct: 1, color: "var(--warn)" },
         { name: "占总单", val: kpiPct(receive, total), pct: receive / (total || 1), color: "var(--warn)" },
-        { name: ">4h 待接收", val: b3, pct: recRows.length ? b3 / recRows.length : 0, color: "var(--warn)" }
+        { name: ">4h 待接收", val: b3, pct: receive ? b3 / receive : 0, color: "var(--warn)" }
       ],
       dims: {
-        type: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "≥1h", v: b2 + b3, c: "#e0820a" } },
-        arrive: { small: { n: "1–4h", v: b2, c: "#ff9f0a" }, big: { n: "其余", v: b1 + b3, c: "#e0820a" } },
+        type: { small: { n: "特级安保单", v: recSp, c: "#7a63f5" }, big: { n: "普通单", v: Math.max(0, receive - recSp), c: "#2f7cf6" } },
+        arrive: { small: { n: "在途", v: Math.max(0, receive - recArrived), c: "#f59a26" }, big: { n: "已到达", v: recArrived, c: "#2f7cf6" } },
         overtime: { small: { n: "<1h", v: b1, c: "#ffd166" }, big: { n: "1–4h", v: b2, c: "#ff9f0a" }, extra: { n: ">4h", v: b3, c: "#e0820a" } }
       },
-      recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收"
+      recTitle: "待接收单据", recFilter: r => { const o = orders[r.放行单号]; return o && o.超时未接收; }, recTag: "未接收", recOrderLevel: true
     });
   }
   const specialInTransit = Object.values(orders).filter(o => o.特保 && o.在途).length;
@@ -2340,9 +2401,13 @@ function buildKpiProps(id, S) {
     dims: {
       type: { small: { n: "特级安保单", v: special, c: "#7a63f5" }, big: { n: "普通单", v: normal, c: "#2f7cf6" } },
       arrive: { small: { n: "在途", v: transit, c: "#f59a26" }, big: { n: "已到达", v: arrived, c: "#2f7cf6" } },
-      overtime: { small: { n: "超时未放行", v: overtime, c: "#f04d3e" }, big: { n: "正常", v: relOk, c: "#2f7cf6" } }
+      overtime: {
+        small: { n: "在途超时", v: overtime, c: "#ff3b30" },
+        big: { n: "到达超时", v: S.arrivedTimeout || 0, c: "#ff6b5a" },
+        extra: { n: "正常", v: relOk, c: "#2f7cf6" }
+      }
     },
-    recTitle: "最新放行记录", recFilter: () => true, recTag: null, specialInTransit
+    recTitle: "最新放行记录", recFilter: () => true, recTag: null, recOrderLevel: true, specialInTransit
   });
 }
 function svgDualDonut(ratio, cBig, cSmall, center, sub) {
@@ -2400,71 +2465,122 @@ function htmlBars(bars) {
   }).join("") + "</div>";
 }
 function htmlRecords(p) {
-  const list = kpiLatestRows(p.recFilter, 4);
+  const list = p.recOrderLevel ? kpiLatestOrders(p.recFilter, 4) : kpiLatestRows(p.recFilter, 4);
   const col3 = p.recTag === "超时" ? "流出门岗" : p.recTag === "未接收" ? "流入门岗" : "放行物品";
   const cells = list;
   const body = cells.map(r => {
     const abn = /异常|異常/.test(r.放行状态 || "");
     let tag = '<span class="tag tag-ok">已核驗</span>';
     if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
-    else if (p.recTag === "未接收") tag = '<span class="tag tag-bad">未接收</span>';
+    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">未接收</span>';
     else if (p.recTag === "安保") tag = '<span class="tag tag-bad">特保</span>';
     else if (abn) tag = '<span class="tag tag-bad">門崗異常</span>';
     const col3v = p.recTag === "超时" ? (r.流出门岗 || "—") : p.recTag === "未接收" ? (r.流入门岗 || "—") : (r.放行物品名称 || r.物品分类 || "—");
     return "<tr><td class=\"mono\">" + kpiEsc(r.放行单号) + "</td><td class=\"t-time\">" + fmtKpiTime(r.申请日期) + "</td><td>" + kpiEsc(col3v) + "</td><td>" + tag + "</td></tr>";
   }).join("") || '<tr><td colspan="4" class="t-time">暂无记录</td></tr>';
-  const allN = rows.filter(p.recFilter).length;
-  return '<section class="l-panel"><div class="lp-head"><span class="lp-title">' + kpiEsc(p.recTitle) + '</span><span class="lp-link">全部 ' + allN + " 条 →</span></div>" +
+  const allN = p.recOrderLevel
+    ? new Set(rows.filter(p.recFilter).map(r => r.放行单号)).size
+    : rows.filter(p.recFilter).length;
+  const allTxt = p.recOrderLevel ? ("全部 " + allN + " 单 →") : ("全部 " + allN + " 条 →");
+  return '<section class="l-panel"><div class="lp-head"><span class="lp-title">' + kpiEsc(p.recTitle) + '</span><span class="lp-link">' + allTxt + "</span></div>" +
     '<div class="lp-scroll"><table class="tbl"><colgroup><col style="width:32%"><col style="width:22%"><col style="width:22%"><col style="width:24%"></colgroup>' +
     "<thead><tr><th>放行单号</th><th>申请时间</th><th>" + col3 + "</th><th>状态</th></tr></thead><tbody>" + body + "</tbody></table></div>" +
     '<div class="lp-foot">点击查看完整明细页 →</div></section>';
 }
-function donutPair(p, tab) {
+function donutSlices(p, tab) {
   const d = (p.dims && p.dims[tab]) || p.dims.type;
-  const tot = Math.max(1, (d.small.v || 0) + (d.big.v || 0));
-  return { small: d.small, big: d.big, tot, pS: kpiPct(d.small.v, tot, 2), pB: kpiPct(d.big.v, tot, 2) };
+  const slices = [d.small, d.big].concat(d.extra ? [d.extra] : []).filter(Boolean);
+  const raw = slices.reduce((s, x) => s + (x.v || 0), 0);
+  return { slices, raw, tot: Math.max(1, raw) };
 }
-function donutPolar(degFromTop, radius) {
-  const a = (degFromTop - 90) * Math.PI / 180;
-  return { x: 110 + radius * Math.cos(a), y: 110 + radius * Math.sin(a) };
+const DONUT_CORNERS = [
+  { cls: "d-c-tr", deg: 45 },
+  { cls: "d-c-br", deg: 135 },
+  { cls: "d-c-bl", deg: 225 },
+  { cls: "d-c-tl", deg: 315 }
+];
+function donutAngDiff(a, b) {
+  let d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
 }
-function htmlDonutLeader(midDeg, name, line2) {
-  const inner = donutPolar(midDeg, 100);
-  const outer = donutPolar(midDeg, 116);
-  const left = midDeg > 92 && midDeg < 268;
-  const lx = left ? outer.x - 10 : outer.x + 10;
-  const anchor = left ? "end" : "start";
-  const y1 = outer.y - 7, y2 = outer.y + 9;
-  return "<g><path d=\"M" + inner.x.toFixed(1) + " " + inner.y.toFixed(1) + " L" + outer.x.toFixed(1) + " " + outer.y.toFixed(1) +
-    "\" fill=\"none\" stroke=\"var(--muted)\" stroke-width=\"1\"/>" +
-    "<text x=\"" + lx.toFixed(1) + "\" y=\"" + y1.toFixed(1) + "\" text-anchor=\"" + anchor + "\" font-size=\"13\" font-weight=\"600\" fill=\"currentColor\">" + kpiEsc(name) + "</text>" +
-    "<text x=\"" + lx.toFixed(1) + "\" y=\"" + y2.toFixed(1) + "\" text-anchor=\"" + anchor + "\" font-size=\"12\" fill=\"var(--txt2)\">" + kpiEsc(line2) + "</text></g>";
+function donutAssignCorners(mids) {
+  if (!mids.length) return { rot: 0, corner: [] };
+  if (mids.length === 1) {
+    const rot = (45 - mids[0] + 360) % 360;
+    return { rot: rot, corner: [0] };
+  }
+  let best = { cost: 1e9, rot: 0, corner: [] };
+  for (let rot = 0; rot < 360; rot += 3) {
+    const used = {};
+    const corner = [];
+    let cost = 0, ok = true;
+    for (let i = 0; i < mids.length; i++) {
+      const a = (mids[i] + rot) % 360;
+      let bi = -1, bd = 1e9;
+      for (let c = 0; c < 4; c++) {
+        if (used[c]) continue;
+        const d = donutAngDiff(a, DONUT_CORNERS[c].deg);
+        if (d < bd) { bd = d; bi = c; }
+      }
+      if (bi < 0) { ok = false; break; }
+      used[bi] = 1;
+      corner.push(bi);
+      cost += bd;
+    }
+    if (ok && cost < best.cost) best = { cost: cost, rot: rot, corner: corner.slice() };
+  }
+  return best;
+}
+function htmlDonutLeader(midDeg, cornerIdx) {
+  const a = (midDeg - 90) * Math.PI / 180;
+  const x1 = 110 + 100 * Math.cos(a), y1 = 110 + 100 * Math.sin(a);
+  const x2 = 110 + 112 * Math.cos(a), y2 = 110 + 112 * Math.sin(a);
+  const left = cornerIdx === 2 || cornerIdx === 3;
+  const x3 = left ? x2 - 10 : x2 + 10;
+  return '<path d="M' + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) +
+    " L" + x3.toFixed(1) + " " + y2.toFixed(1) + '" fill="none" stroke="var(--muted)" stroke-width="1"/>';
 }
 function donutCenterLabel(p, tab) {
-  if (p.id === "kpi_transit") return "在途单";
-  if (p.id === "kpi_receive") return "待接收";
-  if (p.id === "kpi_special" && tab !== "type") return "特保单";
+  if (p.id === "kpi_transit") return "在途超时";
+  if (p.id === "kpi_receive") return "超时未接收";
+  if (p.id === "kpi_special") return "特保单";
   return "总单数";
 }
 function htmlLargeDonut(p, tab) {
-  const { small, big, tot, pS, pB } = donutPair(p, tab);
-  const r = 86, C = 2 * Math.PI * r, GAP = 7;
-  const lenS = Math.max(0, small.v / tot * C - GAP);
-  const lenB = Math.max(0, big.v / tot * C - GAP);
-  const midS = (lenS / 2) / C * 360;
-  const midB = (lenS + GAP + lenB / 2) / C * 360;
-  return '<div class="donut"><svg viewBox="-28 -18 276 256" width="100%" height="100%">' +
+  const { slices, raw, tot } = donutSlices(p, tab);
+  const C = 2 * Math.PI * 86, GAP = 7;
+  let offset = 0;
+  const arcs = [];
+  const labeled = [];
+  slices.forEach(sl => {
+    const frac = (sl.v || 0) / tot;
+    const len = Math.max(0, frac * C - GAP);
+    const mid = ((offset + len / 2) / C) * 360;
+    arcs.push('<circle class="d-s" cx="110" cy="110" r="86" fill="none" stroke="' + sl.c +
+      '" stroke-width="27" stroke-dasharray="' + len + " " + (C - len) + '" stroke-dashoffset="-' + offset + '"/>');
+    if ((sl.v || 0) > 0 && frac >= 0.03) labeled.push({ sl: sl, mid: mid });
+    offset += len + GAP;
+  });
+  const asg = donutAssignCorners(labeled.map(x => x.mid));
+  const leaders = labeled.map((x, i) => htmlDonutLeader((x.mid + asg.rot) % 360, asg.corner[i]));
+  const cornerHtml = ["", "", "", ""];
+  labeled.forEach((x, i) => {
+    const c = asg.corner[i];
+    cornerHtml[c] = '<div class="d-call">' + kpiEsc(x.sl.n) + "<small>" + x.sl.v + " 单 (" + kpiPct(x.sl.v, tot, 2) + ")</small></div>";
+  });
+  const legend = slices.map(sl =>
+    '<span class="lg-pill"><i class="dot" style="--dc:' + sl.c + '"></i>' + kpiEsc(sl.n) + " <b>" + sl.v + "</b></span>"
+  ).join("");
+  return '<div class="donut"><div class="donut-stage">' +
+    '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">' +
     '<circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>' +
-    '<g transform="rotate(-90 110 110)">' +
-    '<circle class="d-small" cx="110" cy="110" r="86" fill="none" stroke="' + small.c + '" stroke-width="27" stroke-dasharray="' + lenS + " " + (C - lenS) + '"/>' +
-    '<circle class="d-big" cx="110" cy="110" r="86" fill="none" stroke="' + big.c + '" stroke-width="27" stroke-dasharray="' + lenB + " " + (C - lenB) + '" stroke-dashoffset="-' + (lenS + GAP) + '"/>' +
-    "</g>" +
-    htmlDonutLeader(midS, small.n, small.v + " 单 (" + pS + ")") +
-    htmlDonutLeader(midB, big.n, big.v + " 单 (" + pB + ")") +
-    '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + tot + "</text>" +
-    '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg></div>" +
-    '<div class="legend"><span class="lg-pill"><i class="dot" style="--dc:' + small.c + '"></i>' + kpiEsc(small.n) + " <b>" + small.v + "</b></span>" +
-    '<span class="lg-pill"><i class="dot" style="--dc:' + big.c + '"></i>' + kpiEsc(big.n) + " <b>" + big.v + "</b></span></div>";
+    '<g transform="rotate(' + (-90 + asg.rot) + ' 110 110)">' + arcs.join("") + "</g>" +
+    leaders.join("") +
+    '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + raw + "</text>" +
+    '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg>" +
+    DONUT_CORNERS.map((c, i) => '<div class="' + c.cls + '">' + cornerHtml[i] + "</div>").join("") +
+    "</div>" +
+    '<div class="legend">' + legend + "</div></div>";
 }
 function htmlKpiLarge(p, tab) {
   tab = tab || p.tab || "type";
@@ -4220,13 +4336,16 @@ function traceToneVar(t) {
 function traceTagCls(t) {
   return ({ ok: "tag-ok", warn: "tag-warn", bad: "tag-bad", purple: "tag-purple", accent: "tag-mute", mute: "tag-mute" })[t] || "tag-mute";
 }
-// 状态徽章判定（优先级：在途超时 > 到达超时 > 超时未接收 > 放行异常 > 已接收 > 在途）
+// 状态徽章判定（优先级：在途超时 > 到达超时 > 超时未接收 > 放行异常 > 已接收但超时 > 已接收 > 待接收 > 在途）
+// 只用 orders 布尔字段，不用 接收状态 原文（D-34）
 function traceState(o) {
   if (o.在途超时) return { name: "在途超时", tone: "bad" };
   if (o.放行超时 && o.已到达) return { name: "到达超时", tone: "bad" };
   if (o.超时未接收) return { name: "超时未接收", tone: "warn" };
   if (o.放行异常) return { name: "放行异常", tone: "bad" };
+  if (o.已接收 && o.接收超时) return { name: "已接收但超时", tone: "warn" };
   if (o.已接收) return { name: "已接收", tone: "ok" };
+  if (o.已到达) return { name: "待接收", tone: "accent" };
   return { name: "在途", tone: "mute" };
 }
 // 构造时间轴节点；gap = 距上一节点耗时（秒），未完成节点标 waiting
@@ -4252,14 +4371,18 @@ function traceNodes(o, recs) {
   const recvAt = earliest(recs.map(r => r._接收日期).filter(Boolean));
   if (recvAt) {
     const rr = recs.find(r => r._接收日期) || {};
+    const recvLate = !!(o.已接收 && o.接收超时);
     nodes.push({
-      kind: "receive", time: recvAt, desc: "接收确认", tone: "ok",
-      who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-")
+      kind: "receive", time: recvAt, desc: "接收确认",
+      tone: recvLate ? "warn" : "ok",
+      who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-"),
+      flag: recvLate ? "已接收但超时" : ""
     });
   } else {
     nodes.push({
       kind: "receive", time: null, desc: "尚未接收",
-      tone: o.超时未接收 ? "warn" : "accent", who: "待接收"
+      tone: o.超时未接收 ? "warn" : "accent", who: "待接收",
+      flag: o.超时未接收 ? "超时未接收" : ""
     });
   }
   const now = dayjs();
@@ -4277,7 +4400,7 @@ function renderTraceAxis(nodes) {
     const pend = !n.time, t = n.tone;
     const crit = maxGap != null && n.gap === maxGap;
     const dotCls = pend ? ("pending p-" + (t === "bad" ? "bad" : t === "warn" ? "warn" : "mute")) : t;
-    const tagTxt = pend ? (t === "bad" ? "超时" : "进行中")
+    const tagTxt = pend ? (t === "bad" || t === "warn" ? "超时" : "进行中")
       : (n.kind === "apply" ? "已提交" : (t === "bad" || t === "warn" ? "超时" : t === "purple" ? "特保" : "正常"));
     return '<div class="tl-row node">' +
       '<div class="tl-time ' + (pend ? "pending" : "") + '">' + (n.time ? escapeHtml(n.time.format("HH:mm")) : "--:--") + "</div>" +
@@ -4285,7 +4408,7 @@ function renderTraceAxis(nodes) {
       '<div class="tl-body">' +
         '<div class="tl-title">' + TRACE_KIND[n.kind] +
           '<span class="tag ' + traceTagCls(t) + '">' + tagTxt + "</span>" +
-          (n.flag ? '<span class="tag tag-bad">' + escapeHtml(n.flag) + "</span>" : "") +
+          (n.flag ? '<span class="tag ' + traceTagCls(t) + '">' + escapeHtml(n.flag) + "</span>" : "") +
         "</div>" +
         '<div class="tl-meta">' + escapeHtml(n.desc) + " · <code>" + escapeHtml(n.who) + "</code></div>" +
         (n.gap != null
@@ -4311,9 +4434,13 @@ function renderTraceTable(recs) {
         if (dayjs.isDayjs && dayjs.isDayjs(v)) return escapeHtml(v.format("MM-DD HH:mm"));
         return escapeHtml(String(v));
       });
-      const st = r._放行超时 ? { t: "放行超时", c: "tag-bad" }
+      // 记录级状态：接收结果优先（末笔才有接收字段）；中间门岗已放行不得标成「在途/未接收」
+      const st = (r._接收日期 && r._接收超时) ? { t: "已接收但超时", c: "tag-warn" }
+        : (r._接收超时未接收 ? { t: "超时未接收", c: "tag-warn" }
         : (r._接收日期 ? { t: "已接收", c: "tag-ok" }
-          : ((r._接收超时未接收 || r._接收超时) ? { t: "超时未接收", c: "tag-warn" } : { t: "在途", c: "tag-mute" }));
+        : (r._放行超时 ? { t: "放行超时", c: "tag-bad" }
+        : (r._放行日期 ? { t: "已放行", c: "tag-ok" }
+        : { t: "在途", c: "tag-mute" }))));
       return "<tr>" + cells.map(c => '<td style="' + td + '">' + c + "</td>").join("") +
         '<td style="padding:7px 8px;border-bottom:1px solid var(--line)"><span class="tag ' + st.c + '">' + st.t + "</span></td></tr>";
     }).join("") + "</tbody></table>";

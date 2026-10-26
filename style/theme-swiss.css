@@ -839,3 +839,12 @@ html[data-theme="swiss"] button.tb-drawer-btn:hover{
   background:var(--txt)!important;color:var(--bg)!important;border-color:var(--txt)!important}
 html[data-theme="swiss"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
+
+/* 大卡分段 Tab：只给外壳描边，内钮保持无边框 */
+[data-theme="swiss"] .kpi-seg{
+  border-radius:0!important;border:1px solid var(--txt)!important;background:transparent!important;
+  padding:0!important;gap:0!important;box-shadow:none!important}
+[data-theme="swiss"] .kpi-seg button{border-radius:0!important}
+[data-theme="swiss"] .kpi-seg button.on,
+[data-theme="swiss"] .kpi-seg button.on:hover{
+  background:var(--txt)!important;color:var(--bg)!important;box-shadow:none!important}

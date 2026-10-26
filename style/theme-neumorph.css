@@ -713,3 +713,11 @@ html[data-theme="neumorph"] button.tb-drawer-btn:hover{
   box-shadow:var(--neu-inset)!important}
 html[data-theme="neumorph"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;color:#fff!important;box-shadow:var(--card-sh)!important}
+
+/* 大卡分段 Tab：拟态阴影打在外壳 */
+[data-theme="neumorph"] .kpi-seg{
+  border:none!important;border-radius:var(--btn-r)!important;
+  background:var(--bg)!important;box-shadow:var(--card-sh)!important}
+[data-theme="neumorph"] .kpi-seg button.on,
+[data-theme="neumorph"] .kpi-seg button.on:hover{
+  background:transparent!important;color:var(--accent)!important;box-shadow:var(--neu-inset)!important}

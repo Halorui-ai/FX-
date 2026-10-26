@@ -97,7 +97,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 |----|------|--------|
 | S compact | 高 ≤4（默认 `4×4`；很宽但只有 4 行仍是小卡） | 现状：标题区 + 单个核心数字（不动） |
 | M cozy | `h≥5` | HANDOFF 中卡：主数字+单位+副说明、右侧微图形（双环/进度环/堆叠条/告警章）、底 3 指标或 CTA。矮中卡图形随栏高缩小 |
-| L expanded | `w≥10` 且 `h≥6` | HANDOFF 大卡：左指标条、中维度环图（Tab 切换）、右最新 4 条记录。环图与主数字随栏缩放；滚动只在右栏记录区。点空白/「全部 N 条」打开现有二级详情 |
+| L expanded | `w≥10` 且 `h≥6` | HANDOFF 大卡：左指标条、中维度环图（Tab 切换，注释贴四角）、右最新 4 条。环图与主数字随栏缩放；滚动只在右栏。点空白/「全部 N 单」打开现有二级详情。四张业务大卡环图人口 = 主数字那批订单：总数切全量，特保/在途超时/超时未接收只切本卡订单；超时状态可三扇区 |
 
 点 `.kpi-seg` 不打开详情。规格见 `kpi-card-redesign/HANDOFF.md`。
 
@@ -168,7 +168,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 
 - `file://` 必须可用；禁止引入必须 HTTP 的能力（除非保留 file:// 兑底）。
 - **追踪模式与常规详情共用一个抽屉**（D-34）：`openTrace()` 给 `#detailPanel` 加 `.trace-mode`（宽度收窄 `min(95vw,920px)`）、隐藏图表与常规明细表、显示 `#detailTraceBox`；`closeDetail()` 必须移除该类并复位容器。两者**必须共用**同一套 `detailPanelOpening` / `detailDrawTimer` / `detailResizeTimer` / `detailDisposeTimer`——各写一套会回退 Issue #7·#5 的定时器修复。
-- 追踪为**纯展示层**：只读 `orders[单号]` 与 `rows.filter(放行单号)`，禁止新增 `computeStats` 字段；单号入口用 `.orderLink` + 全局委托（点击须 `stopPropagation()`，否则会连带触发卡片自身的 `detailKey` 下钻）。
+- 追踪为**纯展示层**：只读 `orders[单号]` 与 `rows.filter(放行单号)`，禁止新增 `computeStats` 字段；单号入口用 `.orderLink` + 全局委托（点击须 `stopPropagation()`，否则会连带触发卡片自身的 `detailKey` 下钻）。状态徽章用 `o.在途超时` / `o.放行超时 && o.已到达` / `o.超时未接收` / `o.已接收 && o.接收超时` 等布尔字段，禁止用源字段 `接收状态` 原文。
 - 大 xlsx 的硬瓶颈是 `XLSX.read` 同步阻塞；产品侧引导转存 CSV，本机重复打开走 IndexedDB 缓存恢复。
 - **IndexedDB 只存"最近一份数据"**，不得用它承载业务状态；业务状态仍走 `localStorage`。现有键：`dashLayouts`（视图）、`dashTheme`（主题）、`dashMode`（深浅色）、`perfMode`（性能档）、`dashCacheOff`（数据缓存开关）。file:// 下这些存储由**所有本地 HTML 共享**，故键名与 DB 名都带项目前缀，改动需谨慎。
 - 缓存写入必须分块让出主线程，且**任何失败都要自愈**（清缓存 + 不污染当前 `rows`）；探活失败时相关入口整块隐藏。
@@ -226,6 +226,7 @@ CARD_DEFS.my_newCard = {
 3. 在 `THEME_REGISTRY` **追加一行**（`id`、`theme`、`css`、`js`）。
 4. 不要把主题 CSS 内联进主 HTML，不要再复制一份 `dashboard-release-monitor-v5.x-themes.html`。
 5. 在该主题 css **末尾**覆盖 `html[data-theme="<key>"] button.tb-drawer-btn` 的空闲 / 悬停 / 展开三态，使圆形箭头跟本主题按钮一致，禁止再写死黑底。
+6. 全局 `button { … !important }` **不要打穿** `.kpi-seg button`（大卡分段 Tab）。外壳 `.kpi-seg` 可按主题描边；内钮保持无边框。抽屉钮、关闭钮同样排除。
 
 ### 7.5 新视图
 
