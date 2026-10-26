@@ -713,3 +713,11 @@ html[data-theme="clay"] button.tb-drawer-btn:hover{
   box-shadow:var(--clay-inset)!important}
 html[data-theme="clay"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important}
+
+/* 大卡分段 Tab：粘土阴影打在外壳 */
+[data-theme="clay"] .kpi-seg{
+  border:var(--card-bd)!important;border-radius:var(--btn-r)!important;
+  background:var(--bg)!important;box-shadow:var(--card-sh)!important}
+[data-theme="clay"] .kpi-seg button.on,
+[data-theme="clay"] .kpi-seg button.on:hover{
+  background:var(--surface-h)!important;color:var(--accent)!important;box-shadow:none!important}

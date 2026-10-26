@@ -226,6 +226,7 @@ CARD_DEFS.my_newCard = {
 3. 在 `THEME_REGISTRY` **追加一行**（`id`、`theme`、`css`、`js`）。
 4. 不要把主题 CSS 内联进主 HTML，不要再复制一份 `dashboard-release-monitor-v5.x-themes.html`。
 5. 在该主题 css **末尾**覆盖 `html[data-theme="<key>"] button.tb-drawer-btn` 的空闲 / 悬停 / 展开三态，使圆形箭头跟本主题按钮一致，禁止再写死黑底。
+6. 全局 `button { … !important }` **不要打穿** `.kpi-seg button`（大卡分段 Tab）。外壳 `.kpi-seg` 可按主题描边；内钮保持无边框。抽屉钮、关闭钮同样排除。
 
 ### 7.5 新视图
 

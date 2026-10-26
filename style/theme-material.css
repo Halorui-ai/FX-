@@ -634,3 +634,9 @@ html[data-theme="material"] button.tb-drawer-btn:hover{
   background:var(--surface-h)!important;color:var(--txt)!important;border:none!important}
 html[data-theme="material"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;color:#fff!important}
+
+[data-theme="material"] .kpi-seg{
+  border:none!important;border-radius:var(--btn-r)!important;background:var(--surface2)!important}
+[data-theme="material"] .kpi-seg button.on,
+[data-theme="material"] .kpi-seg button.on:hover{
+  background:var(--surface-h)!important;color:var(--accent)!important;box-shadow:none!important}

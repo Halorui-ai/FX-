@@ -377,3 +377,14 @@ html[data-theme="brutal"] button.tb-drawer-btn:hover{
 html[data-theme="brutal"] button.tb-drawer-btn[aria-expanded="true"]{
   background:var(--accent)!important;color:#fff!important;border-color:var(--txt)!important;
   box-shadow:3px 3px 0 var(--txt)!important}
+
+/* 大卡分段 Tab：粗边和硬阴影打在整段外壳上，不要打在三颗内钮上 */
+[data-theme="brutal"] .kpi-seg{
+  border:2px solid var(--txt)!important;border-radius:var(--btn-r)!important;
+  box-shadow:3px 3px 0 var(--txt)!important;background:var(--surface)!important;
+  padding:0!important;gap:0!important}
+[data-theme="brutal"] .kpi-seg button{border-radius:0!important;transform:none!important}
+[data-theme="brutal"] .kpi-seg button:hover{transform:none!important;box-shadow:none!important}
+[data-theme="brutal"] .kpi-seg button.on,
+[data-theme="brutal"] .kpi-seg button.on:hover{
+  background:var(--txt)!important;color:var(--bg)!important;box-shadow:none!important;transform:none!important}
