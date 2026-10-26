@@ -4220,13 +4220,16 @@ function traceToneVar(t) {
 function traceTagCls(t) {
   return ({ ok: "tag-ok", warn: "tag-warn", bad: "tag-bad", purple: "tag-purple", accent: "tag-mute", mute: "tag-mute" })[t] || "tag-mute";
 }
-// 状态徽章判定（优先级：在途超时 > 到达超时 > 超时未接收 > 放行异常 > 已接收 > 在途）
+// 状态徽章判定（优先级：在途超时 > 到达超时 > 超时未接收 > 放行异常 > 已接收但超时 > 已接收 > 待接收 > 在途）
+// 只用 orders 布尔字段，不用 接收状态 原文（D-34）
 function traceState(o) {
   if (o.在途超时) return { name: "在途超时", tone: "bad" };
   if (o.放行超时 && o.已到达) return { name: "到达超时", tone: "bad" };
   if (o.超时未接收) return { name: "超时未接收", tone: "warn" };
   if (o.放行异常) return { name: "放行异常", tone: "bad" };
+  if (o.已接收 && o.接收超时) return { name: "已接收但超时", tone: "warn" };
   if (o.已接收) return { name: "已接收", tone: "ok" };
+  if (o.已到达) return { name: "待接收", tone: "accent" };
   return { name: "在途", tone: "mute" };
 }
 // 构造时间轴节点；gap = 距上一节点耗时（秒），未完成节点标 waiting
@@ -4252,14 +4255,18 @@ function traceNodes(o, recs) {
   const recvAt = earliest(recs.map(r => r._接收日期).filter(Boolean));
   if (recvAt) {
     const rr = recs.find(r => r._接收日期) || {};
+    const recvLate = !!(o.已接收 && o.接收超时);
     nodes.push({
-      kind: "receive", time: recvAt, desc: "接收确认", tone: "ok",
-      who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-")
+      kind: "receive", time: recvAt, desc: "接收确认",
+      tone: recvLate ? "warn" : "ok",
+      who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-"),
+      flag: recvLate ? "已接收但超时" : ""
     });
   } else {
     nodes.push({
       kind: "receive", time: null, desc: "尚未接收",
-      tone: o.超时未接收 ? "warn" : "accent", who: "待接收"
+      tone: o.超时未接收 ? "warn" : "accent", who: "待接收",
+      flag: o.超时未接收 ? "超时未接收" : ""
     });
   }
   const now = dayjs();
@@ -4277,7 +4284,7 @@ function renderTraceAxis(nodes) {
     const pend = !n.time, t = n.tone;
     const crit = maxGap != null && n.gap === maxGap;
     const dotCls = pend ? ("pending p-" + (t === "bad" ? "bad" : t === "warn" ? "warn" : "mute")) : t;
-    const tagTxt = pend ? (t === "bad" ? "超时" : "进行中")
+    const tagTxt = pend ? (t === "bad" || t === "warn" ? "超时" : "进行中")
       : (n.kind === "apply" ? "已提交" : (t === "bad" || t === "warn" ? "超时" : t === "purple" ? "特保" : "正常"));
     return '<div class="tl-row node">' +
       '<div class="tl-time ' + (pend ? "pending" : "") + '">' + (n.time ? escapeHtml(n.time.format("HH:mm")) : "--:--") + "</div>" +
@@ -4285,7 +4292,7 @@ function renderTraceAxis(nodes) {
       '<div class="tl-body">' +
         '<div class="tl-title">' + TRACE_KIND[n.kind] +
           '<span class="tag ' + traceTagCls(t) + '">' + tagTxt + "</span>" +
-          (n.flag ? '<span class="tag tag-bad">' + escapeHtml(n.flag) + "</span>" : "") +
+          (n.flag ? '<span class="tag ' + traceTagCls(t) + '">' + escapeHtml(n.flag) + "</span>" : "") +
         "</div>" +
         '<div class="tl-meta">' + escapeHtml(n.desc) + " · <code>" + escapeHtml(n.who) + "</code></div>" +
         (n.gap != null
@@ -4311,9 +4318,13 @@ function renderTraceTable(recs) {
         if (dayjs.isDayjs && dayjs.isDayjs(v)) return escapeHtml(v.format("MM-DD HH:mm"));
         return escapeHtml(String(v));
       });
-      const st = r._放行超时 ? { t: "放行超时", c: "tag-bad" }
+      // 记录级状态：接收结果优先（末笔才有接收字段）；中间门岗已放行不得标成「在途/未接收」
+      const st = (r._接收日期 && r._接收超时) ? { t: "已接收但超时", c: "tag-warn" }
+        : (r._接收超时未接收 ? { t: "超时未接收", c: "tag-warn" }
         : (r._接收日期 ? { t: "已接收", c: "tag-ok" }
-          : ((r._接收超时未接收 || r._接收超时) ? { t: "超时未接收", c: "tag-warn" } : { t: "在途", c: "tag-mute" }));
+        : (r._放行超时 ? { t: "放行超时", c: "tag-bad" }
+        : (r._放行日期 ? { t: "已放行", c: "tag-ok" }
+        : { t: "在途", c: "tag-mute" }))));
       return "<tr>" + cells.map(c => '<td style="' + td + '">' + c + "</td>").join("") +
         '<td style="padding:7px 8px;border-bottom:1px solid var(--line)"><span class="tag ' + st.c + '">' + st.t + "</span></td></tr>";
     }).join("") + "</tbody></table>";
