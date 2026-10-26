@@ -640,9 +640,11 @@ body.editing .cardRemove{display:flex}
 .d-c-br{bottom:0;right:0;text-align:right}
 .d-c-bl{bottom:0;left:0;text-align:left}
 .d-c-tl{top:0;left:0;text-align:left}
-.d-call{font-size:13px;line-height:1.25;color:var(--txt);font-weight:600;padding:3px 7px;border-radius:8px;
-  background:color-mix(in srgb,var(--card-face) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.d-call small{display:block;font-size:12px;font-weight:500;color:var(--txt2);font-variant-numeric:tabular-nums}
+.cardSlot .d-call{font-size:13px;line-height:1.25;color:var(--txt)!important;font-weight:600;
+  padding:0!important;border:0!important;border-radius:0!important;background:none!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.cardSlot .d-call small{display:block;font-size:12px;font-weight:500;color:var(--txt2)!important;
+  font-variant-numeric:tabular-nums;background:none!important}
 .donut circle{transition:stroke-dasharray .35s ease,stroke-dashoffset .35s ease,stroke .35s ease}
 .legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .l-mid .lg-pill{white-space:nowrap;padding:3px 10px}
@@ -2526,11 +2528,14 @@ function donutAssignCorners(mids) {
   }
   return best;
 }
-function htmlDonutTick(midDeg) {
+function htmlDonutLeader(midDeg, cornerIdx) {
   const a = (midDeg - 90) * Math.PI / 180;
-  const x1 = (110 + 86 * Math.cos(a)).toFixed(1), y1 = (110 + 86 * Math.sin(a)).toFixed(1);
-  const x2 = (110 + 104 * Math.cos(a)).toFixed(1), y2 = (110 + 104 * Math.sin(a)).toFixed(1);
-  return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--muted)" stroke-width="1.2"/>';
+  const x1 = 110 + 100 * Math.cos(a), y1 = 110 + 100 * Math.sin(a);
+  const x2 = 110 + 116 * Math.cos(a), y2 = 110 + 116 * Math.sin(a);
+  const left = cornerIdx === 2 || cornerIdx === 3;
+  const x3 = left ? x2 - 12 : x2 + 12;
+  return '<path d="M' + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) +
+    " L" + x3.toFixed(1) + " " + y2.toFixed(1) + '" fill="none" stroke="var(--muted)" stroke-width="1"/>';
 }
 function donutCenterLabel(p, tab) {
   if (p.id === "kpi_transit") return "在途超时";
@@ -2554,7 +2559,7 @@ function htmlLargeDonut(p, tab) {
     offset += len + GAP;
   });
   const asg = donutAssignCorners(labeled.map(x => x.mid));
-  const ticks = labeled.map(x => htmlDonutTick((x.mid + asg.rot) % 360));
+  const leaders = labeled.map((x, i) => htmlDonutLeader((x.mid + asg.rot) % 360, asg.corner[i]));
   const cornerHtml = ["", "", "", ""];
   labeled.forEach((x, i) => {
     const c = asg.corner[i];
@@ -2567,7 +2572,7 @@ function htmlLargeDonut(p, tab) {
     '<svg viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">' +
     '<circle cx="110" cy="110" r="86" fill="none" stroke="var(--track)" stroke-width="27"/>' +
     '<g transform="rotate(' + (-90 + asg.rot) + ' 110 110)">' + arcs.join("") + "</g>" +
-    ticks.join("") +
+    leaders.join("") +
     '<text x="110" y="104" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">' + raw + "</text>" +
     '<text x="110" y="124" text-anchor="middle" font-size="12" fill="var(--txt2)">' + donutCenterLabel(p, tab) + "</text></svg>" +
     DONUT_CORNERS.map((c, i) => '<div class="' + c.cls + '">' + cornerHtml[i] + "</div>").join("") +
