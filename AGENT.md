@@ -15,7 +15,7 @@
 
 **开工闸门是文件里的 `status: approved`，不是 GitHub 标签。** 没有 `approved`，实现 Agent 必须停。Issue / 分支 / PR 是推荐渠道（D-25），不卡死 `file://` 本机流程。**合进 `main` 的闸门见 D-35**：新功能 / 行为变化 / 口径改动必须开 PR，由仓库哨兵复核后再合并；仅纯文档错别字 / 注释 / 体积数字等无行为变化的小改可直推 `main`。
 
-**开 PR 必须写明是哪个 Agent 开的**（本机常有多个 Agent 改同一仓库，列表里要分得清）。正文第一行写 `Agent: <工具名>`，标题前加 `[工具名]`。工具名用角色表里的默认工具，例如 `Grok Build`、`Trae Design`，不要写「AI」这种笼统称呼。后续往该 PR 推提交的 Agent 若换了，在正文补一行 `后续提交: <工具名>`。
+**开 Issue / PR 必须写明是哪个 Agent 开的**（本机常有多个 Agent 改同一仓库，列表里要分得清）。标题前加 `[工具名]`，正文第一行写 `Agent: <工具名>`。工具名用角色表里的默认工具，例如 `Grok Build`、`Trae Design`，不要写「AI」这种笼统称呼。用户本人开的写 `[用户]`。后续往该 PR 推提交、或往该 Issue 跟帖的 Agent 若换了，在正文补一行 `后续: <工具名>`。
 
 已交付样板：`kpi-card-redesign/`（D-22）。新原型只进 `docs/prototypes/`。
 
@@ -23,7 +23,7 @@
 
 新布局或要改主 HTML 时按这条走。没开 Issue 不算违禁；没打 `ready-for-build` 不算禁止开工。设计文件只放 `docs/prototypes/<slug>/`。
 
-1. **（推荐）** 开 Issue，标题写清改哪张卡。可选标签 `design/trae`。
+1. **（推荐）** 开 Issue，标题写清改哪张卡（`[工具名] …`，正文第一行 `Agent: <工具名>`）。可选标签 `design/trae`。
 2. **Trae** 从 `main` 开 `design/<slug>`，只提交 `docs/prototypes/<slug>/`（`index.html` + `HANDOFF.md`，`status: draft`）。禁止提 `.trae-html-share-packages/`、`.uploads/`。开 PR 指向 `main`（标题 `[Trae Design] …`，正文第一行 `Agent: Trae Design`）。
 3. **用户** 打开原型。通过：在该 PR 里把 HANDOFF 改成 `approved` 并填 freeze → 合并设计 PR → （可选）Issue 标签改 `ready-for-build`。
 4. **Grok** `git pull origin main`，确认 HANDOFF 已是 `approved`，再开 `feat/<slug>` 改主文件，开工可把 HANDOFF 改 `implementing`，提 PR（标题 `[Grok Build] …`，正文第一行 `Agent: Grok Build`）。
@@ -92,7 +92,7 @@ Grok 从 `design/<slug>` 读未合并原型也可以，但默认先合设计 PR�
 3. 主文件 `<title>`、页脚、README 顶部三个版本字符串相同。
 4. 点「载入示例数据预览」：卡片能出来；点顶栏右侧圆形箭头打开功能抽屉，切一次主题、点开一个 KPI 下钻；控制台无报错。（若本次只改文档、未改看板，本条可跳过。）
 5. 改了解析 / 口径 / 主题机制时：用根目录 `物品放行监控_生成_100k.xlsx` 拖入加载，应能完成解析；特保须按 WF9897 识别。
-6. 若本回合开了 PR：标题带 `[工具名]`，正文第一行 `Agent: <工具名>`。
+6. 若本回合开了 Issue 或 PR：标题带 `[工具名]`，正文第一行 `Agent: <工具名>`。
 
 ## 推荐提示词（可复制）
 
