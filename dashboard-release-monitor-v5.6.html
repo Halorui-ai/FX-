@@ -1057,8 +1057,13 @@ const CONFIG = {
   特保单号前缀: "WF9897",
   普通单号标识: "WF7501",
 
-  // —— 超时判断：超时标记字段值等于以下之一即视为超时 ——
-  超时标记: ["1", 1, "是", "Y", "YES", "TRUE"],
+  // —— 超时判断（D-36）：「放行超时 / 接收超时」两列现行导出为**超时分钟数**（0 = 未超时，>0 = 超时）；
+  //    旧导出为是/否标记。两种都认：数值 > 0，或等于下列标记之一 → 超时 ——
+  超时标记: ["是", "Y", "YES", "TRUE"],
+  // —— 状态列兜底：「放行状态 / 接收状态」含以下任一字样也视为超时（如 超时 / 未接收超时） ——
+  超时状态关键字: ["超时", "超時"],
+  // —— 放行异常：「放行状态」含以下任一字样（现行导出为「放行拒绝」，旧导出为「異常」） ——
+  放行异常关键字: ["异常", "異常", "拒绝", "拒絕"],
 
   TOPN: 10,
   趋势天数阈值: 62,
@@ -1138,8 +1143,17 @@ function decodeText(buf) {
   try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
   catch (e) { return new TextDecoder("gbk").decode(buf); }
 }
-// 超时标记判断
-function isTimeout(v) { return CONFIG.超时标记.some(m => String(v).trim().toUpperCase() === String(m).toUpperCase()); }
+// 超时判断：数值 > 0（超时分钟数；旧标记 1 同样命中）或命中是/否类标记
+function isTimeout(v) {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (!s) return false;
+  if (/^[+-]?\d+(\.\d+)?$/.test(s)) return parseFloat(s) > 0;
+  return CONFIG.超时标记.some(m => s === String(m).toUpperCase());
+}
+// 状态列文本判断（放行状态 / 接收状态）
+function hasKeyword(v, words) { const s = String(v ?? ""); return words.some(w => s.includes(w)); }
+function isTimeoutStatus(v) { return hasKeyword(v, CONFIG.超时状态关键字); }
+function isAbnormalStatus(v) { return hasKeyword(v, CONFIG.放行异常关键字); }
 // 特保单判断：放行单号前六位为 WF9897
 function isSpecialOrder(r) {
   return String(r.放行单号 || "").startsWith(CONFIG.特保单号前缀);
@@ -1451,8 +1465,10 @@ function normalizeRow(r) {
   o._放行日期 = parseDate(o.实际放行时间);
   o._接收日期 = parseDate(o.接收时间);
   o._特保 = isSpecialOrder(o);
-  o._放行超时 = isTimeout(o.放行超时);
-  o._接收超时 = isTimeout(o.接收超时);
+  // 超时：以「超时分钟数」列为准，状态列（超时 / 未接收超时）兜底（D-36）
+  o._放行超时 = isTimeout(o.放行超时) || isTimeoutStatus(o.放行状态);
+  o._接收超时 = isTimeout(o.接收超时) || isTimeoutStatus(o.接收状态);
+  o._放行异常 = isAbnormalStatus(o.放行状态);
   // 已到达：实际放行门岗 == 流入门岗（且均非空）
   o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
   // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
@@ -1482,7 +1498,7 @@ function computeOrders() {
       超时: releaseTimeout || receiveTimeout,           // ★ 广义超时 = 放行超时 ∪ 接收超时
       在途超时: !arrived && releaseTimeout,             // ★ 在途超时流入门岗未放行
       超时未接收: arr.some(r => r._接收超时未接收),      // 任一记录超时未接收 → 整单超时未接收
-      放行异常: arr.some(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")),
+      放行异常: arr.some(r => r._放行异常),
       已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
       申请部门: arr[0].申请部门 || "",
       接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
@@ -2469,7 +2485,7 @@ function htmlRecords(p) {
   const col3 = p.recTag === "超时" ? "流出门岗" : p.recTag === "未接收" ? "流入门岗" : "放行物品";
   const cells = list;
   const body = cells.map(r => {
-    const abn = /异常|異常/.test(r.放行状态 || "");
+    const abn = isAbnormalStatus(r.放行状态);
     let tag = '<span class="tag tag-ok">已核驗</span>';
     if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
     else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">未接收</span>';
@@ -3623,7 +3639,7 @@ function saveViewPlugin(name) {
 // =====================================================================
 const CACHE = {
   db: "dashCacheData",
-  ver: 1,               // 结构版本：改动结构时递增，旧缓存自动作废
+  ver: 2,               // 结构版本（2：超时改认分钟数 + 新增 _放行异常，D-36）：改动结构时递增，旧缓存自动作废
   chunk: 2000,          // 每块行数（单条 IndexedDB 记录过大会拖慢读写）
   metaStore: "meta",
   rowStore: "rows",
@@ -4548,7 +4564,7 @@ function pushFeedItems(newRows, eventText) {
   const empty = box.querySelector(".empty");
   if (empty) empty.remove();
   newRows.forEach(r => {
-    const stCls = r._特保 ? "st-sp" : (String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")) ? "st-bad" : "st-ok";
+    const stCls = r._特保 ? "st-sp" : isAbnormalStatus(r.放行状态) ? "st-bad" : "st-ok";
     const el = document.createElement("div");
     el.className = "feedItem feedItem--new";
     el.innerHTML =
@@ -4632,16 +4648,17 @@ function liveTick() {
     const wasTimeout = o.放行超时;
     // 清原末笔超时标记（超时标记只在末笔），新末笔保持原单超时状态或按概率新增
     if (last._放行超时) {
-      last.放行超时 = 0; last._放行超时 = false;
+      last.放行超时 = 0; last._放行超时 = false; last.放行状态 = "正常";
       modifiedRows.push(last);
     }
+    const relTO = (wasTimeout || Math.random() < 0.25) ? demoMin() : 0;
     const rec = {
       申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
       申请人姓名: last.申请人, 申请人部门: last.申请部门,
       放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
       实际放行门岗: gate, 放行人姓名: pick(DEMO.people),
-      实际放行时间: now.format(fmt), 放行状态: Math.random() < 0.06 ? "異常" : "正常",
-      放行超时: wasTimeout ? 1 : (Math.random() < 0.25 ? 1 : 0),
+      实际放行时间: now.format(fmt), 放行状态: demoRelStatus(relTO),
+      放行超时: relTO,
       接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
       物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
     };
@@ -4655,26 +4672,27 @@ function liveTick() {
     const last = recs[recs.length - 1];
     const wasTimeout = o.放行超时;
     if (last._放行超时) {
-      last.放行超时 = 0; last._放行超时 = false;
+      last.放行超时 = 0; last._放行超时 = false; last.放行状态 = "正常";
       modifiedRows.push(last);
     }
+    const relTO = (wasTimeout || Math.random() < 0.12) ? demoMin() : 0;
     const rec = {
       申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
       申请人姓名: last.申请人, 申请人部门: last.申请部门,
       放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
       实际放行门岗: o.流入门岗, 放行人姓名: pick(DEMO.people),
-      实际放行时间: now.format(fmt), 放行状态: "正常",
-      放行超时: wasTimeout ? 1 : (Math.random() < 0.12 ? 1 : 0),
-      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      实际放行时间: now.format(fmt), 放行状态: relTO > 0 ? "超时" : "正常",
+      放行超时: relTO,
+      接收时间: "", 接收超时: 0, 接收状态: "未接收", 接收人姓名: "", 接收人部门: "",
       物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
     };
     // 40% 概率到达后立即完成接收
     if (Math.random() < 0.4) {
       rec.接收时间 = now.add(Math.floor(Math.random() * 20) + 5, "minute").format(fmt);
-      rec.接收状态 = "正常";
       rec.接收人姓名 = pick(DEMO.people);
       rec.接收人部门 = pick(DEMO.depts);
-      rec.接收超时 = Math.random() < 0.2 ? 1 : 0;
+      rec.接收超时 = Math.random() < 0.2 ? demoMin() : 0;
+      rec.接收状态 = rec.接收超时 > 0 ? "超时" : "正常";
     }
     const newRow = normalizeRow(rec);
     newRows.push(newRow); rows.push(newRow);
@@ -4686,10 +4704,10 @@ function liveTick() {
     const recs = rows.filter(r => r.放行单号 === o.单号);
     const rec = recs.find(r => r._已到达) || recs[recs.length - 1];
     rec.接收时间 = now.add(Math.floor(Math.random() * 30) + 1, "minute").format(fmt);
-    rec.接收状态 = "正常";
     rec.接收人姓名 = pick(DEMO.people);
     rec.接收人部门 = pick(DEMO.depts);
-    rec.接收超时 = Math.random() < 0.25 ? 1 : 0;
+    rec.接收超时 = Math.random() < 0.25 ? demoMin() : 0;
+    rec.接收状态 = rec.接收超时 > 0 ? "超时" : "正常";
     // 重算派生字段（_接收日期 / _接收超时未接收 等）
     const idx = rows.indexOf(rec);
     const newRow = normalizeRow(rec);
@@ -4789,6 +4807,9 @@ const DEMO = {
   units: ["PCS", "台", "箱", "批"]
 };
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+// 演示数据与现行导出格式一致：超时列写分钟数，放行状态 正常/超时/放行拒绝，接收状态 正常/超时/未接收/未接收超时
+const demoMin = () => 30 + Math.floor(Math.random() * 570);
+const demoRelStatus = to => to > 0 ? "超时" : (Math.random() < 0.06 ? "放行拒绝" : "正常");
 const pad = (n, l) => String(n).padStart(l, "0");
 
 // 模拟一张放行单（符合真实业务规则）：
@@ -4799,8 +4820,8 @@ function makeDemoOrder(time, seq) {
   const special = Math.random() < 0.18;  // 约18%为特级安保单（单号前缀 WF9897）
   const orderNo = `${special ? CONFIG.特保单号前缀 : CONFIG.普通单号标识}${time.format("YYMMDD")}${pad(1 + (seq % 999999), 6)}`;
   // —— 整单固定属性：物品类型/分类/申请人/门岗路线 ——
-  const itemType = special ? pick(["新产品A级物料", "新产品机台"]) : "普通物品";
-  const category = special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品")));
+  const itemType = special ? "特级安保物品" : "普通物品";
+  const category = special ? pick(["新产品A级物料", "新产品机台"]) : pick(DEMO.categories.filter(c => !c.includes("新产品")));
   const itemName = pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]);
   const applicant = pick(DEMO.people), dept = pick(DEMO.depts), qty = Math.ceil(Math.random() * 200);
   const from = pick(DEMO.gates);
@@ -4835,8 +4856,8 @@ function makeDemoOrder(time, seq) {
       "实际放行门岗": gate,
       "放行人姓名": pick(DEMO.people),
       "实际放行时间": t.format("YYYY/MM/DD HH:mm:ss"),
-      "放行状态": Math.random() < 0.06 ? "異常" : "正常",
-      "放行超时": (idx === path.length - 1 && releaseTimeout) ? 1 : 0,
+      "放行状态": (idx === path.length - 1 && releaseTimeout) ? "超时" : demoRelStatus(0),
+      "放行超时": (idx === path.length - 1 && releaseTimeout) ? demoMin() : 0,
       "接收时间": "",
       "接收超时": 0,
       "接收状态": "",
@@ -4853,13 +4874,13 @@ function makeDemoOrder(time, seq) {
     const lastRec = recs[recs.length - 1];
     if (recv) {
       lastRec["接收时间"] = t.add(Math.floor(Math.random() * 90) + 10, "minute").format("YYYY/MM/DD HH:mm:ss");
-      lastRec["接收状态"] = "正常";
+      lastRec["接收状态"] = recvTimeout ? "超时" : "正常";
       lastRec["接收人姓名"] = pick(DEMO.people);
       lastRec["接收人部门"] = pick(DEMO.depts);   // 接收人属收货方，部门取随机（与申请部门可不同）
     } else {
-      lastRec["接收状态"] = "未接收";
+      lastRec["接收状态"] = recvTimeout ? "未接收超时" : "未接收";
     }
-    if (recvTimeout) lastRec["接收超时"] = 1;
+    if (recvTimeout) lastRec["接收超时"] = demoMin();
   }
   return recs;
 }

@@ -30,7 +30,7 @@
 | 存储 | IndexedDB `dashCacheData`（`meta` + `rows` 两个 store），**只保留最近一份**（`metaKey: "latest"`） |
 | 分块 | 每 2000 行一条记录（`CACHE.chunk`），写入时逐块让出主线程 |
 | 序列化 | **`_申请日期/_放行日期/_接收日期` 必须转时间戳**（结构化克隆会丢 dayjs 原型，直接存会让恢复后 `.format()` 报错），读取时用 `dayjs(ts)` 重建 |
-| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废 |
+| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废。**改 `normalizeRow` 的派生字段（`_放行超时` 等）必须递增 `CACHE.ver`**，否则恢复出来的是旧判定（现为 2，D-36） |
 | 写入时机 | `processData()` 渲染完成后异步执行；**演示数据（`demoMode`）不写** |
 | 恢复 | `cacheRestore()` 重建 rows + `currentFileName` + `currentColOf`，并按 `_rowId` 最大值复位 `_rowSeq`（防与演示新增行撞 ID），然后 `renderAll()` |
 | 开关 | 默认开启，功能抽屉「💾 数据缓存」可关（`localStorage.dashCacheOff`）；关闭时同时清除已留存数据 |
@@ -63,7 +63,7 @@
 |------|------|
 | `<style>` | 默认液态玻璃 + 深色 `[data-mode="dark"]` |
 | `<body>` | 顶栏（状态 + 右侧功能抽屉）/ 上传 / 卡片网格 / 卡片库 / 二级详情 |
-| `CONFIG` | 字段映射、特保前缀、超时标记、性能阈值（**改业务规则只动这里**） |
+| `CONFIG` | 字段映射、特保前缀、超时标记 / 超时状态关键字 / 放行异常关键字、性能阈值（**改业务规则只动这里**） |
 | 解析 | `handleFile` / `findHeaderRow` / `firstNonEmptySheet` / `sheetToRowsChunked` |
 | Worker（保留未启用） | `PARSER_WORKER_SRC` / `parseViaWorker` |
 | 标准化 | `processData` / `normalizeRow` / `mapColumns` |
@@ -249,4 +249,4 @@ window.VIEW_PLUGIN = {
 
 ### 7.6 演示数据
 
-改业务规则时同步 `makeDemoOrder()`（以及如需测试文件则用 `gen_monitor_data_v3.py`）：分类整单固定、超时标记打末笔、特保前缀 WF9897。
+改业务规则时同步 `makeDemoOrder()`（以及如需测试文件则用 `gen_monitor_data_v3.py`）：分类整单固定、超时打末笔、特保前缀 WF9897。演示数据须与现行导出格式一致（D-36）：超时列写分钟数；`放行状态` 正常 / 超时 / 放行拒绝；`接收状态` 正常 / 超时 / 未接收 / 未接收超时；`物品类型` 普通物品 / 特级安保物品。
