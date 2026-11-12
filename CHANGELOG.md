@@ -9,11 +9,15 @@
 
 ## 进行中
 
-无。
+- **GDMS 视图重做（`docs/prototypes/gdms-view-redesign/`，`status: draft`）**：原型与 HANDOFF 已写完，**等用户评审**。主文件一行未动。下一步：用户把 HANDOFF 改 `approved` 后，按 HANDOFF §6 改主文件 6 张 `gdms_*` 卡与 `BUILTIN_LAYOUTS["GDMS超时管控"]`。未 `approved` 前不要动主文件；时间段分档与部门归并是**新口径**，实现时须同步 CONTEXT + DECISIONS。
 
 <!-- 明天接着改时：把未做完的写在这里（做到哪、下一步、不要动什么）。做完后删掉或迁到当日记录。 -->
 
 ---
+
+## 2026-11-12
+
+- 新增设计原型 `docs/prototypes/gdms-view-redesign/`（`status: draft`，Claude Code 代笔）：仿 GDMS「放行物品监测」大屏重排「GDMS超时管控」视图为 3×2 六模块，去掉三个厂区圆。无行为变化：只加原型与 HANDOFF，主文件未改。
 
 ## 2026-10-27
 

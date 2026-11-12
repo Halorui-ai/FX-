@@ -23,6 +23,7 @@ docs/prototypes/
 |---|---|---|
 | [`completion-rate-card/`](completion-rate-card/HANDOFF.md) | `shipped` | 结案率水球图中卡(M)/大卡(L)；S 小卡不变。已实现进主文件（2026-09-23）。 |
 | [`order-timeline/`](order-timeline/HANDOFF.md) | `shipped` | 单据全生命周期时间线（形态 A）：申请 → 放行各门岗 → 接收 + 段耗时 + 最长卡点。已按 D-34 落地进主文件（2026-10-13）；形态 B/C 规格仍在 HANDOFF §3，未实现。 |
+| [`gdms-view-redesign/`](gdms-view-redesign/HANDOFF.md) | `draft` | 「GDMS超时管控」视图重做：仿 GDMS 大屏的 3×2 六模块（去掉三个厂区圆，保留 8 格汇总），加 ALL / MP / NPI 与 日 / 周 / 月 切换。待用户评审，**未实现**。 |
 
 ## 流程
 
