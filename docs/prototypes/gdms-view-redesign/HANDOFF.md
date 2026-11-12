@@ -5,12 +5,12 @@
 原型图表是手绘 SVG，数字是脚本生成的演示数据；实现时换 ECharts，数字一律走 `orders` / `computeStats`。
 
 ```yaml
-status: draft          # draft | approved | implementing | shipped
+status: implementing   # draft | approved | implementing | shipped —— 已实现进主文件，待用户本机 file:// 验收后改 shipped
 owner_design: Claude Code（用户指定代笔设计，2026-11-12）
 owner_impl: Claude Code
-approved_by:
-approved_at:           # YYYY-MM-DD
-freeze:                # 审批后填：3×2 骨架 / 六卡标题与图形 / 8 格顺序 / 两组切换的位置 / 状态色
+approved_by: 用户（"原型也没问题"）
+approved_at: 2026-11-12
+freeze:                # 3×2 骨架 / 六卡标题与图形 / 8 格顺序 / 两组切换的位置 / 状态色
 must_not_change:       # 特保只认 WF9897；订单级；D-2 广义超时；结案率公式；D-33 状态色；顶栏与主题机制；四张业务 KPI 与结案率卡
 impl_touch:            # CONFIG（字段映射 + GDMS 配置）/ computeOrders（带出申请人、分机）/ 新增 computeGdmsStats / CARD_DEFS 6 张 gdms_* / optionBuilders / BUILTIN_LAYOUTS["GDMS超时管控"]
 ```
@@ -103,7 +103,7 @@ impl_touch:            # CONFIG（字段映射 + GDMS 配置）/ computeOrders�
 
 **业务定义（用户 2026-11-12）**：超时时长 = 上一个门岗放行之后，下一个门岗该放行而没放行，隔了多久。
 
-**取数（待用户确认）**：准确导出里 `放行超时` 列本身就是**超时分钟数**（D-36），系统已按上述定义算好，直接用：
+**取数（用户 2026-11-12 确认）**：准确导出里 `放行超时` 列本身就是**超时分钟数**（D-36），系统已按上述定义算好，直接用：
 
 - 每单超时时长 = 该单各记录 `放行超时` 分钟数的最大值；只对 `o.放行超时` 的单计算。
 - 需在 `normalizeRow` 留 `_放行超时分钟`（数字，非数字记 `null`），`computeOrders` 带出 `放行超时分钟`。
@@ -150,6 +150,8 @@ impl_touch:            # CONFIG（字段映射 + GDMS 配置）/ computeOrders�
 ---
 
 ## 6. 实现清单
+
+> 以下 7 项已于 2026-11-12 全部完成（D-37）。与原稿的出入：图表颜色改为构造 option 时读主题变量，主题 / 深浅色切换后自动重渲；`computeStats` 里 GDMS 专用的 `timeoutByCat` / `timeoutByDept` / `timeoutTrend` 一并移到 `computeGdmsStats`。
 
 1. `CONFIG`：加 `申请人分机` 映射；加 `GDMS: { 时长分档, 部门超时率预警, 部门归并 }`。缓存 `CACHE.ver` +1（订单多了字段来源列）。
 2. `computeOrders`：带出 `申请人`、`申请人分机`（首个非空）。

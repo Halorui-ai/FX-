@@ -30,7 +30,7 @@
 | 存储 | IndexedDB `dashCacheData`（`meta` + `rows` 两个 store），**只保留最近一份**（`metaKey: "latest"`） |
 | 分块 | 每 2000 行一条记录（`CACHE.chunk`），写入时逐块让出主线程 |
 | 序列化 | **`_申请日期/_放行日期/_接收日期` 必须转时间戳**（结构化克隆会丢 dayjs 原型，直接存会让恢复后 `.format()` 报错），读取时用 `dayjs(ts)` 重建 |
-| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废。**改 `normalizeRow` 的派生字段（`_放行超时` 等）必须递增 `CACHE.ver`**，否则恢复出来的是旧判定（现为 2，D-36） |
+| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废。**改 `normalizeRow` 的派生字段（`_放行超时` 等）必须递增 `CACHE.ver`**，否则恢复出来的是旧判定（现为 3，D-36 / D-37） |
 | 写入时机 | `processData()` 渲染完成后异步执行；**演示数据（`demoMode`）不写** |
 | 恢复 | `cacheRestore()` 重建 rows + `currentFileName` + `currentColOf`，并按 `_rowId` 最大值复位 `_rowSeq`（防与演示新增行撞 ID），然后 `renderAll()` |
 | 开关 | 默认开启，功能抽屉「💾 数据缓存」可关（`localStorage.dashCacheOff`）；关闭时同时清除已留存数据 |
@@ -69,6 +69,7 @@
 | 标准化 | `processData` / `normalizeRow` / `mapColumns` |
 | 数据缓存 | `CACHE` / `cacheSave` / `cacheRestore` / `cacheClear` / `renderCacheRestore`（IndexedDB，只留最近一份） |
 | 计算 | `computeOrders` / `computeStats` |
+| GDMS 统计与卡片公共件 | `gdmsState` / `gdmsScope` / `computeGdmsStats(scope)` / `computeGdmsTrend(scope, grain)` / `gdmsDeptL1` / `gdmsChart` / `gdmsSeg` / `gdmsHeadExtra` / `gdmsExport`；图表统一走 `optionBuilders.gdmsCombo` |
 | 卡片 | `CARD_DEFS` / `optionBuilders` / `BUILTIN_LAYOUTS` |
 | 详情 | `KPI_DETAIL` / `openDetail` |
 | 单据追踪 | `openTrace` / `renderTrace` / `renderTraceAxis` / `renderTraceTable` / `traceNodes` / `traceState`（纵向时间轴；与详情共用 `#detailOverlay`，靠 `.trace-mode` 切换宽度与容器） |
@@ -103,7 +104,9 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 
 结案率 `kpi_rate` 同档位阈值；S=liquid 水球（默认常为 8×4 仍 compact）；M=左水球（随栏高缩放）+右三指标+底注；L=水球图例|进度条|待关注列表，三栏按比例变宽，Tab「总览/特保/非特保」在标题右侧。四张业务大卡中栏为引导线大环，图例横排。编辑态四角角标内收，对齐卡片 16px 圆角。大卡右栏滚动条用 `--sb-size` / `--sb-radius` / `--sb-thumb`，随主题变。
 
-内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维、GDMS，不在管理层精简视图里。KPI 自适应档位见上一小节。
+内置视图：默认 / 管理层 / 一线 / 运维 / GDMS超时管控。自定义布局存 `localStorage.dashLayouts`，与数据无关。卡 A/B（`chart_gate_stuck` / `chart_gate_load`）已放入默认、一线、运维，不在管理层与 GDMS 视图里。
+
+**GDMS超时管控视图（D-37）**：六张 `gdms_*` 卡各 `8×8`，排成 3×2，一屏看完（仿 GDMS 大屏）。六卡共用范围 `gdmsState.scope`（ALL / MP / NPI），控件在 `gdms_timeout_trend` 卡头，切换时 `gdmsRerender()` 重渲所有 `gdms_*` 卡；统计走 `computeGdmsStats(scope)` / `computeGdmsTrend(scope, grain)`，按范围缓存在 `_gdmsCache`，随 `invalidateStats()` 失效——**不要把范围塞进 `computeStats()`**。卡头控件（分段 Tab / 范围徽标 / 状态下拉 / 导出）用 `gdmsHeadExtra()` 插在标题与 ✕ 之间，同卡同 key 只建一次。`gdmsCombo` 的颜色在构造 option 时读主题变量（`--bad` / `--warn` / `--ok` / `--accent` / `--txt`…），所以深浅色或主题切换后由一个 `MutationObserver` 触发重渲。KPI 自适应档位见上一小节。
 
 ### 状态色语义（D-33）
 
