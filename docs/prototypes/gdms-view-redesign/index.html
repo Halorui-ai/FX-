@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-mode="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原型 · GDMS 超时管控视图重做</title>
+<!--
+  设计原型（不是交付物）。现行产品仍是根目录 dashboard-release-monitor-v5.6.html。
+  自包含、零依赖：双击即可打开，无任何外部请求。图表为手绘 SVG，实现时换成 ECharts。
+  内容：仿 GDMS「放行物品监测」大屏的 3×2 六模块（去掉中央三个厂区圆，只留 8 格汇总）。
+  页面上所有数字来自脚本里的演示数据，仅用于看布局与交互。
+  规格见同目录 HANDOFF.md（status: draft）。
+-->
+<style>
+/* ===== Token：与主文件默认主题 :root 一致（9 套主题只是换这组变量） ===== */
+:root{
+  --bg:#eef1f6;
+  --line:rgba(0,0,0,0.08);
+  --txt:#1d1d1f; --txt2:rgba(0,0,0,0.50);
+  --accent:#0071e3; --accent2:#2997ff;
+  --ok:#34c759; --bad:#ff3b30; --warn:#ff9f0a; --purple:#5e5ce6; --cyan:#00b8d4;
+  --brand:#2f7cf6;
+  --card-face:rgba(255,255,255,.74); --panel:rgba(255,255,255,.56); --track:rgba(31,41,55,.08);
+  --danger-soft:rgba(240,77,62,.12); --halo:#fff;
+}
+[data-mode="dark"]{
+  --bg:#0d1117; --line:rgba(255,255,255,0.10);
+  --txt:#e6edf3; --txt2:rgba(255,255,255,0.55);
+  --accent:#58a6ff; --accent2:#79c0ff;
+  --ok:#3fb950; --bad:#f85149; --warn:#d29922; --purple:#bc8cff; --cyan:#39d2e0;
+  --brand:#5b9bff;
+  --card-face:rgba(255,255,255,.05); --panel:rgba(255,255,255,.06); --track:rgba(220,230,245,.12);
+  --danger-soft:rgba(248,81,73,.16); --halo:#161b22;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{color:var(--txt);font-size:14px;padding:18px 22px;min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+
+/* ===== 顶栏（示意，主文件顶栏不改） ===== */
+#topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;margin-bottom:10px;
+  border:1px solid rgba(255,255,255,.40);border-radius:16px;background:rgba(255,255,255,.08);
+  box-shadow:0 4px 24px rgba(0,0,0,.04), inset 0 1px 0 rgba(255,255,255,.35)}
+[data-mode="dark"] #topbar{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+#topbar h1{font-size:20px;font-weight:600;letter-spacing:-.3px}
+#topbar .sub{color:var(--txt2);font-size:12px;margin-top:3px}
+#topbar .sp{flex:1}
+.pill{border:1px solid var(--line);background:var(--panel);color:var(--txt);border-radius:980px;padding:6px 14px;font-size:13px}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
+.note{font-size:12px;color:var(--txt2);margin:0 4px 12px;line-height:1.6}
+.note b{color:var(--txt);font-weight:600}
+
+/* ===== 网格：对应主文件 gridstack 24 列 × 行高 48px，六卡各 8 列 × 8 行 ===== */
+#grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:384px;gap:12px}
+@media (max-width:1180px){#grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){#grid{grid-template-columns:minmax(0,1fr)} body{padding:14px 16px}}
+
+.cardSlot{display:flex;flex-direction:column;min-width:0;min-height:0;padding:14px 16px;border-radius:16px;
+  background:var(--card-face);border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 4px 24px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.5)}
+[data-mode="dark"] .cardSlot{border-color:rgba(255,255,255,.10);box-shadow:none}
+.cardHead{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex:none;min-height:30px}
+.cardTitle{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cardBody{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* 分段 Tab：照主文件 .kpi-seg */
+.seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel);border:1px solid var(--line);flex:none}
+.seg button{border:0;background:transparent;font-size:12px;line-height:18px;color:var(--txt2);padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap}
+.seg button:hover{color:var(--txt)}
+.seg button.on{background:rgba(255,255,255,.9);color:var(--brand);box-shadow:0 2px 8px rgba(28,45,74,.12)}
+[data-mode="dark"] .seg button.on{background:rgba(255,255,255,.1);box-shadow:none}
+
+/* 范围徽标：筛选不是 ALL 时，其余五张卡标题旁提示当前范围 */
+.scopeChip{flex:none;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:var(--brand);
+  background:rgba(47,124,246,.12);display:none}
+body[data-scope="MP"] .scopeChip,body[data-scope="NPI"] .scopeChip{display:inline-block}
+.warnTag{flex:none;font-size:11px;font-weight:600;color:var(--bad);white-space:nowrap}
+
+/* 图例 */
+.legend{display:flex;gap:14px;justify-content:flex-end;flex-wrap:wrap;font-size:11.5px;color:var(--txt2);margin-bottom:2px;flex:none}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend i.ln{height:3px;border-radius:2px;vertical-align:3px;width:14px}
+.chart{flex:1;min-height:0;position:relative}
+.chart svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.chart text{font-size:11px;fill:var(--txt2);font-variant-numeric:tabular-nums}
+.chart text.v{fill:var(--txt);font-weight:600}
+.chart text.ln{font-weight:600;paint-order:stroke;stroke:var(--halo);stroke-width:3px;stroke-linejoin:round}
+.chart .gridl{stroke:var(--line);stroke-width:1}
+.empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt2);font-size:13px}
+
+/* 8 格汇总 */
+.sumGrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:10px}
+.sumCell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;
+  border-radius:12px;background:var(--panel);border:1px solid var(--line);padding:14px 6px 10px;overflow:hidden}
+.sumCell::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.sumCell .l{font-size:12px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.sumCell .n{font-size:30px;font-weight:700;line-height:1;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--c)}
+.sumCell .s{font-size:11px;color:var(--txt2);white-space:nowrap}
+.sumCell.link{cursor:pointer}
+.sumCell.link .n{border-bottom:1px dashed currentColor;padding-bottom:2px}
+.sumCell.link:hover{border-color:var(--c)}
+@media (max-width:1400px){.sumCell .n{font-size:24px}}
+
+/* 未结案表 */
+.tblBar{display:flex;align-items:center;gap:8px;flex:none}
+.tblBar select{font:inherit;font-size:12px;color:var(--txt);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 6px;max-width:150px}
+.tblBar .exp{border:1px solid var(--line);background:var(--panel);color:var(--accent);border-radius:8px;padding:3px 10px;font-size:12px}
+.tblBar .exp:hover{border-color:var(--accent)}
+.tblWrap{flex:1;min-height:0;overflow:auto;border-radius:10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--bg);text-align:left;padding:7px 6px;font-weight:600;color:var(--txt2);border-bottom:1px solid var(--line)}
+tbody td{padding:6px 6px;border-bottom:1px solid var(--line);color:var(--txt2);max-width:104px;overflow:hidden;text-overflow:ellipsis}
+tbody td.no{max-width:none;font-family:Consolas,"SF Mono",Menlo,monospace;color:var(--txt);font-weight:600}
+tbody td.no span{cursor:pointer;border-bottom:1px dashed currentColor}
+tbody td.no span:hover{color:var(--accent)}
+.tag{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;font-weight:600;background:var(--danger-soft);color:var(--bad)}
+.tblFoot{flex:none;font-size:11.5px;color:var(--txt2);margin-top:6px;text-align:right}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,24,32,.92);color:#fff;font-size:13px;
+  padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:86vw}
+#toast.on{opacity:1}
+</style>
+</head>
+<body data-scope="ALL">
+
+<div id="topbar">
+  <div>
+    <h1>物品放行监控数据看板</h1>
+    <div class="sub">当前视图：GDMS超时管控（原型 · 演示数据）</div>
+  </div>
+  <div class="sp"></div>
+  <button class="pill" id="btnMode">切换深 / 浅色</button>
+</div>
+<div class="note">
+  <b>可试：</b>① 左上卡切 ALL / MP / NPI（六张卡一起变）与 日 / 周 / 月 ② 右下表切状态、点「导出」 ③ 点「放行单总数」「NPI物料」两格（实现后进现有二级详情） ④ 右上切深浅色。
+  主文件的顶栏、主题、时间范围筛选都不变；这里只重排「GDMS超时管控」视图里的六张卡。
+</div>
+
+<div id="grid">
+  <!-- 1 放行物品超时监测 -->
+  <section class="cardSlot">
+    <div class="cardHead">
+      <div class="cardTitle">放行物品超时监测</div>
+      <div class="seg" id="segScope"><button data-v="ALL" class="on">ALL</button><button data-v="MP">MP</button><button data-v="NPI">NPI</button></div>
+      <div class="seg" id="segGrain"><button data-v="day" class="on">日</button><button data-v="week">周</button><button data-v="month">月</button></div>
+    </div>
+    <div class="cardBody">
+      <div class="legend"><span><i style="background:var(--warn)"></i>总超时</span><span><i style="background:var(--bad)"></i>超时未结案</span><span><i class="ln" style="background:var(--ok)"></i>结案率</span></div>
+      <div class="chart" id="cTrend"></div>
+    </div>
+  </section>
+
+  <!-- 2 放行汇总 8 格 -->
+  <section class="cardSlot">
+    <div class="cardHead"><div class="cardTitle">放行汇总指标</div><span class="scopeChip"></span></div>
+    <div class="cardBody"><div class="sumGrid" id="sumGrid"></div></div>
+  </section>
+
+  <!-- 3 放行超时By物品类型 -->
+  <section class="cardSlot">
+    <div class="cardHead"><div class="cardTitle">放行超时By物品类型</div><span class="scopeChip"></span></div>
+    <div class="cardBody">
+      <div class="legend"><span><i style="background:var(--bad)"></i>放行超时单</span></div>
+      <div class="chart" id="cCat"></div>
+    </div>
+  </section>
+
+  <!-- 4 放行超时By部门 -->
+  <section class="cardSlot">
+    <div class="cardHead"><div class="cardTitle">放行超时By部门分析</div><span class="scopeChip"></span><span class="warnTag">预警：超时率 ≥ 2.5%</span></div>
+    <div class="cardBody">
+      <div class="legend"><span><i style="background:var(--bad)"></i>超时数</span><span><i class="ln" style="background:var(--accent)"></i>超时率</span><span><i class="ln" style="background:var(--bad);opacity:.55"></i>预警线</span></div>
+      <div class="chart" id="cDept"></div>
+    </div>
+  </section>
+
+  <!-- 5 放行超时By时间段 -->
+  <section class="cardSlot">
+    <div class="cardHead"><div class="cardTitle">物品放行超时By时间段分析</div><span class="scopeChip"></span></div>
+    <div class="cardBody">
+      <div class="legend"><span><i style="background:var(--bad);opacity:.4"></i>总超时</span><span><i style="background:var(--bad)"></i>超时未结案</span><span><i class="ln" style="background:var(--accent)"></i>超时率</span></div>
+      <div class="chart" id="cDur"></div>
+    </div>
+  </section>
+
+  <!-- 6 超时未结案查询 -->
+  <section class="cardSlot">
+    <div class="cardHead">
+      <div class="cardTitle">物品放行超时未结案查询</div><span class="scopeChip"></span>
+      <div class="tblBar">
+        <select id="selState" aria-label="状态">
+          <option value="open">未结案</option>
+          <option value="closed">已到达（超时）</option>
+          <option value="all">全部放行超时</option>
+        </select>
+        <button class="exp" id="btnExport">导出</button>
+      </div>
+    </div>
+    <div class="cardBody">
+      <div class="tblWrap"><table><thead><tr><th>序号</th><th>放行单号</th><th>部门</th><th>姓名</th><th>分机</th><th>状态</th></tr></thead><tbody id="tb"></tbody></table></div>
+      <div class="tblFoot" id="tblFoot"></div>
+    </div>
+  </section>
+</div>
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+ * 演示数据：固定种子生成约 1800 单，仅供原型展示。实现时一律走 computeStats / orders。
+ * ===================================================================== */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(20261112), pick=a=>a[Math.floor(R()*a.length)];
+const TODAY=new Date(2026,10,12);
+const DEPTS=["MLB 撕石墨片 A線_ZZ","MLB 組裝 測試線_ZZ","MFG 網站 SW 自動化1組_鄭州","MFG 網站 SW 自動化2組_鄭州","FATP GW2設備課_鄭州",
+  "物流 倉儲課_鄭州","設備 工程課_鄭州","新產品 試製線_鄭州","QA 來料檢驗_ZZ","SMT 一課_鄭州"];
+const DEPT_W=[5,4,6,4,5,2,3,2,2,3];
+const NAMES=["劉斌","周勇","趙飛","張巧莉","郝強","馬萬玉","王偉","李娜","陳靜","楊帆","黃磊","吳婷","鄭浩","孫琳"];
+const CAT_MP=["生產物料(非A類)","生產物料(非A類)","生產物料(非A類)","耗材","资讯物品","设备"];
+const CAT_NPI=["A级物料","新产品机台"];
+
+/* 一级部门归并规则（HANDOFF §4.2）：先去掉末尾「_厂区」后缀，再取第一个空格之前的部分 */
+function deptL1(name){
+  const s=String(name||"").trim().replace(/_[^_]*$/,"").trim();
+  return s?s.split(/\s+/)[0]:"（空）";
+}
+function pickDept(){let t=R()*DEPT_W.reduce((a,b)=>a+b,0);for(let i=0;i<DEPTS.length;i++){t-=DEPT_W[i];if(t<0)return DEPTS[i]}return DEPTS[0]}
+
+const ORDERS=[];
+for(let d=89;d>=0;d--){
+  const day=new Date(TODAY);day.setDate(day.getDate()-d);
+  const wk=day.getDay(), n=(wk===0||wk===6)?Math.round(4+R()*8):Math.round(18+R()*14);
+  for(let i=0;i<n;i++){
+    const special=R()<0.06, dept=pickDept();
+    const relTO=R()<(special?0.10:0.045);
+    const arrived=relTO?R()<0.62:(d<=1?R()<0.7:R()<0.985);
+    const recvTO=arrived&&R()<0.025;
+    const u=R(), dur=u<.18?5+R()*25:u<.42?31+R()*29:u<.78?61+R()*179:241+R()*900;
+    ORDERS.push({
+      no:(special?"WF9897":"WF7501")+String(day.getFullYear()).slice(2)+String(day.getMonth()+1).padStart(2,"0")+String(day.getDate()).padStart(2,"0")+String(100000+ORDERS.length),
+      special, cat:special?pick(CAT_NPI):pick(CAT_MP), dept, l1:deptL1(dept), name:pick(NAMES),
+      ext:R()<0.5?String(30000+Math.floor(R()*39999)):(500+Math.floor(R()*99))+"-"+(80000+Math.floor(R()*9999)),
+      day, relTO, arrived, recvTO, dur:relTO?dur:null
+    });
+  }
+}
+
+/* ===== 状态 ===== */
+const state={scope:"ALL",grain:"day",tbl:"open"};
+const inScope=o=>state.scope==="ALL"||(state.scope==="NPI")===o.special;
+const pct=(a,b)=>b?a/b:0, fmtPct=(v,d)=>(v*100).toFixed(d==null?1:d).replace(/\.0$/,"")+"%";
+const two=n=>String(n).padStart(2,"0");
+
+/* ===== 通用组合图：柱（左轴，单）+ 折线（右轴，%）。实现时换 ECharts，同一份数据结构 ===== */
+function combo(el,cfg){
+  const W=el.clientWidth,H=el.clientHeight; if(!W||!H)return;
+  const n=cfg.cats.length;
+  if(!n||(cfg.bars.every(b=>b.data.every(v=>!v))&&!cfg.keepEmpty)){el.innerHTML='<div class="empty" style="height:100%">✅ 当前范围内没有放行超时单</div>';return}
+  const rot=cfg.rotate&&W/n<74, padL=30,padR=cfg.line?40:10,padT=20,padB=rot?46:24;
+  const pw=W-padL-padR,ph=H-padT-padB;
+  const rawMax=Math.max(1,...cfg.bars.flatMap(b=>b.data));
+  const maxL=[4,8,12,16,20,40,60,80,100,120,160,200,400,600,800,1000,2000,4000,8000].find(v=>v>=rawMax)||Math.ceil(rawMax/4)*4;
+  const maxR=cfg.line?(cfg.line.max||1):1;
+  const y=v=>padT+ph-(v/maxL)*ph, yr=v=>padT+ph-(Math.min(v,maxR)/maxR)*ph;
+  const band=pw/n, k=cfg.bars.length, bw=Math.max(4,Math.min(26,band*0.62/k)), gap=k>1?3:0;
+  let s='';
+  for(let i=0;i<=4;i++){
+    const v=maxL*i/4, yy=y(v);
+    s+='<line class="gridl" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yy+'" y2="'+yy+'"/>';
+    s+='<text x="'+(padL-6)+'" y="'+(yy+4)+'" text-anchor="end">'+(Number.isInteger(v)?v:v.toFixed(1))+'</text>';
+    if(cfg.line)s+='<text x="'+(W-padR+6)+'" y="'+(yy+4)+'">'+fmtPct(maxR*i/4,maxR<0.2?1:0)+'</text>';
+  }
+  if(cfg.line&&cfg.warn!=null&&cfg.warn<=maxR){
+    const yy=yr(cfg.warn);
+    s+='<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yy+'" y2="'+yy+'" style="stroke:var(--bad);opacity:.55;stroke-dasharray:5 4;stroke-width:1.5"/>';
+  }
+  const showVal=band>=24, showLn=band>=44;
+  cfg.cats.forEach((c,i)=>{
+    const cx=padL+band*(i+.5), x0=cx-(k*bw+(k-1)*gap)/2;
+    cfg.bars.forEach((b,j)=>{
+      const v=b.data[i], h=Math.max(v?2:0,(v/maxL)*ph), x=x0+j*(bw+gap);
+      s+='<rect x="'+x+'" y="'+(padT+ph-h)+'" width="'+bw+'" height="'+h+'" rx="'+Math.min(4,bw/2)+'" style="fill:'+b.color+';opacity:'+(b.opacity||1)+'"><title>'+esc(c)+' · '+b.name+'：'+v+' 单</title></rect>';
+      if(showVal&&v)s+='<text class="v" x="'+(x+bw/2)+'" y="'+(padT+ph-h-4)+'" text-anchor="middle">'+v+'</text>';
+    });
+    if(rot)s+='<text transform="translate('+cx+','+(padT+ph+12)+') rotate(-32)" text-anchor="end">'+esc(c)+'</text>';
+    else s+='<text x="'+cx+'" y="'+(padT+ph+16)+'" text-anchor="middle">'+esc(c)+'</text>';
+  });
+  if(cfg.line){
+    const pts=cfg.line.data.map((v,i)=>[padL+band*(i+.5),yr(v),v]);
+    s+='<polyline fill="none" points="'+pts.map(p=>p[0]+','+p[1]).join(' ')+'" style="stroke:'+cfg.line.color+';stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round"/>';
+    pts.forEach((p,i)=>{
+      s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.5" style="fill:var(--bg);stroke:'+cfg.line.color+';stroke-width:2"><title>'+esc(cfg.cats[i])+' · '+cfg.line.name+'：'+fmtPct(p[2])+'</title></circle>';
+      if(showLn&&cfg.line.labels)s+='<text class="ln" x="'+p[0]+'" y="'+Math.max(10,p[1]-8)+'" text-anchor="middle" style="fill:'+cfg.line.color+'">'+fmtPct(p[2],maxR<0.2?1:0)+'</text>';
+    });
+  }
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(cfg.label)+'">'+s+'</svg>';
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function niceRateMax(arr,floor){const m=Math.max(floor||0,...arr);return [0.04,0.08,0.1,0.2,0.4,0.6,0.8,1].find(x=>m<=x)||1}
+
+/* ===== 各卡 ===== */
+function bucketKey(d){
+  if(state.grain==="day")return {k:+d,l:two(d.getMonth()+1)+"/"+two(d.getDate())};
+  if(state.grain==="week"){const m=new Date(d);m.setDate(m.getDate()-((m.getDay()+6)%7));return {k:+m,l:two(m.getMonth()+1)+"/"+two(m.getDate())+"周"}}
+  return {k:d.getFullYear()*100+d.getMonth(),l:d.getFullYear()+"/"+two(d.getMonth()+1)};
+}
+function renderTrend(list){
+  const m=new Map();
+  list.forEach(o=>{const b=bucketKey(o.day);if(!m.has(b.k))m.set(b.k,{l:b.l,a:[]});m.get(b.k).a.push(o)});
+  const keep={day:14,week:12,month:12}[state.grain];
+  const bs=[...m.entries()].sort((a,b)=>a[0]-b[0]).slice(-keep).map(e=>e[1]);
+  combo(document.getElementById("cTrend"),{label:"超时与结案率趋势",cats:bs.map(b=>b.l),keepEmpty:true,rotate:true,
+    bars:[{name:"总超时",color:"var(--warn)",data:bs.map(b=>b.a.filter(o=>o.relTO||o.recvTO).length)},
+          {name:"超时未结案",color:"var(--bad)",data:bs.map(b=>b.a.filter(o=>o.relTO&&!o.arrived).length)}],
+    line:{name:"结案率",color:"var(--ok)",max:1,labels:true,data:bs.map(b=>{
+      const closed=b.a.filter(o=>o.arrived&&!o.relTO).length, scoped=closed+b.a.filter(o=>o.relTO).length;return scoped?closed/scoped:1})}});
+}
+function renderSummary(list){
+  const N=list.length, npi=list.filter(o=>o.special), gen=list.filter(o=>!o.special&&/生產物料|生产物料/.test(o.cat));
+  const to=list.filter(o=>o.relTO||o.recvTO), toN=to.filter(o=>o.special);
+  const cells=[
+    ["放行单总数",N,"var(--accent)","全部放行单",1],
+    ["NPI物料",npi.length,"var(--purple)","占 "+fmtPct(pct(npi.length,N)),1],
+    ["一般物料",gen.length,"var(--accent2)","占 "+fmtPct(pct(gen.length,N))],
+    ["非物料类",N-npi.length-gen.length,"var(--cyan)","占 "+fmtPct(pct(N-npi.length-gen.length,N))],
+    ["超时总数",to.length,"var(--warn)","超时率 "+fmtPct(pct(to.length,N))],
+    ["NPI超时总数",toN.length,"var(--purple)","占 NPI "+fmtPct(pct(toN.length,npi.length))],
+    ["特保物料超时",toN.filter(o=>o.cat==="A级物料").length,"var(--purple)","A级物料"],
+    ["特保机台超时",toN.filter(o=>o.cat==="新产品机台").length,"var(--purple)","新产品机台"]
+  ];
+  document.getElementById("sumGrid").innerHTML=cells.map(c=>
+    '<div class="sumCell'+(c[4]?' link':'')+'" style="--c:'+c[2]+'"'+(c[4]?' data-detail="'+c[0]+'"':'')+'><div class="l">'+c[0]+'</div><div class="n">'+c[1].toLocaleString()+'</div><div class="s">'+c[3]+'</div></div>').join("");
+}
+function renderCat(list){
+  const g={};list.filter(o=>o.relTO).forEach(o=>g[o.cat]=(g[o.cat]||0)+1);
+  const e=Object.entries(g).sort((a,b)=>b[1]-a[1]);
+  combo(document.getElementById("cCat"),{label:"放行超时按物品分类",cats:e.map(x=>x[0]),rotate:true,bars:[{name:"放行超时",color:"var(--bad)",data:e.map(x=>x[1])}]});
+}
+function renderDept(list){
+  const g={};list.forEach(o=>{const d=g[o.l1]||(g[o.l1]={n:0,t:0});d.n++;if(o.relTO)d.t++});
+  const e=Object.entries(g).filter(x=>x[1].t>0).sort((a,b)=>b[1].t-a[1].t).slice(0,8);
+  const rates=e.map(x=>x[1].t/x[1].n);
+  combo(document.getElementById("cDept"),{label:"放行超时按一级部门",cats:e.map(x=>x[0]),rotate:true,warn:0.025,
+    bars:[{name:"超时数",color:"var(--bad)",data:e.map(x=>x[1].t)}],
+    line:{name:"超时率",color:"var(--accent)",max:niceRateMax(rates,0.03),labels:true,data:rates}});
+}
+const DUR=[["X≤30min",30],["30min<X≤1H",60],["1H<X≤4H",240],["X>4H",Infinity]];
+function renderDur(list){
+  const N=list.length, to=list.filter(o=>o.relTO), idx=o=>DUR.findIndex(b=>o.dur<=b[1]);
+  const all=DUR.map((b,i)=>to.filter(o=>idx(o)===i).length), open=DUR.map((b,i)=>to.filter(o=>!o.arrived&&idx(o)===i).length);
+  const rates=all.map(v=>pct(v,N));
+  combo(document.getElementById("cDur"),{label:"放行超时按时间段",cats:DUR.map(b=>b[0]),
+    bars:[{name:"总超时",color:"var(--bad)",opacity:.4,data:all},{name:"超时未结案",color:"var(--bad)",data:open}],
+    line:{name:"超时率",color:"var(--accent)",max:niceRateMax(rates,0.02),labels:true,data:rates}});
+}
+function tableRows(list){
+  const to=list.filter(o=>o.relTO).sort((a,b)=>b.day-a.day);
+  return state.tbl==="open"?to.filter(o=>!o.arrived):state.tbl==="closed"?to.filter(o=>o.arrived):to;
+}
+function renderTable(list){
+  const rows=tableRows(list), show=rows.slice(0,50);
+  document.getElementById("tb").innerHTML=show.length?show.map((o,i)=>
+    '<tr><td>'+(i+1)+'</td><td class="no"><span data-order="'+o.no+'" title="点击查看该单全链路">'+o.no+'</span></td><td title="'+esc(o.dept)+'">'+esc(o.dept)+'</td><td>'+o.name+'</td><td>'+o.ext+'</td>'+
+    '<td><span class="tag">'+(o.arrived?"到达超时":"未结案")+'</span></td></tr>').join("")
+    :'<tr><td colspan="6" style="text-align:center;padding:28px 0">✅ 暂无符合条件的单</td></tr>';
+  document.getElementById("tblFoot").textContent="共 "+rows.length+" 单"+(rows.length>show.length?"，表内显示前 "+show.length+" 单；导出为全部":"");
+}
+function renderAll(){
+  document.body.dataset.scope=state.scope;
+  document.querySelectorAll(".scopeChip").forEach(c=>c.textContent="范围 "+state.scope);
+  const list=ORDERS.filter(inScope);
+  renderTrend(list);renderSummary(list);renderCat(list);renderDept(list);renderDur(list);renderTable(list);
+}
+
+/* ===== 交互 ===== */
+function toast(t){const el=document.getElementById("toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),2200)}
+function bindSeg(id,key){document.getElementById(id).addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;state[key]=b.dataset.v;
+  [...b.parentNode.children].forEach(x=>x.classList.toggle("on",x===b));renderAll()})}
+bindSeg("segScope","scope");bindSeg("segGrain","grain");
+document.getElementById("selState").addEventListener("change",e=>{state.tbl=e.target.value;renderTable(ORDERS.filter(inScope))});
+document.getElementById("btnMode").addEventListener("click",()=>{const h=document.documentElement;h.dataset.mode=h.dataset.mode==="dark"?"light":"dark";renderAll()});
+document.getElementById("sumGrid").addEventListener("click",e=>{const c=e.target.closest(".link");if(c)toast("实现后：打开现有二级详情「"+c.dataset.detail+"」")});
+document.getElementById("tb").addEventListener("click",e=>{const s=e.target.closest("[data-order]");if(s)toast("实现后：打开单据追踪 "+s.dataset.order)});
+document.getElementById("btnExport").addEventListener("click",()=>{
+  const rows=tableRows(ORDERS.filter(inScope));
+  const csv="﻿"+[["序号","放行单号","部门","姓名","分机","状态"]].concat(rows.map((o,i)=>[i+1,o.no,o.dept,o.name,o.ext,o.arrived?"到达超时":"未结案"]))
+    .map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="放行超时查询_"+state.scope+"_演示.csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("已导出 "+rows.length+" 单（演示数据）");
+});
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(renderAll,120)});
+renderAll();
+</script>
+</body>
+</html>

@@ -731,6 +731,33 @@ body.editing .cardRemove{display:flex}
 /* 分析卡内容 */
 .cardBody .ac-count{font-size:22px;font-weight:700;font-family:"Segoe UI",monospace}
 .cardBody .ac-desc{font-size:12px;color:var(--txt2);margin:6px 0 8px;line-height:1.6}
+/* GDMS 超时管控卡（D-37）：只用主题变量，不写死颜色 */
+.cardHead .gdms-seg{margin-left:6px}
+.cardHead .gdms-seg button{padding:3px 9px!important}
+.cardHead .gdms-chip{flex:none;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:var(--brand);background:var(--brand-soft);white-space:nowrap}
+.cardHead .gdms-warn{flex:none;font-size:11px;font-weight:600;color:var(--bad);white-space:nowrap}
+.cardHead .gdms-bar{flex:none;display:inline-flex;align-items:center;gap:6px}
+.cardHead .gdms-bar select{font:inherit;font-size:12px;color:var(--txt);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px 4px;max-width:128px}
+.cardHead .gdms-bar .gdms-exp{font-size:12px;padding:2px 10px;line-height:18px}
+.gdms-wrap{display:flex;flex-direction:column;height:100%;min-height:0}
+.cardBody .gdms-wrap>.chart{flex:1;min-height:0;height:auto}
+.gdms-note{flex:none;font-size:11px;color:var(--txt2);text-align:right;margin-top:4px}
+.gdms-sum{height:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:10px}
+.gdms-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;overflow:hidden;
+  border-radius:12px;background:var(--panel);border:1px solid var(--line);padding:12px 4px 8px}
+.gdms-cell::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.gdms-cell .l{font-size:12px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.gdms-cell .n{font-size:clamp(18px,2vw,30px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--c)}
+.gdms-cell .s{font-size:11px;color:var(--txt2);white-space:nowrap}
+.gdms-cell.link{cursor:pointer}
+.gdms-cell.link .n{border-bottom:1px dashed currentColor;padding-bottom:2px}
+.gdms-cell.link:hover{border-color:var(--c)}
+.gdms-tblwrap{flex:1;min-height:0;overflow:auto;border-radius:10px;border:1px solid var(--line);scrollbar-width:thin}
+.gdms-tbl{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+.gdms-tbl th{position:sticky;top:0;z-index:1;background:var(--bg);text-align:left;padding:7px 6px;font-weight:600;color:var(--txt2);border-bottom:1px solid var(--line)}
+.gdms-tbl td{padding:6px;border-bottom:1px solid var(--line);color:var(--txt2);max-width:104px;overflow:hidden;text-overflow:ellipsis}
+.gdms-tbl td.no{max-width:none;font-weight:600;color:var(--txt)}
+.gdms-tbl td.gdms-none{text-align:center;padding:28px 0;max-width:none}
 .cardBody .ac-empty{color:var(--txt2);font-size:12px;padding:10px 0;text-align:center}
 
 /* ========== 卡片库抽屉 ========== */
@@ -1032,6 +1059,7 @@ const CONFIG = {
     物品类型:   ["物品类型", "物品類型"],
     申请人:     ["申请人姓名", "申請人姓名", "申请人"],
     申请部门:   ["申请人部门", "申請人部門", "申请部门", "部门"],
+    申请人分机: ["申请人分机", "申請人分機"],
     流出门岗:   ["放行单流出门岗", "放行單流出門崗", "流出门岗"],
     流入门岗:   ["放行单流入门岗", "放行單流入門崗", "流入门岗"],
     实际放行门岗: ["实际放行门岗", "實際放行門崗"],
@@ -1057,8 +1085,22 @@ const CONFIG = {
   特保单号前缀: "WF9897",
   普通单号标识: "WF7501",
 
-  // —— 超时判断：超时标记字段值等于以下之一即视为超时 ——
-  超时标记: ["1", 1, "是", "Y", "YES", "TRUE"],
+  // —— 超时判断（D-36）：「放行超时 / 接收超时」两列现行导出为**超时分钟数**（0 = 未超时，>0 = 超时）；
+  //    旧导出为是/否标记。两种都认：数值 > 0，或等于下列标记之一 → 超时 ——
+  超时标记: ["是", "Y", "YES", "TRUE"],
+  // —— 状态列兜底：「放行状态 / 接收状态」含以下任一字样也视为超时（如 超时 / 未接收超时） ——
+  超时状态关键字: ["超时", "超時"],
+  // —— 放行异常：「放行状态」含以下任一字样。「放行拒绝」不算异常（拒绝是正常走完流程的一种结果，D-36） ——
+  放行异常关键字: ["异常", "異常"],
+
+  // —— GDMS 超时管控视图（D-37）——
+  GDMS: {
+    时长分档: [["X≤30min", 30], ["30min<X≤1H", 60], ["1H<X≤4H", 240], ["X>4H", Infinity]],   // 按「放行超时」分钟数落档
+    部门超时率预警: 0.025,     // 一级部门放行超时率 ≥ 此值即预警
+    部门TOP: 8,
+    部门归并: {},              // 例外表：部门名以键开头 → 归到值，如 { "設備工程": "設備" }；默认按规则自动归并
+    趋势保留: { day: 14, week: 12, month: 12 }   // 趋势图只画最近 N 个日 / 周 / 月
+  },
 
   TOPN: 10,
   趋势天数阈值: 62,
@@ -1138,8 +1180,26 @@ function decodeText(buf) {
   try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); }
   catch (e) { return new TextDecoder("gbk").decode(buf); }
 }
-// 超时标记判断
-function isTimeout(v) { return CONFIG.超时标记.some(m => String(v).trim().toUpperCase() === String(m).toUpperCase()); }
+// 超时判断：数值 > 0（超时分钟数；旧标记 1 同样命中）或命中是/否类标记
+function isTimeout(v) {
+  const s = String(v ?? "").trim().toUpperCase();
+  if (!s) return false;
+  if (/^[+-]?\d+(\.\d+)?$/.test(s)) return parseFloat(s) > 0;
+  return CONFIG.超时标记.some(m => s === String(m).toUpperCase());
+}
+// 状态列文本判断（放行状态 / 接收状态）
+function hasKeyword(v, words) { const s = String(v ?? ""); return words.some(w => s.includes(w)); }
+// 超时分钟数：数字且 >0 才有值；旧是/否标记导出为 null
+function timeoutMinutes(v) {
+  const s = String(v ?? "").trim();
+  if (!/^[+-]?\d+(\.\d+)?$/.test(s)) return null;
+  const n = parseFloat(s);
+  return n > 0 ? n : null;
+}
+// 文案：「超 45m」「超 5h 20m」；没有分钟数时返回空串
+function fmtOver(mins) { return mins == null ? "" : fmtRateDur(mins); }
+function isTimeoutStatus(v) { return hasKeyword(v, CONFIG.超时状态关键字); }
+function isAbnormalStatus(v) { return hasKeyword(v, CONFIG.放行异常关键字); }
 // 特保单判断：放行单号前六位为 WF9897
 function isSpecialOrder(r) {
   return String(r.放行单号 || "").startsWith(CONFIG.特保单号前缀);
@@ -1451,8 +1511,13 @@ function normalizeRow(r) {
   o._放行日期 = parseDate(o.实际放行时间);
   o._接收日期 = parseDate(o.接收时间);
   o._特保 = isSpecialOrder(o);
-  o._放行超时 = isTimeout(o.放行超时);
-  o._接收超时 = isTimeout(o.接收超时);
+  // 超时：以「超时分钟数」列为准，状态列（超时 / 未接收超时）兜底（D-36）
+  o._放行超时 = isTimeout(o.放行超时) || isTimeoutStatus(o.放行状态);
+  o._接收超时 = isTimeout(o.接收超时) || isTimeoutStatus(o.接收状态);
+  o._放行异常 = isAbnormalStatus(o.放行状态);
+  // 超时分钟数（旧是/否标记导出为 null）——供时长分档与各处「超时多久」展示
+  o._放行超时分钟 = timeoutMinutes(o.放行超时);
+  o._接收超时分钟 = timeoutMinutes(o.接收超时);
   // 已到达：实际放行门岗 == 流入门岗（且均非空）
   o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
   // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
@@ -1482,9 +1547,13 @@ function computeOrders() {
       超时: releaseTimeout || receiveTimeout,           // ★ 广义超时 = 放行超时 ∪ 接收超时
       在途超时: !arrived && releaseTimeout,             // ★ 在途超时流入门岗未放行
       超时未接收: arr.some(r => r._接收超时未接收),      // 任一记录超时未接收 → 整单超时未接收
-      放行异常: arr.some(r => String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")),
+      放行异常: arr.some(r => r._放行异常),
       已接收: arr.some(r => r._接收日期),                // 任一记录已接收 → 整单已接收
       申请部门: arr[0].申请部门 || "",
+      申请人: arr.map(r => r.申请人).find(Boolean) || "",
+      申请人分机: arr.map(r => r.申请人分机).find(Boolean) || "",
+      放行超时分钟: arr.reduce((m, r) => (r._放行超时分钟 != null && (m == null || r._放行超时分钟 > m)) ? r._放行超时分钟 : m, null),
+      接收超时分钟: arr.reduce((m, r) => (r._接收超时分钟 != null && (m == null || r._接收超时分钟 > m)) ? r._接收超时分钟 : m, null),
       接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
       流入门岗: arr.map(r => r.流入门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
       流出门岗: arr.map(r => r.流出门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
@@ -1497,7 +1566,8 @@ function computeOrders() {
 
 // ---------- 汇总计算（结果缓存：数据未变时二级页/导出直接复用，避免重复全量扫描） ----------
 let _statsCache = null;
-function invalidateStats() { _statsCache = null; }
+let _gdmsCache = {};
+function invalidateStats() { _statsCache = null; _gdmsCache = {}; }
 function computeStats() { return _statsCache || (_statsCache = _computeStatsRaw()); }
 function _computeStatsRaw() {
   orders = computeOrders();
@@ -1626,42 +1696,11 @@ function _computeStatsRaw() {
       ((o.物品分类 || "").includes("A级物料") || (o.物品分类 || "").includes("A級物料"))).length,
     timeoutNPIMachine: orderList.filter(o => o.特保 && o.超时 &&
       ((o.物品分类 || "").includes("机台") || (o.物品分类 || "").includes("機台"))).length,
-    // 超时By部门（订单级）
-    timeoutByDept: _(orderList).filter(o => o.放行超时)
-      .groupBy(o => o.申请部门 || "（空）")
-      .map((arr, k) => ({ name: k, value: arr.length }))
-      .orderBy("value", "desc").take(12).value(),
     // 接收超时By接收部门（订单级，责任主体 = 接收人所在部门，即收货方部门）
     receiveTimeoutByDept: _(orderList).filter(o => o.接收超时)
       .groupBy(o => o.接收人部门 || "（空）")
       .map((arr, k) => ({ name: k, value: arr.length }))
       .orderBy("value", "desc").take(12).value(),
-    // 超时By物品类型（订单级）
-    timeoutByCat: (() => {
-      const cats = {};
-      orderList.filter(o => o.放行超时).forEach(o => {
-        const c = o.物品分类 || "未分类";
-        cats[c] = (cats[c] || 0) + 1;
-      });
-      return Object.entries(cats).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-    })(),
-    // 超时By时间段（基于订单的申请日期到当前/放行时间的时长）
-    timeoutByDuration: (() => {
-      const now = dayjs();
-      const buckets = { "X≤30min": 0, "30min<X≤1H": 0, "1H<X≤4H": 0, "X>4H": 0 };
-      orderList.filter(o => o.放行超时).forEach(o => {
-        if (!o._日期) return;
-        const end = o.已到达 ? now : now; // 已到达用实际时间，在途用当前时间
-        const hours = end.diff(o._日期, "hour", true);
-        const mins = hours * 60;
-        if (mins <= 30) buckets["X≤30min"]++;
-        else if (mins <= 60) buckets["30min<X≤1H"]++;
-        else if (mins <= 240) buckets["1H<X≤4H"]++;
-        else buckets["X>4H"]++;
-      });
-      return buckets;
-    })(),
-    // 超时+结案率日趋势（按天聚合）
     // 卡 A：在途滞留 By 流入门岗（订单级）。不含已到达后的超时未接收。
     gateStuckTop: (() => {
       const transit = orderList.filter(o => o.在途);
@@ -1691,31 +1730,116 @@ function _computeStatsRaw() {
         };
       }).sort((a, b) => b.hops - a.hops).slice(0, 12);
     })(),
-    timeoutTrend: (() => {
-      const valid2 = rows.filter(r => r._申请日期);
-      if (!valid2.length) return [];
-      const min = _.minBy(valid2, r => r._申请日期.valueOf())._申请日期;
-      const max = _.maxBy(valid2, r => r._申请日期.valueOf())._申请日期;
-      const fmt = "YYYY-MM-DD";
-      const byDay = _.groupBy(valid2, r => r._申请日期.format(fmt));
-      return Object.keys(byDay).sort().map(day => {
-        const dayRows = byDay[day];
-        const dayOrders = Object.values(_.groupBy(dayRows, "放行单号")).map(arr => ({
-          timeout: arr.some(r => r._放行超时) || arr.some(r => r._接收超时),
-          transitTimeout: arr.some(r => r._放行超时) && !arr.some(r => r._已到达),
-          arrived: arr.some(r => r._已到达),
-          releaseTimeout: arr.some(r => r._放行超时)
-        }));
-        const totalTimeout = dayOrders.filter(o => o.timeout).length;
-        const transitTO = dayOrders.filter(o => o.transitTimeout).length;
-        const closed = dayOrders.filter(o => o.arrived && !o.releaseTimeout).length;
-        const arrivedTO = dayOrders.filter(o => o.arrived && o.releaseTimeout).length;
-        const scoped = closed + arrivedTO + transitTO;
-        const rate = scoped ? closed / scoped : 1;
-        return { day, totalTimeout, transitTimeout: transitTO, closeRate: rate };
-      });
-    })()
   };
+}
+
+// =====================================================================
+// GDMS 超时管控统计（D-37）：六张 gdms_* 卡共用，按范围 ALL / MP / NPI 过滤订单后再算。
+// 只读 orders / rows；结果按范围缓存，随 invalidateStats() 一起失效。不要把范围塞进 computeStats()。
+// =====================================================================
+const gdmsState = { scope: "ALL", grain: "day", tbl: "open" };
+// 范围控件在「放行物品超时监测」卡头；当前布局没有这张卡时一律按 ALL
+function gdmsScope() {
+  return (typeof workingLayout !== "undefined" && workingLayout.some(it => it.id === "gdms_timeout_trend")) ? gdmsState.scope : "ALL";
+}
+function gdmsOrderList(scope) {
+  computeStats();
+  const all = Object.values(orders);
+  return scope === "NPI" ? all.filter(o => o.特保) : scope === "MP" ? all.filter(o => !o.特保) : all;
+}
+// 一级部门归并：例外表优先；否则去掉末尾「_厂区」后缀，再取第一个空白之前的部分
+function gdmsDeptL1(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return "（空）";
+  const map = CONFIG.GDMS.部门归并 || {};
+  for (const k of Object.keys(map)) if (raw.startsWith(k)) return map[k];
+  const s = raw.replace(/_[^_]*$/, "").trim() || raw;
+  return s.split(/\s+/)[0];
+}
+// 旧导出（超时列只有是/否标记）兜底：按门岗间放行间隔推算超时时长（分钟）
+function gdmsGapMinutes(o, recs, latest) {
+  const rel = recs.filter(r => r._放行日期).sort((a, b) => a._放行日期.valueOf() - b._放行日期.valueOf());
+  const start0 = o._日期 ? o._日期.valueOf() : null;
+  if (o.在途超时) {
+    const s = rel.length ? rel[rel.length - 1]._放行日期.valueOf() : start0;
+    return (s != null && latest != null) ? Math.max(0, (latest - s) / 60000) : null;
+  }
+  let best = null;
+  rel.forEach((r, i) => {
+    if (!r._放行超时) return;
+    const s = i ? rel[i - 1]._放行日期.valueOf() : start0;
+    if (s == null) return;
+    const g = Math.max(0, (r._放行日期.valueOf() - s) / 60000);
+    if (best == null || g > best) best = g;
+  });
+  return best;
+}
+function computeGdmsStats(scope) {
+  if (_gdmsCache[scope]) return _gdmsCache[scope];
+  const list = gdmsOrderList(scope), N = list.length;
+  const catHas = (o, a, b) => { const c = o.物品分类 || ""; return c.includes(a) || c.includes(b); };
+  const npi = list.filter(o => o.特保).length;
+  const general = list.filter(o => !o.特保 && catHas(o, "生產物料", "生产物料")).length;
+  const toAll = list.filter(o => o.超时), toNPI = toAll.filter(o => o.特保);
+  const rel = list.filter(o => o.放行超时);
+  // —— By 物品分类（仅放行超时；一单一类，不 split） ——
+  const byCat = _(rel).groupBy(o => o.物品分类 || "未分类").map((arr, name) => ({ name, value: arr.length }))
+    .orderBy("value", "desc").value();
+  // —— By 一级部门：超时数 + 超时率（该部门放行超时单 ÷ 该部门总单） ——
+  const deptAll = _.countBy(list, o => gdmsDeptL1(o.申请部门));
+  const byDept = _(rel).groupBy(o => gdmsDeptL1(o.申请部门))
+    .map((arr, name) => ({ name, value: arr.length, total: deptAll[name] || arr.length, rate: arr.length / (deptAll[name] || arr.length) }))
+    .orderBy("value", "desc").take(CONFIG.GDMS.部门TOP).value();
+  // —— By 超时时长：优先用「放行超时」列的分钟数；旧标记导出按门岗间隔推算 ——
+  const bins = CONFIG.GDMS.时长分档;
+  const reliable = Object.values(orders).some(o => o.放行超时分钟 > 1);
+  let recsOf = null, latest = null;
+  if (!reliable && rel.length) {
+    recsOf = _.groupBy(rows, "放行单号");
+    rows.forEach(r => [r._申请日期, r._放行日期, r._接收日期].forEach(d => { if (d) { const v = d.valueOf(); if (latest == null || v > latest) latest = v; } }));
+  }
+  const durAll = bins.map(() => 0), durOpen = bins.map(() => 0);
+  let durMissing = 0;
+  rel.forEach(o => {
+    const m = reliable ? o.放行超时分钟 : gdmsGapMinutes(o, recsOf[o.单号] || [], latest);
+    if (m == null) { durMissing++; return; }
+    const i = bins.findIndex(b => m <= b[1]);
+    durAll[i]++; if (o.在途超时) durOpen[i]++;
+  });
+  const byDate = arr => arr.slice().sort((a, b) => (b._日期 ? b._日期.valueOf() : 0) - (a._日期 ? a._日期.valueOf() : 0));
+  return _gdmsCache[scope] = {
+    scope, N,
+    summary: {
+      total: N, npi, general, other: N - npi - general,
+      timeoutAll: toAll.length, timeoutNPI: toNPI.length,
+      timeoutNPIMaterial: toNPI.filter(o => catHas(o, "A级物料", "A級物料")).length,
+      timeoutNPIMachine: toNPI.filter(o => catHas(o, "机台", "機台")).length
+    },
+    relCount: rel.length, byCat, byDept,
+    dur: { cats: bins.map(b => b[0]), all: durAll, open: durOpen, rate: durAll.map(v => N ? v / N : 0), missing: durMissing, estimated: !reliable && rel.length > 0 },
+    tables: { open: byDate(rel.filter(o => o.在途超时)), closed: byDate(rel.filter(o => o.已到达)), all: byDate(rel) }
+  };
+}
+// 趋势：按申请日期分桶（日 / 周一起算的周 / 月），只保留最近 N 桶
+function computeGdmsTrend(scope, grain) {
+  const key = scope + "|" + grain;
+  if (_gdmsCache[key]) return _gdmsCache[key];
+  const m = new Map();
+  gdmsOrderList(scope).forEach(o => {
+    const d = o._日期; if (!d) return;
+    let k, label;
+    if (grain === "week") { const w = d.subtract((d.day() + 6) % 7, "day"); k = w.format("YYYY-MM-DD"); label = w.format("MM/DD") + "周"; }
+    else if (grain === "month") { k = d.format("YYYY-MM"); label = d.format("YYYY/MM"); }
+    else { k = d.format("YYYY-MM-DD"); label = d.format("MM/DD"); }
+    let b = m.get(k); if (!b) m.set(k, b = { key: k, label, totalTimeout: 0, transitTimeout: 0, closed: 0, relTO: 0 });
+    if (o.超时) b.totalTimeout++;
+    if (o.在途超时) b.transitTimeout++;
+    if (o.放行超时) b.relTO++; else if (o.已到达) b.closed++;
+  });
+  const keep = (CONFIG.GDMS.趋势保留 || {})[grain] || 14;
+  const out = [...m.values()].sort((a, b) => a.key < b.key ? -1 : 1).slice(-keep);
+  out.forEach(b => { const scoped = b.closed + b.relTO; b.closeRate = scoped ? b.closed / scoped : 1; });
+  return _gdmsCache[key] = out;
 }
 
 // ---------- 图表配置 ----------
@@ -1742,7 +1866,31 @@ const withAnim = opt => Object.assign({}, animOpt(), opt);
 const withDetailAnim = opt => Object.assign({}, (PERF.lite || rows.length > CONFIG.大数据量阈值) ? LARGE_ANIM : DETAIL_ANIM, opt);
 // —— ECharts 统一初始化：限制设备像素比（低性能模式强制 1x），降低高 DPR 屏显存/填充压力 ——
 const EC_DPR = Math.min(window.devicePixelRatio || 1, PERF.lite ? 1 : 1.5);
-const initEC = dom => echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
+// —— 默认主题深色模式：老图表的文字 / 轴线颜色是写死的浅色主题值，深色下看不清。
+//    这里在 setOption 前把这几个字面量换成当前主题变量；外部主题由各自的 charts.js 负责，不在此处理 ——
+function ecDarkFix(opt) {
+  const html = document.documentElement;
+  if (html.getAttribute("data-mode") !== "dark" || html.getAttribute("data-theme")) return opt;
+  const cs = getComputedStyle(html), cv = (n, d) => (cs.getPropertyValue(n) || "").trim() || d;
+  const txt = cv("--txt", "#e6edf3"), txt2 = cv("--txt2", "rgba(255,255,255,0.55)"), line = cv("--line", "rgba(255,255,255,0.10)");
+  const map = { "#1d1d1f": txt, "rgba(0,0,0,0.55)": txt2, "rgba(0,0,0,0.14)": "rgba(255,255,255,0.22)", "rgba(0,0,0,0.08)": line,
+    "rgba(0,0,0,0.06)": line, "rgba(255,255,255,0.85)": cv("--bg", "#0d1117") };
+  const walk = v => {
+    if (typeof v === "string") return map[v] || v;
+    if (Array.isArray(v)) return (v.length && typeof v[0] === "number") ? v : v.map(walk);
+    if (v && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype) {   // 只复制纯对象，不动 baseAxis 等共享常量
+      const o = {}; for (const k in v) o[k] = walk(v[k]); return o;
+    }
+    return v;
+  };
+  return walk(opt);
+}
+const initEC = dom => {
+  const ch = echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
+  const raw = ch.setOption;
+  ch.setOption = function (opt, ...rest) { return raw.call(this, ecDarkFix(opt), ...rest); };
+  return ch;
+};
 function hbarOption(data, color) {
   return {
     tooltip: {},
@@ -1824,22 +1972,6 @@ const optionBuilders = {
     };
   },
 
-  // ===== v5.2 新增：GDMS option 构造（抽离供 render/update 复用，实现增量刷新不重建） =====
-  gdmsTrend: data => ({
-    tooltip: { trigger: "axis" },
-    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
-    grid: { left: 50, right: 50, top: 30, bottom: 40 },
-    xAxis: { type: "category", data: data.map(d => d.day), ...baseAxis },
-    yAxis: [
-      { type: "value", name: "数量", ...baseAxis },
-      { type: "value", name: "结案率", min: 0, max: 1, axisLabel: { formatter: v => (v * 100) + "%", color: "rgba(0,0,0,0.55)" }, splitLine: { show: false } }
-    ],
-    series: [
-      { name: "总超时", type: "bar", data: data.map(d => d.totalTimeout), barWidth: "30%", itemStyle: { color: "#ff9f0a", borderRadius: [4, 4, 0, 0] } },
-      { name: "在途超时未放行", type: "bar", data: data.map(d => d.transitTimeout), barWidth: "30%", itemStyle: { color: "#ff3b30", borderRadius: [4, 4, 0, 0] } },
-      { name: "结案率", type: "line", yAxisIndex: 1, data: data.map(d => d.closeRate), smooth: true, symbolSize: 6, lineStyle: { width: 3, color: "#34c759" }, itemStyle: { color: "#34c759" } }
-    ]
-  }),
   gateStuck: data => {
     const names = data.map(d => d.name).reverse();
     return {
@@ -1883,26 +2015,43 @@ const optionBuilders = {
       itemStyle: { color: "#00b8d4", borderRadius: [0, 5, 5, 0] },
       label: { show: true, position: "right", color: "#1d1d1f" } }]
   }),
-  gdmsCatPie: data => ({
-    tooltip: { trigger: "item" },
-    legend: { bottom: 0, textStyle: { color: "rgba(0,0,0,0.55)" } },
-    series: [{ type: "pie", radius: ["38%", "65%"], center: ["50%", "44%"],
-      itemStyle: { borderRadius: 6, borderColor: "rgba(255,255,255,0.85)", borderWidth: 2 },
-      label: { color: "#1d1d1f", formatter: "{b}\n{c}单 ({d}%)" },
-      data: data.map((d, i) => ({ name: d.name, value: d.value, itemStyle: { color: PALETTE[i % PALETTE.length] } }))
-    }]
-  }),
-  gdmsDuration: bk => {
-    const keys = Object.keys(bk), vals = Object.values(bk);
-    const total = vals.reduce((a, b) => a + b, 0) || 1;
+  // ===== GDMS 通用组合图（D-37）：柱（左轴·单）+ 折线（右轴·%）。cfg = { cats, bars:[{name,color,data,opacity}], line:{name,color,data,max,warn,labels}, rotate } =====
+  gdmsCombo: cfg => {
+    const cs = getComputedStyle(document.documentElement), cv = (n, d) => (cs.getPropertyValue(n) || "").trim() || d;
+    const TXT = cv("--txt", "#1d1d1f"), TXT2 = cv("--txt2", "rgba(0,0,0,0.55)"), LINE = cv("--line", "rgba(0,0,0,0.08)");
+    const tone = c => ({ warn: cv("--warn", "#ff9f0a"), bad: cv("--bad", "#ff3b30"), ok: cv("--ok", "#34c759"), accent: cv("--accent", "#0071e3") }[c] || c);
+    const BAD = tone("bad");
+    const axis = { axisLine: { lineStyle: { color: LINE } }, axisLabel: { color: TXT2 }, splitLine: { lineStyle: { color: LINE } } };
+    const pct = (v, d) => (v * 100).toFixed(d == null ? 1 : d).replace(/\.0$/, "") + "%";
+    const many = cfg.cats.length > 10;
+    const series = cfg.bars.map(b => ({
+      name: b.name, type: "bar", data: b.data, barMaxWidth: 26, barGap: "12%",
+      itemStyle: { color: tone(b.color), opacity: b.opacity || 1, borderRadius: [4, 4, 0, 0] },
+      label: { show: true, position: "top", color: TXT, fontSize: 11, formatter: p => p.value || "" }
+    }));
+    if (cfg.line) {
+      const L = cfg.line, LC = tone(L.color), warnOn = v => L.warn != null && v >= L.warn;
+      series.push({
+        name: L.name, type: "line", yAxisIndex: 1, symbolSize: 6, z: 5,
+        data: L.data.map(v => warnOn(v) ? { value: v, itemStyle: { color: BAD }, label: { color: BAD } } : v),
+        lineStyle: { width: 2.5, color: LC }, itemStyle: { color: LC },
+        label: { show: !!L.labels && !many, position: "top", color: LC, fontSize: 11, fontWeight: 600, formatter: p => pct(p.value, L.max < 0.2 ? 1 : 0) },
+        markLine: L.warn != null ? { silent: true, symbol: "none", label: { show: false },
+          lineStyle: { color: BAD, type: "dashed", opacity: 0.6, width: 1.5 }, data: [{ yAxis: L.warn }] } : undefined
+      });
+    }
+    const yAxis = [{ type: "value", minInterval: 1, splitNumber: 4, ...axis }];
+    if (cfg.line) yAxis.push({ type: "value", min: 0, max: cfg.line.max, interval: cfg.line.max / 4, splitLine: { show: false },
+      axisLabel: { color: TXT2, formatter: v => pct(v, cfg.line.max < 0.2 ? 1 : 0) } });
     return {
-      tooltip: { trigger: "axis", formatter: p => p.map(s => escapeHtml(s.name) + ": " + s.value + "单 (" + (s.value / total * 100).toFixed(1) + "%)").join("<br>") },
-      grid: { left: 10, right: 30, top: 20, bottom: 10, containLabel: true },
-      xAxis: { type: "value", ...baseAxis },
-      yAxis: { type: "category", data: keys.reverse(), ...baseAxis, axisLabel: { color: "rgba(0,0,0,0.55)" } },
-      series: [{ type: "bar", data: vals.reverse(), barWidth: "50%",
-        itemStyle: { borderRadius: [0, 5, 5, 0], color: p => ["#ffb3ab", "#ff7d70", "#ff3b30", "#c62828"][p.dataIndex % 4] },
-        label: { show: true, position: "right", color: "#1d1d1f", formatter: p => p.value + "单" } }]
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" },
+        formatter: ps => escapeHtml(ps[0].axisValue) + "<br/>" + ps.map(p => p.marker + escapeHtml(p.seriesName) + "：<b>" +
+          (p.seriesType === "line" ? pct(p.value, 1) : p.value + " 单") + "</b>").join("<br/>") },
+      legend: { top: 0, right: 0, itemWidth: 12, itemHeight: 8, textStyle: { color: TXT2, fontSize: 11 } },
+      grid: { left: cfg.rotate ? 22 : 6, right: 6, top: 34, bottom: 2, containLabel: true },
+      xAxis: { type: "category", data: cfg.cats, ...axis,
+        axisLabel: { color: TXT2, fontSize: 11, interval: many ? "auto" : 0, rotate: cfg.rotate ? 28 : 0, width: 92, overflow: "truncate" } },
+      yAxis, series
     };
   }
 };
@@ -2090,7 +2239,8 @@ function kpiLatestOrders(pred, n) {
   });
   return [...best.values()].sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-function kpiOrderWaitBuckets(orderList) {
+// field：订单上的超时分钟字段（放行超时分钟 / 接收超时分钟）。有分钟数按分钟数落档；没有（旧标记导出）才退回「末次放行 → 当前」
+function kpiOrderWaitBuckets(orderList, field) {
   const nos = new Set(orderList.map(o => o.单号));
   const lastRel = {};
   rows.forEach(r => {
@@ -2102,7 +2252,8 @@ function kpiOrderWaitBuckets(orderList) {
   let b1 = 0, b2 = 0, b3 = 0;
   orderList.forEach(o => {
     const t = lastRel[o.单号] || 0;
-    const h = t ? Math.max(0, (now - t) / 3600000) : 0;
+    const m = field ? o[field] : null;
+    const h = m != null ? m / 60 : (t ? Math.max(0, (now - t) / 3600000) : 0);
     if (h < 1) b1++;
     else if (h <= 4) b2++;
     else b3++;
@@ -2341,7 +2492,7 @@ function buildKpiProps(id, S) {
   }
   if (id === "kpi_transit") {
     const tOrders = S.transitTimeoutOrders || [];
-    const tw = kpiOrderWaitBuckets(tOrders);
+    const tw = kpiOrderWaitBuckets(tOrders, "放行超时分钟");
     return Object.assign({ tone: "v-danger", tab: "overtime" }, common, {
       hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--danger)">' + transit + "</b> 单",
       visual: "stack",
@@ -2367,7 +2518,7 @@ function buildKpiProps(id, S) {
     const recOrders = S.receiveTimeoutOrders || [];
     const recSp = recOrders.filter(o => o.特保).length;
     const recArrived = recOrders.filter(o => o.已到达).length;
-    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders);
+    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders, "接收超时分钟");
     return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
@@ -2469,10 +2620,11 @@ function htmlRecords(p) {
   const col3 = p.recTag === "超时" ? "流出门岗" : p.recTag === "未接收" ? "流入门岗" : "放行物品";
   const cells = list;
   const body = cells.map(r => {
-    const abn = /异常|異常/.test(r.放行状态 || "");
+    const abn = isAbnormalStatus(r.放行状态);
     let tag = '<span class="tag tag-ok">已核驗</span>';
-    if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
-    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">未接收</span>';
+    const od = (typeof orders !== "undefined" && orders[r.放行单号]) || {};
+    if (p.recTag === "超时") tag = '<span class="tag tag-bad">' + (fmtOver(od.放行超时分钟) || "超时") + '</span>';
+    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">' + (fmtOver(od.接收超时分钟) || "未接收") + '</span>';
     else if (p.recTag === "安保") tag = '<span class="tag tag-bad">特保</span>';
     else if (abn) tag = '<span class="tag tag-bad">門崗異常</span>';
     const col3v = p.recTag === "超时" ? (r.流出门岗 || "—") : p.recTag === "未接收" ? (r.流入门岗 || "—") : (r.放行物品名称 || r.物品分类 || "—");
@@ -2951,76 +3103,83 @@ const CARD_DEFS = {
     update(body, ctx) { /* 明细表由 liveTick 的 addData 增量更新 */ }
   },
 
-  // ===== v5.1 新增：GDMS 增强卡片 =====
+  // ===== GDMS 超时管控（D-37；规格 docs/prototypes/gdms-view-redesign/HANDOFF.md）=====
+  gdms_timeout_trend: {
+    id: "gdms_timeout_trend", title: "放行物品超时监测", icon: "📈", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 5, maxH: 12,
+    _cfg() {
+      const data = computeGdmsTrend(gdmsScope(), gdmsState.grain);
+      if (!data.length) return null;
+      return { cats: data.map(d => d.label), rotate: data.length > 8,
+        bars: [{ name: "总超时", color: "warn", data: data.map(d => d.totalTimeout) },
+               { name: "超时未结案", color: "bad", data: data.map(d => d.transitTimeout) }],
+        line: { name: "结案率", color: "ok", max: 1, labels: true, data: data.map(d => d.closeRate) } };
+    },
+    render(body, ctx, merge) {
+      gdmsSeg(body, "scope", [["ALL", "ALL"], ["MP", "MP"], ["NPI", "NPI"]], true);
+      gdmsSeg(body, "grain", [["day", "日"], ["week", "周"], ["month", "月"]], false);
+      gdmsChart(this.id, body, this._cfg(), "暂无带申请日期的放行单", "", merge);
+    },
+    update(body, ctx) { this.render(body, ctx, true); }
+  },
   gdms_summary: {
-    id: "gdms_summary", title: "放行汇总指标", icon: "📊", cat: "GDMS超时管控", w: 24, h: 4, minW: 12, maxW: 24, minH: 4, maxH: 6,
+    id: "gdms_summary", title: "放行汇总指标", icon: "📊", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 4, maxH: 10,
     render(body, ctx) {
-      const S = ctx.S, mc = S.materialClass;
-      const items = [
-        ["放行单总数", S.orderCount, "var(--accent)"], ["NPI物料", mc.NPI物料, "var(--purple)"],
-        ["一般物料", mc.一般物料, "var(--accent2)"], ["非物料类", mc.非物料類, "var(--txt2)"],
-        ["超时总数", S.timeoutAll, "var(--bad)"], ["NPI超时", S.timeoutNPI, "var(--purple)"],
-        ["特保物料超时", S.timeoutNPIMaterial, "var(--warn)"], ["特保机台超时", S.timeoutNPIMachine, "var(--cyan)"]
+      const sc = gdmsScopeChip(body), m = computeGdmsStats(sc).summary;
+      const pct = (a, b) => b ? (a / b * 100).toFixed(1).replace(/\.0$/, "") + "%" : "0%";
+      const cells = [
+        ["放行单总数", m.total, "var(--accent)", "全部放行单", "overview"],
+        ["NPI物料", m.npi, "var(--purple)", "占 " + pct(m.npi, m.total), "special"],
+        ["一般物料", m.general, "var(--accent2)", "占 " + pct(m.general, m.total)],
+        ["非物料类", m.other, "var(--cyan)", "占 " + pct(m.other, m.total)],
+        ["超时总数", m.timeoutAll, "var(--warn)", "超时率 " + pct(m.timeoutAll, m.total)],
+        ["NPI超时总数", m.timeoutNPI, "var(--purple)", "占 NPI " + pct(m.timeoutNPI, m.npi)],
+        ["特保物料超时", m.timeoutNPIMaterial, "var(--purple)", "A级物料"],
+        ["特保机台超时", m.timeoutNPIMachine, "var(--purple)", "新产品机台"]
       ];
-      body.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:100%;align-content:center">' +
-        items.map(([l, v, c]) => '<div style="text-align:center;padding:6px 4px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.25)">' +
-          '<div style="font-size:11px;color:var(--txt2);margin-bottom:3px">' + l + '</div>' +
-          '<div style="font-size:20px;font-weight:700;font-family:Segoe UI,monospace;color:' + c + '">' + v + '</div></div>').join("") + '</div>';
+      body.innerHTML = '<div class="gdms-sum">' + cells.map(c =>
+        '<div class="gdms-cell' + (c[4] ? ' link" data-detail="' + c[4] + '" title="点击查看明细' : '') + '" style="--c:' + c[2] + '">' +
+        '<div class="l">' + c[0] + '</div><div class="n">' + c[1].toLocaleString() + '</div><div class="s">' + c[3] + '</div></div>').join("") + '</div>';
+      if (!body._gdmsBound) {
+        body._gdmsBound = true;
+        body.addEventListener("click", e => {
+          const cell = e.target.closest(".gdms-cell.link");
+          if (cell && !editMode) openDetail(cell.dataset.detail);
+        });
+      }
     },
     update(body, ctx) { this.render(body, ctx); }
   },
-  gdms_timeout_trend: {
-    id: "gdms_timeout_trend", title: "超时 + 结案率日趋势", icon: "📈", cat: "GDMS超时管控", w: 16, h: 6, minW: 8, maxW: 24, minH: 4, maxH: 12,
-    render(body, ctx) {
-      const data = ctx.S.timeoutTrend;
-      if (!data.length) { body.innerHTML = '<div class="ac-empty">暂无数据</div>'; return; }
-      body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_trend", body.firstChild).setOption(optionBuilders.gdmsTrend(data), true);
-    },
-    update(body, ctx) {
-      // 增量刷新：复用已有实例 setOption，不销毁重建（避免闪烁）
-      const ch = liveCharts.gdms_timeout_trend;
-      if (!ch) { this.render(body, ctx); return; }
-      if (!ctx.S.timeoutTrend.length) { this.render(body, ctx); return; }
-      ch.setOption(optionBuilders.gdmsTrend(ctx.S.timeoutTrend));
-    }
-  },
   gdms_timeout_cat: {
-    id: "gdms_timeout_cat", title: "放行超时By物品类型分析", icon: "🥧", cat: "GDMS超时管控", w: 8, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
-    render(body, ctx) {
-      const data = ctx.S.timeoutByCat;
-      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
-      body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_cat", body.firstChild).setOption(optionBuilders.gdmsCatPie(data), true);
+    id: "gdms_timeout_cat", title: "放行超时By物品类型", icon: "📦", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 5, maxH: 12,
+    render(body, ctx, merge) {
+      const data = computeGdmsStats(gdmsScopeChip(body)).byCat;
+      gdmsChart(this.id, body, data.length ? { cats: data.map(d => d.name), rotate: data.length > 5,
+        bars: [{ name: "放行超时单", color: "bad", data: data.map(d => d.value) }] } : null, "", "", merge);
     },
-    update(body, ctx) {
-      const ch = liveCharts.gdms_timeout_cat;
-      if (!ch) { this.render(body, ctx); return; }
-      if (!ctx.S.timeoutByCat.length) { this.render(body, ctx); return; }
-      ch.setOption(optionBuilders.gdmsCatPie(ctx.S.timeoutByCat));
-    }
-  },
-  gdms_timeout_duration: {
-    id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
-    render(body, ctx) {
-      body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_duration", body.firstChild).setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration), true);
-    },
-    update(body, ctx) {
-      const ch = liveCharts.gdms_timeout_duration;
-      if (!ch) { this.render(body, ctx); return; }
-      ch.setOption(optionBuilders.gdmsDuration(ctx.S.timeoutByDuration));
-    }
+    update(body, ctx) { this.render(body, ctx, true); }
   },
   gdms_timeout_dept: {
-    id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
-    render(body, ctx) {
-      const data = ctx.S.timeoutByDept;
-      if (!data.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时单据</div>'; return; }
-      body.innerHTML = '<div class="chart"></div>';
-      cardChart("gdms_timeout_dept", body.firstChild).setOption(hbarOption(data, "#ff3b30"), true);
+    id: "gdms_timeout_dept", title: "放行超时By部门分析", icon: "🏢", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 5, maxH: 12,
+    render(body, ctx, merge) {
+      const data = computeGdmsStats(gdmsScopeChip(body)).byDept, warn = CONFIG.GDMS.部门超时率预警;
+      const tag = gdmsHeadExtra(body, "warn", "span", "gdms-warn");
+      if (tag) tag.textContent = "预警：超时率 ≥ " + +(warn * 100).toFixed(1) + "%";
+      gdmsChart(this.id, body, data.length ? { cats: data.map(d => d.name), rotate: data.length > 6,
+        bars: [{ name: "超时数", color: "bad", data: data.map(d => d.value) }],
+        line: { name: "超时率", color: "accent", labels: true, warn, max: gdmsRateMax(data.map(d => d.rate), warn * 1.2), data: data.map(d => d.rate) } } : null, "", "", merge);
     },
-    update(body, ctx) { if (liveCharts.gdms_timeout_dept && ctx.S.timeoutByDept.length) liveCharts.gdms_timeout_dept.setOption(hbarOption(ctx.S.timeoutByDept, "#ff3b30")); }
+    update(body, ctx) { this.render(body, ctx, true); }
+  },
+  gdms_timeout_duration: {
+    id: "gdms_timeout_duration", title: "物品放行超时By时间段分析", icon: "⏱️", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 5, maxH: 12,
+    render(body, ctx, merge) {
+      const G = computeGdmsStats(gdmsScopeChip(body)), d = G.dur;
+      const note = [d.estimated ? "源表超时列不是分钟数，时长按门岗间放行间隔推算" : "", d.missing ? d.missing + " 单缺时间未计入" : ""].filter(Boolean).join(" · ");
+      gdmsChart(this.id, body, G.relCount ? { cats: d.cats,
+        bars: [{ name: "总超时", color: "bad", opacity: 0.4, data: d.all }, { name: "超时未结案", color: "bad", data: d.open }],
+        line: { name: "超时率", color: "accent", labels: true, max: gdmsRateMax(d.rate, 0.02), data: d.rate } } : null, "", note, merge);
+    },
+    update(body, ctx) { this.render(body, ctx, true); }
   },
   gdms_receive_dept: {
     id: "gdms_receive_dept", title: "接收超时By接收部门分析", icon: "📥", cat: "GDMS超时管控", w: 12, h: 6, minW: 6, maxW: 24, minH: 4, maxH: 12,
@@ -3033,28 +3192,124 @@ const CARD_DEFS = {
     update(body, ctx) { if (liveCharts.gdms_receive_dept && ctx.S.receiveTimeoutByDept.length) liveCharts.gdms_receive_dept.setOption(hbarOption(ctx.S.receiveTimeoutByDept, "#ff9f0a")); }
   },
   gdms_unclosed: {
-    id: "gdms_unclosed", title: "超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 12, h: 8, minW: 8, maxW: 24, minH: 6, maxH: 16, detailKey: "transitTimeout",
+    id: "gdms_unclosed", title: "物品放行超时未结案查询", icon: "🚨", cat: "GDMS超时管控", w: 8, h: 8, minW: 6, maxW: 24, minH: 5, maxH: 16,
     render(body, ctx) {
-      const list = ctx.S.transitTimeoutOrders;
-      if (!list.length) { body.innerHTML = '<div class="ac-empty">✅ 暂无超时未结案件</div>'; return; }
-      let html = '<div style="font-size:12px;overflow:auto;max-height:100%">';
-      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap"><thead><tr style="border-bottom:2px solid var(--line);text-align:left">' +
-        '<th style="padding:5px 6px">#</th><th style="padding:5px 6px">放行单号</th><th style="padding:5px 6px">部门</th><th style="padding:5px 6px">门岗</th><th style="padding:5px 6px">状态</th></tr></thead><tbody>';
-      list.slice(0, 20).forEach((o, i) => {
-        html += '<tr style="border-bottom:1px solid var(--line)"><td style="padding:4px 6px;color:var(--txt2)">' + (i + 1) + '</td>' +
-          '<td style="padding:4px 6px;font-weight:600;color:var(--txt)"><span class="orderLink" data-order="' + escapeHtml(o.单号) + '" title="点击查看该单全链路">' + escapeHtml(o.单号) + '</span></td>' +
-          '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.申请部门 || "-") + '</td>' +
-          '<td style="padding:4px 6px;color:var(--txt2)">' + escapeHtml(o.流入门岗 || "-") + '</td>' +
-          '<td style="padding:4px 6px"><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">未结案</span></td></tr>';
-      });
-      html += '</tbody></table>';
-      if (list.length > 20) html += '<div style="color:var(--txt2);margin-top:6px;text-align:center">… 另有 ' + (list.length - 20) + ' 单，点击卡片查看完整明细</div>';
-      html += '</div>';
-      body.innerHTML = html;
+      const sc = gdmsScopeChip(body);
+      gdmsHeadExtra(body, "bar", "span", "gdms-bar",
+        '<select aria-label="状态" title="状态"><option value="open">未结案</option><option value="closed">已到达（超时）</option><option value="all">全部放行超时</option></select>' +
+        '<button type="button" class="gdms-exp" title="导出当前范围与状态下的全部单（CSV）">导出</button>',
+        el => {
+          const sel = el.querySelector("select");
+          sel.value = gdmsState.tbl;
+          el.addEventListener("mousedown", e => e.stopPropagation());
+          sel.addEventListener("change", () => { gdmsState.tbl = sel.value; this.render(body, ctx); });
+          el.querySelector("button").addEventListener("click", e => { e.stopPropagation(); gdmsExport(); });
+        });
+      const list = computeGdmsStats(sc).tables[gdmsState.tbl] || [], show = list.slice(0, 50);
+      const wrap0 = body.querySelector(".gdms-tblwrap"), top = wrap0 ? wrap0.scrollTop : 0;
+      const td = v => '<td title="' + escapeHtml(v || "") + '">' + escapeHtml(v || "-") + '</td>';
+      body.innerHTML = '<div class="gdms-wrap"><div class="gdms-tblwrap"><table class="gdms-tbl"><thead><tr><th>序号</th><th>放行单号</th><th>部门</th><th>姓名</th><th>分机</th><th>状态</th></tr></thead><tbody>' +
+        (show.length ? show.map((o, i) => '<tr><td>' + (i + 1) + '</td>' +
+          '<td class="no"><span class="orderLink" data-order="' + escapeHtml(o.单号) + '" title="点击查看该单全链路">' + escapeHtml(o.单号) + '</span></td>' +
+          td(o.申请部门) + td(o.申请人) + td(o.申请人分机) +
+          '<td><span class="ac-tag" style="background:var(--danger-soft);color:var(--bad);margin:0">' + (o.在途超时 ? "未结案" : "到达超时") + (o.放行超时分钟 != null ? " · " + fmtOver(o.放行超时分钟) : "") + '</span></td></tr>').join("")
+          : '<tr><td colspan="6" class="gdms-none">✅ 暂无符合条件的单</td></tr>') +
+        '</tbody></table></div><div class="gdms-note">共 ' + list.length + ' 单' + (list.length > show.length ? '，表内显示前 ' + show.length + ' 单；导出为全部' : '') + '</div></div>';
+      if (top) body.querySelector(".gdms-tblwrap").scrollTop = top;
     },
     update(body, ctx) { this.render(body, ctx); }
   }
 };
+
+// ---------- GDMS 卡片公共件（D-37） ----------
+// 往卡头（标题与 ✕ 之间）放一个控件容器；同一张卡同一个 key 只建一次
+function gdmsHeadExtra(body, key, tag, cls, html, onInit) {
+  const slot = body.closest(".cardSlot"), head = slot && slot.querySelector(".cardHead");
+  if (!head) return null;
+  let el = head.querySelector('[data-gx="' + key + '"]');
+  if (!el) {
+    el = document.createElement(tag); el.dataset.gx = key; el.className = cls; el.innerHTML = html || "";
+    head.insertBefore(el, head.querySelector(".cardRemove"));
+    if (onInit) onInit(el);
+  }
+  return el;
+}
+// 范围徽标：范围不是 ALL 时提示当前范围。返回当前范围
+function gdmsScopeChip(body) {
+  const sc = gdmsScope(), el = gdmsHeadExtra(body, "chip", "span", "gdms-chip");
+  if (el) { el.textContent = sc === "ALL" ? "" : "范围 " + sc; el.hidden = sc === "ALL"; }
+  return sc;
+}
+// 分段 Tab（复用 .kpi-seg）：all=true 时重渲全部 GDMS 卡，否则只重渲本卡
+function gdmsSeg(body, key, opts, all) {
+  const seg = gdmsHeadExtra(body, key, "div", "kpi-seg gdms-seg", opts.map(o => '<button type="button" data-v="' + o[0] + '">' + o[1] + '</button>').join(""), el => {
+    el.setAttribute("role", "tablist");
+    el.addEventListener("mousedown", e => e.stopPropagation());
+    el.addEventListener("click", e => {
+      e.stopPropagation();
+      const b = e.target.closest("button"); if (!b || gdmsState[key] === b.dataset.v) return;
+      gdmsState[key] = b.dataset.v;
+      if (all) gdmsRerender();
+      else { const def = CARD_DEFS[body.closest(".cardSlot").dataset.card]; def.render(body, { S: computeStats(), rows, orders }); }
+    });
+  });
+  if (seg) seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === gdmsState[key]));
+}
+function gdmsRerender() {
+  const ctx = { S: computeStats(), rows, orders };
+  document.querySelectorAll('#cardGrid .cardSlot[data-card^="gdms_"]').forEach(slot => {
+    const def = CARD_DEFS[slot.dataset.card];
+    if (def) def.render(slot.querySelector(".cardBody"), ctx);
+  });
+}
+// 图表颜色在 setOption 时才定（gdmsCombo 读主题变量；老图表经 ecDarkFix 换色），故深浅色 / 主题切换后把带图表的卡重渲一次
+let _chartThemeTimer = null;
+new MutationObserver(() => {
+  clearTimeout(_chartThemeTimer);
+  _chartThemeTimer = setTimeout(() => {
+    if (!rows.length) return;
+    const ctx = { S: computeStats(), rows, orders };
+    document.querySelectorAll("#cardGrid .cardSlot").forEach(slot => {
+      const id = slot.dataset.card, def = CARD_DEFS[id];
+      if (def && def.render && (liveCharts[id] || id.startsWith("gdms_"))) def.render(slot.querySelector(".cardBody"), ctx);
+    });
+  }, 350);
+}).observe(document.documentElement, { attributes: true, attributeFilter: ["data-mode", "data-theme"] });
+function gdmsRateMax(arr, floor) {
+  const m = Math.max(floor || 0, ...arr);
+  return [0.04, 0.08, 0.1, 0.2, 0.4, 0.6, 0.8, 1].find(x => m <= x) || 1;
+}
+// 图表卡：cfg 为 null 显示空态；merge=true（演示增量刷新）时不重建图表
+function gdmsChart(id, body, cfg, emptyMsg, note, merge) {
+  if (!cfg) {
+    if (liveCharts[id]) { try { liveCharts[id].dispose(); } catch (e) { } delete liveCharts[id]; }
+    body.innerHTML = '<div class="ac-empty">' + (emptyMsg || "✅ 当前范围内没有放行超时单") + '</div>';
+    return;
+  }
+  let box = body.querySelector(".gdms-wrap > .chart"), ch = liveCharts[id];
+  const reuse = merge && box && ch && !ch.isDisposed() && ch.getDom() === box;
+  if (!reuse) {
+    body.innerHTML = '<div class="gdms-wrap"><div class="chart"></div><div class="gdms-note"></div></div>';
+    box = body.querySelector(".chart");
+  }
+  const n = body.querySelector(".gdms-note");
+  n.textContent = note || ""; n.hidden = !note;
+  if (!reuse) ch = cardChart(id, box);
+  ch.setOption(withAnim(optionBuilders.gdmsCombo(cfg)), !reuse);
+  if (reuse) ch.resize();
+}
+// 导出查询表：当前范围 + 当前状态下的全部单
+function gdmsExport() {
+  const sc = gdmsScope(), list = computeGdmsStats(sc).tables[gdmsState.tbl] || [];
+  if (!list.length) { toast("当前没有可导出的单", false); return; }
+  const cell = v => { let t = String(v ?? ""); if (/^[=+@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const lines = [["序号", "放行单号", "部门", "姓名", "分机", "状态", "超时分钟"]].concat(
+    list.map((o, i) => [i + 1, o.单号, o.申请部门, o.申请人, o.申请人分机, o.在途超时 ? "未结案" : "到达超时", o.放行超时分钟 ?? ""]));
+  const name = { open: "未结案", closed: "已到达超时", all: "全部放行超时" }[gdmsState.tbl];
+  saveAs(new Blob(["﻿" + lines.map(r => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
+    "放行超时查询_" + sc + "_" + name + "_" + dayjs().format("YYYYMMDD_HHmm") + ".csv");
+  toast("已导出 " + list.length + " 单 ✅");
+}
 
 // ---------- 布局状态 + 预设 + 持久化（v5: gridstack x/y/w/h 格式） ----------
 const BUILTIN_LAYOUTS = {
@@ -3091,21 +3346,13 @@ const BUILTIN_LAYOUTS = {
     { id: "table_detail", x: 0, y: 32, w: 24, h: 10 }
   ],
   "GDMS超时管控": [
-    // —— 顶部：5 张 KPI 指标卡（v5.2 起从底部上移，一眼掌握全局） ——
-    { id: "kpi_overview", x: 0, y: 0, w: 4, h: 4 },
-    { id: "kpi_special", x: 4, y: 0, w: 4, h: 4 },
-    { id: "kpi_transit", x: 8, y: 0, w: 4, h: 4 },
-    { id: "kpi_receive", x: 12, y: 0, w: 4, h: 4 },
-    { id: "kpi_rate", x: 16, y: 0, w: 8, h: 4 },
-    { id: "gdms_summary", x: 0, y: 4, w: 24, h: 4 },
-    { id: "gdms_timeout_trend", x: 0, y: 8, w: 16, h: 6 },
-    { id: "gdms_timeout_cat", x: 16, y: 8, w: 8, h: 6 },
-    { id: "gdms_timeout_dept", x: 0, y: 14, w: 12, h: 6 },
-    { id: "gdms_receive_dept", x: 12, y: 14, w: 12, h: 6 },
-    { id: "gdms_timeout_duration", x: 0, y: 20, w: 12, h: 6 },
-    { id: "gdms_unclosed", x: 12, y: 20, w: 12, h: 8 },
-    { id: "chart_gate_stuck", x: 0, y: 28, w: 12, h: 8 },
-    { id: "chart_gate_load", x: 12, y: 28, w: 12, h: 8 }
+    // —— 仿 GDMS「放行物品监测」大屏：3×2 六模块，一屏看完（D-37） ——
+    { id: "gdms_timeout_trend", x: 0, y: 0, w: 8, h: 8 },
+    { id: "gdms_summary", x: 8, y: 0, w: 8, h: 8 },
+    { id: "gdms_timeout_cat", x: 16, y: 0, w: 8, h: 8 },
+    { id: "gdms_timeout_dept", x: 0, y: 8, w: 8, h: 8 },
+    { id: "gdms_timeout_duration", x: 8, y: 8, w: 8, h: 8 },
+    { id: "gdms_unclosed", x: 16, y: 8, w: 8, h: 8 }
   ]
 };
 let layoutState = { active: "默认视图", custom: {} };
@@ -3623,7 +3870,7 @@ function saveViewPlugin(name) {
 // =====================================================================
 const CACHE = {
   db: "dashCacheData",
-  ver: 1,               // 结构版本：改动结构时递增，旧缓存自动作废
+  ver: 4,               // 结构版本（2：超时改认分钟数 + _放行异常，D-36；3：_放行超时分钟 + 申请人分机，D-37；4：_接收超时分钟）：改动结构时递增，旧缓存自动作废
   chunk: 2000,          // 每块行数（单条 IndexedDB 记录过大会拖慢读写）
   metaStore: "meta",
   rowStore: "rows",
@@ -3922,22 +4169,27 @@ function updateFileMeta(S) {
 }
 
 // ---------- 异常监控卡片内容生成（供 CARD_DEFS 复用） ----------
+// 超时最久的排前面（没有分钟数的排最后，保持原顺序）
+function byOverDesc(list, field) { return list.slice().sort((a, b) => (b[field] ?? -1) - (a[field] ?? -1)); }
+function overChip(mins, tone) {
+  return mins == null ? "" : ` <b style="color:var(--${tone});white-space:nowrap;margin-left:6px">${fmtOver(mins)}</b>`;
+}
 function analysisTransitHTML(S) {
   let preview;
   if (!S.transitTimeoutOrders.length) {
     preview = '<div class="ac-empty">✅ 暂无在途超时未放行单据</div>';
   } else {
-    preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
+    preview = byOverDesc(S.transitTimeoutOrders, "放行超时分钟").slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
       `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
-      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
+      `<span style="color:var(--txt2);text-align:right">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}${overChip(o.放行超时分钟, "bad")}</span></div>`).join("") +
       (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
     `<span style="font-size:12px;color:var(--txt2)">在途超时单数</span>` +
     `<span class="ac-count" style="color:var(--danger)">${S.transitTimeoutOrders.length}</span></div>` +
-    `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。点击卡片查看完整明细。</div>` +
+    `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。按超时时长从长到短列出，点击卡片查看完整明细。</div>` +
     `<div class="ac-preview">${preview}</div>`;
 }
 function analysisReceiveHTML(S) {
@@ -3945,11 +4197,11 @@ function analysisReceiveHTML(S) {
   if (!S.receiveTimeoutOrders.length) {
     preview = '<div class="ac-empty">✅ 暂无超时未接收单据</div>';
   } else {
-    preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
+    preview = byOverDesc(S.receiveTimeoutOrders, "接收超时分钟").slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
       `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
-      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
+      `<span style="color:var(--txt2);text-align:right">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}${overChip(o.接收超时分钟, "warn")}</span></div>`).join("") +
       (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
@@ -4363,7 +4615,7 @@ function traceNodes(o, recs) {
       desc: released.length > 1 ? "第 " + (i + 1) + " 笔放行" : "放行核验完成",
       who: (r.放行人 || "-") + " · " + (r.实际放行门岗 || "-"),
       tone: r._放行超时 ? "bad" : (o.特保 ? "purple" : "ok"),
-      flag: r._放行超时 ? "放行超时" : ""
+      flag: r._放行超时 ? "放行超时" + (r._放行超时分钟 != null ? " " + fmtOver(r._放行超时分钟) : "") : ""
     }));
   } else {
     nodes.push({ kind: "release", time: null, desc: "尚未放行", tone: "bad", who: o.流入门岗 || "-" });
@@ -4376,13 +4628,13 @@ function traceNodes(o, recs) {
       kind: "receive", time: recvAt, desc: "接收确认",
       tone: recvLate ? "warn" : "ok",
       who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-"),
-      flag: recvLate ? "已接收但超时" : ""
+      flag: recvLate ? "已接收但超时" + (o.接收超时分钟 != null ? " " + fmtOver(o.接收超时分钟) : "") : ""
     });
   } else {
     nodes.push({
       kind: "receive", time: null, desc: "尚未接收",
       tone: o.超时未接收 ? "warn" : "accent", who: "待接收",
-      flag: o.超时未接收 ? "超时未接收" : ""
+      flag: o.超时未接收 ? "超时未接收" + (o.接收超时分钟 != null ? " " + fmtOver(o.接收超时分钟) : "") : ""
     });
   }
   const now = dayjs();
@@ -4441,8 +4693,9 @@ function renderTraceTable(recs) {
         : (r._放行超时 ? { t: "放行超时", c: "tag-bad" }
         : (r._放行日期 ? { t: "已放行", c: "tag-ok" }
         : { t: "在途", c: "tag-mute" }))));
+      const over = st.c === "tag-warn" ? fmtOver(r._接收超时分钟) : st.c === "tag-bad" ? fmtOver(r._放行超时分钟) : "";
       return "<tr>" + cells.map(c => '<td style="' + td + '">' + c + "</td>").join("") +
-        '<td style="padding:7px 8px;border-bottom:1px solid var(--line)"><span class="tag ' + st.c + '">' + st.t + "</span></td></tr>";
+        '<td style="padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap"><span class="tag ' + st.c + '">' + st.t + (over ? " · " + over : "") + "</span></td></tr>";
     }).join("") + "</tbody></table>";
 }
 function renderTrace(o, recs) {
@@ -4548,7 +4801,7 @@ function pushFeedItems(newRows, eventText) {
   const empty = box.querySelector(".empty");
   if (empty) empty.remove();
   newRows.forEach(r => {
-    const stCls = r._特保 ? "st-sp" : (String(r.放行状态).includes("异常") || String(r.放行状态).includes("異常")) ? "st-bad" : "st-ok";
+    const stCls = r._特保 ? "st-sp" : isAbnormalStatus(r.放行状态) ? "st-bad" : "st-ok";
     const el = document.createElement("div");
     el.className = "feedItem feedItem--new";
     el.innerHTML =
@@ -4632,16 +4885,17 @@ function liveTick() {
     const wasTimeout = o.放行超时;
     // 清原末笔超时标记（超时标记只在末笔），新末笔保持原单超时状态或按概率新增
     if (last._放行超时) {
-      last.放行超时 = 0; last._放行超时 = false;
+      last.放行超时 = 0; last._放行超时 = false; last.放行状态 = "正常";
       modifiedRows.push(last);
     }
+    const relTO = (wasTimeout || Math.random() < 0.25) ? demoMin() : 0;
     const rec = {
       申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
-      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门, 申请人分机: last.申请人分机,
       放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
       实际放行门岗: gate, 放行人姓名: pick(DEMO.people),
-      实际放行时间: now.format(fmt), 放行状态: Math.random() < 0.06 ? "異常" : "正常",
-      放行超时: wasTimeout ? 1 : (Math.random() < 0.25 ? 1 : 0),
+      实际放行时间: now.format(fmt), 放行状态: demoRelStatus(relTO),
+      放行超时: relTO,
       接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
       物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
     };
@@ -4655,26 +4909,27 @@ function liveTick() {
     const last = recs[recs.length - 1];
     const wasTimeout = o.放行超时;
     if (last._放行超时) {
-      last.放行超时 = 0; last._放行超时 = false;
+      last.放行超时 = 0; last._放行超时 = false; last.放行状态 = "正常";
       modifiedRows.push(last);
     }
+    const relTO = (wasTimeout || Math.random() < 0.12) ? demoMin() : 0;
     const rec = {
       申请日期: last.申请日期, 放行单号: o.单号, 物品类型: last.物品类型,
-      申请人姓名: last.申请人, 申请人部门: last.申请部门,
+      申请人姓名: last.申请人, 申请人部门: last.申请部门, 申请人分机: last.申请人分机,
       放行单流出门岗: last.流出门岗, 放行单流入门岗: o.流入门岗,
       实际放行门岗: o.流入门岗, 放行人姓名: pick(DEMO.people),
-      实际放行时间: now.format(fmt), 放行状态: "正常",
-      放行超时: wasTimeout ? 1 : (Math.random() < 0.12 ? 1 : 0),
-      接收时间: "", 接收超时: 0, 接收状态: "", 接收人姓名: "", 接收人部门: "",
+      实际放行时间: now.format(fmt), 放行状态: relTO > 0 ? "超时" : "正常",
+      放行超时: relTO,
+      接收时间: "", 接收超时: 0, 接收状态: "未接收", 接收人姓名: "", 接收人部门: "",
       物品分类: last.物品分类, 放行物品名称: last.放行物品名称, 放行数量: last.数量, 厂区: last.厂区
     };
     // 40% 概率到达后立即完成接收
     if (Math.random() < 0.4) {
       rec.接收时间 = now.add(Math.floor(Math.random() * 20) + 5, "minute").format(fmt);
-      rec.接收状态 = "正常";
       rec.接收人姓名 = pick(DEMO.people);
       rec.接收人部门 = pick(DEMO.depts);
-      rec.接收超时 = Math.random() < 0.2 ? 1 : 0;
+      rec.接收超时 = Math.random() < 0.2 ? demoMin() : 0;
+      rec.接收状态 = rec.接收超时 > 0 ? "超时" : "正常";
     }
     const newRow = normalizeRow(rec);
     newRows.push(newRow); rows.push(newRow);
@@ -4686,10 +4941,10 @@ function liveTick() {
     const recs = rows.filter(r => r.放行单号 === o.单号);
     const rec = recs.find(r => r._已到达) || recs[recs.length - 1];
     rec.接收时间 = now.add(Math.floor(Math.random() * 30) + 1, "minute").format(fmt);
-    rec.接收状态 = "正常";
     rec.接收人姓名 = pick(DEMO.people);
     rec.接收人部门 = pick(DEMO.depts);
-    rec.接收超时 = Math.random() < 0.25 ? 1 : 0;
+    rec.接收超时 = Math.random() < 0.25 ? demoMin() : 0;
+    rec.接收状态 = rec.接收超时 > 0 ? "超时" : "正常";
     // 重算派生字段（_接收日期 / _接收超时未接收 等）
     const idx = rows.indexOf(rec);
     const newRow = normalizeRow(rec);
@@ -4780,7 +5035,8 @@ $("btnReupload").onclick = () => {
 
 // ---------- 示例数据生成（符合「物品放行监控」文件格式） ----------
 const DEMO = {
-  depts: ["MLB 撕石墨片 A線_ZZ", "品保IQC課_ZZ", "SMT 一課_ZZ", "組裝一課_ZZ", "倉儲物流課_ZZ", "設備維護課_ZZ", "研發一部_ZZ", "資訊部_ZZ"],
+  depts: ["MLB 撕石墨片 A線_ZZ", "MLB 主板 SMT 一課_ZZ", "MLB 組裝 測試線_ZZ", "MFG 網站 SW 自動化1組_鄭州", "MFG 網站 SW 自動化2組_鄭州",
+    "品保 IQC 課_鄭州", "物流 倉儲課_鄭州", "設備 工程課_鄭州", "新產品 試製線_鄭州", "資訊 系統維運課_鄭州"],
   itemTypes: ["普通物品", "普通物品", "普通物品", "新产品A级物料", "新产品机台"],
   categories: ["生產物料(非A類)", "耗材", "资讯物品", "设备", "新产品A级物料", "新产品机台"],
   gates: ["ZZ-D07-1F-南一門", "ZZ-L07-1F-中碼頭崗", "ZZ-D03-1F-北二門", "ZZ-L02-1F-東一門", "ZZ-D05-2F-西三門", "ZZ-L09-1F-南二門"],
@@ -4789,6 +5045,9 @@ const DEMO = {
   units: ["PCS", "台", "箱", "批"]
 };
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+// 演示数据与现行导出格式一致：超时列写分钟数，放行状态 正常/超时/放行拒绝，接收状态 正常/超时/未接收/未接收超时
+const demoMin = () => { const u = Math.random(); return Math.round(u < .2 ? 5 + Math.random() * 25 : u < .45 ? 31 + Math.random() * 29 : u < .8 ? 61 + Math.random() * 179 : 241 + Math.random() * 400); };
+const demoRelStatus = to => to > 0 ? "超时" : (Math.random() < 0.06 ? "放行拒绝" : "正常");
 const pad = (n, l) => String(n).padStart(l, "0");
 
 // 模拟一张放行单（符合真实业务规则）：
@@ -4799,10 +5058,11 @@ function makeDemoOrder(time, seq) {
   const special = Math.random() < 0.18;  // 约18%为特级安保单（单号前缀 WF9897）
   const orderNo = `${special ? CONFIG.特保单号前缀 : CONFIG.普通单号标识}${time.format("YYMMDD")}${pad(1 + (seq % 999999), 6)}`;
   // —— 整单固定属性：物品类型/分类/申请人/门岗路线 ——
-  const itemType = special ? pick(["新产品A级物料", "新产品机台"]) : "普通物品";
-  const category = special ? itemType : pick(DEMO.categories.filter(c => !c.includes("新产品")));
+  const itemType = special ? "特级安保物品" : "普通物品";
+  const category = special ? pick(["新产品A级物料", "新产品机台"]) : pick(DEMO.categories.filter(c => !c.includes("新产品")));
   const itemName = pick(["石墨片", "顯示模組", "測試治具", "筆電樣機", "包裝耗材", "伺服器機台", "光學鏡頭", "PCB板"]);
   const applicant = pick(DEMO.people), dept = pick(DEMO.depts), qty = Math.ceil(Math.random() * 200);
+  const ext = String(30000 + Math.floor(Math.random() * 39999));
   const from = pick(DEMO.gates);
   let to = pick(DEMO.gates);
   if (to === from) to = DEMO.gates[(DEMO.gates.indexOf(from) + 1) % DEMO.gates.length];
@@ -4829,14 +5089,15 @@ function makeDemoOrder(time, seq) {
       "放行单号": orderNo,
       "物品类型": itemType,
       "申请人姓名": applicant,
+      "申请人分机": ext,
       "申请人部门": dept,
       "放行单流出门岗": from,
       "放行单流入门岗": to,
       "实际放行门岗": gate,
       "放行人姓名": pick(DEMO.people),
       "实际放行时间": t.format("YYYY/MM/DD HH:mm:ss"),
-      "放行状态": Math.random() < 0.06 ? "異常" : "正常",
-      "放行超时": (idx === path.length - 1 && releaseTimeout) ? 1 : 0,
+      "放行状态": (idx === path.length - 1 && releaseTimeout) ? "超时" : demoRelStatus(0),
+      "放行超时": (idx === path.length - 1 && releaseTimeout) ? demoMin() : 0,
       "接收时间": "",
       "接收超时": 0,
       "接收状态": "",
@@ -4853,13 +5114,13 @@ function makeDemoOrder(time, seq) {
     const lastRec = recs[recs.length - 1];
     if (recv) {
       lastRec["接收时间"] = t.add(Math.floor(Math.random() * 90) + 10, "minute").format("YYYY/MM/DD HH:mm:ss");
-      lastRec["接收状态"] = "正常";
+      lastRec["接收状态"] = recvTimeout ? "超时" : "正常";
       lastRec["接收人姓名"] = pick(DEMO.people);
       lastRec["接收人部门"] = pick(DEMO.depts);   // 接收人属收货方，部门取随机（与申请部门可不同）
     } else {
-      lastRec["接收状态"] = "未接收";
+      lastRec["接收状态"] = recvTimeout ? "未接收超时" : "未接收";
     }
-    if (recvTimeout) lastRec["接收超时"] = 1;
+    if (recvTimeout) lastRec["接收超时"] = demoMin();
   }
   return recs;
 }
