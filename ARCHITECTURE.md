@@ -30,7 +30,7 @@
 | 存储 | IndexedDB `dashCacheData`（`meta` + `rows` 两个 store），**只保留最近一份**（`metaKey: "latest"`） |
 | 分块 | 每 2000 行一条记录（`CACHE.chunk`），写入时逐块让出主线程 |
 | 序列化 | **`_申请日期/_放行日期/_接收日期` 必须转时间戳**（结构化克隆会丢 dayjs 原型，直接存会让恢复后 `.format()` 报错），读取时用 `dayjs(ts)` 重建 |
-| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废。**改 `normalizeRow` 的派生字段（`_放行超时` 等）必须递增 `CACHE.ver`**，否则恢复出来的是旧判定（现为 3，D-36 / D-37） |
+| 元数据 | `fileName / savedAt / rowCount / schema / colOf`；`schema` 与 `CACHE.ver` 不符即作废。**改 `normalizeRow` 的派生字段（`_放行超时` 等）必须递增 `CACHE.ver`**，否则恢复出来的是旧判定（现为 4，D-36 / D-37 / D-38） |
 | 写入时机 | `processData()` 渲染完成后异步执行；**演示数据（`demoMode`）不写** |
 | 恢复 | `cacheRestore()` 重建 rows + `currentFileName` + `currentColOf`，并按 `_rowId` 最大值复位 `_rowSeq`（防与演示新增行撞 ID），然后 `renderAll()` |
 | 开关 | 默认开启，功能抽屉「💾 数据缓存」可关（`localStorage.dashCacheOff`）；关闭时同时清除已留存数据 |
@@ -177,6 +177,7 @@ gridstack **24 列**，行高 **48px**（`GRID_COLS` / `GRID_CELL_H`）。相对
 - 缓存写入必须分块让出主线程，且**任何失败都要自愈**（清缓存 + 不污染当前 `rows`）；探活失败时相关入口整块隐藏。
 - 派生字段 `_` 前缀，导出前 `stripPrivate()` 剥离。
 - 新图表动画走 `withAnim()` / `animOpt()`，大数据与 lite 自动降级。
+- **图表一律经 `initEC()` 创建**（D-38）：它包了一层 `setOption`，在「默认主题 + 深色」时用 `ecDarkFix()` 把老 option 里写死的浅色主题字面量（`#1d1d1f`、`rgba(0,0,0,0.55)` 等）换成主题变量。新图表请直接读主题变量（参考 `gdmsCombo`），不要再写死文字 / 轴线颜色。深浅色或主题切换后，一个 `MutationObserver` 会把带图表的卡重渲一次。外部主题的图表配色仍由各自 `theme-*-charts.js` 负责。
 - 拼进 `innerHTML`（含 tooltip formatter 返回的 HTML）的单元格文本与文件名必须先经 `escapeHtml`。
 
 常见排障（现象 → 先查）：缺必需列 → 别名或表头未识别；解析失败 → 空 Sheet 是否仍被误当成第一张（现行应已跳过）；主题进门就不是默认 → `localStorage.dashTheme` 或探测未标 `data-probe`；**视图比保存时宽一倍 → 该布局/插件缺 `cols: 24`，被当成旧 12 列 ×2（D-30）**；**没有「恢复上次数据」按钮 → IndexedDB 被禁用/被关掉开关，或上一份数据写入失败**；不想在本机留数据 → 抽屉「🗑 清除缓存」或关掉「💾 数据缓存」；卡顿 → 打开右侧功能抽屉，打开「流畅模式」开关。

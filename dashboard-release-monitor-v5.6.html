@@ -1189,6 +1189,15 @@ function isTimeout(v) {
 }
 // 状态列文本判断（放行状态 / 接收状态）
 function hasKeyword(v, words) { const s = String(v ?? ""); return words.some(w => s.includes(w)); }
+// 超时分钟数：数字且 >0 才有值；旧是/否标记导出为 null
+function timeoutMinutes(v) {
+  const s = String(v ?? "").trim();
+  if (!/^[+-]?\d+(\.\d+)?$/.test(s)) return null;
+  const n = parseFloat(s);
+  return n > 0 ? n : null;
+}
+// 文案：「超 45m」「超 5h 20m」；没有分钟数时返回空串
+function fmtOver(mins) { return mins == null ? "" : fmtRateDur(mins); }
 function isTimeoutStatus(v) { return hasKeyword(v, CONFIG.超时状态关键字); }
 function isAbnormalStatus(v) { return hasKeyword(v, CONFIG.放行异常关键字); }
 // 特保单判断：放行单号前六位为 WF9897
@@ -1506,9 +1515,9 @@ function normalizeRow(r) {
   o._放行超时 = isTimeout(o.放行超时) || isTimeoutStatus(o.放行状态);
   o._接收超时 = isTimeout(o.接收超时) || isTimeoutStatus(o.接收状态);
   o._放行异常 = isAbnormalStatus(o.放行状态);
-  // 放行超时分钟数（数字且 >0 才有；旧是/否标记导出为 null）——供 GDMS 时间段分档
-  const _m = parseFloat(String(o.放行超时 ?? "").trim());
-  o._放行超时分钟 = (isFinite(_m) && _m > 0 && /^[+-]?\d+(\.\d+)?$/.test(String(o.放行超时).trim())) ? _m : null;
+  // 超时分钟数（旧是/否标记导出为 null）——供时长分档与各处「超时多久」展示
+  o._放行超时分钟 = timeoutMinutes(o.放行超时);
+  o._接收超时分钟 = timeoutMinutes(o.接收超时);
   // 已到达：实际放行门岗 == 流入门岗（且均非空）
   o._已到达 = !!o.流入门岗 && !!o.实际放行门岗 && String(o.实际放行门岗).trim() === String(o.流入门岗).trim();
   // 超时未接收：流入门岗已放行（实际放行门岗非空）但无接收时间且接收超时
@@ -1544,6 +1553,7 @@ function computeOrders() {
       申请人: arr.map(r => r.申请人).find(Boolean) || "",
       申请人分机: arr.map(r => r.申请人分机).find(Boolean) || "",
       放行超时分钟: arr.reduce((m, r) => (r._放行超时分钟 != null && (m == null || r._放行超时分钟 > m)) ? r._放行超时分钟 : m, null),
+      接收超时分钟: arr.reduce((m, r) => (r._接收超时分钟 != null && (m == null || r._接收超时分钟 > m)) ? r._接收超时分钟 : m, null),
       接收人部门: arr.map(r => r.接收人部门).find(Boolean) || "",  // 一单的接收人（收货方）部门一致，取首个非空
       流入门岗: arr.map(r => r.流入门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
       流出门岗: arr.map(r => r.流出门岗).find(Boolean) || "",  // 提单表头：同一单各行一致，取首个非空
@@ -1856,7 +1866,31 @@ const withAnim = opt => Object.assign({}, animOpt(), opt);
 const withDetailAnim = opt => Object.assign({}, (PERF.lite || rows.length > CONFIG.大数据量阈值) ? LARGE_ANIM : DETAIL_ANIM, opt);
 // —— ECharts 统一初始化：限制设备像素比（低性能模式强制 1x），降低高 DPR 屏显存/填充压力 ——
 const EC_DPR = Math.min(window.devicePixelRatio || 1, PERF.lite ? 1 : 1.5);
-const initEC = dom => echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
+// —— 默认主题深色模式：老图表的文字 / 轴线颜色是写死的浅色主题值，深色下看不清。
+//    这里在 setOption 前把这几个字面量换成当前主题变量；外部主题由各自的 charts.js 负责，不在此处理 ——
+function ecDarkFix(opt) {
+  const html = document.documentElement;
+  if (html.getAttribute("data-mode") !== "dark" || html.getAttribute("data-theme")) return opt;
+  const cs = getComputedStyle(html), cv = (n, d) => (cs.getPropertyValue(n) || "").trim() || d;
+  const txt = cv("--txt", "#e6edf3"), txt2 = cv("--txt2", "rgba(255,255,255,0.55)"), line = cv("--line", "rgba(255,255,255,0.10)");
+  const map = { "#1d1d1f": txt, "rgba(0,0,0,0.55)": txt2, "rgba(0,0,0,0.14)": "rgba(255,255,255,0.22)", "rgba(0,0,0,0.08)": line,
+    "rgba(0,0,0,0.06)": line, "rgba(255,255,255,0.85)": cv("--bg", "#0d1117") };
+  const walk = v => {
+    if (typeof v === "string") return map[v] || v;
+    if (Array.isArray(v)) return (v.length && typeof v[0] === "number") ? v : v.map(walk);
+    if (v && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype) {   // 只复制纯对象，不动 baseAxis 等共享常量
+      const o = {}; for (const k in v) o[k] = walk(v[k]); return o;
+    }
+    return v;
+  };
+  return walk(opt);
+}
+const initEC = dom => {
+  const ch = echarts.init(dom, null, { devicePixelRatio: EC_DPR, renderer: "canvas" });
+  const raw = ch.setOption;
+  ch.setOption = function (opt, ...rest) { return raw.call(this, ecDarkFix(opt), ...rest); };
+  return ch;
+};
 function hbarOption(data, color) {
   return {
     tooltip: {},
@@ -2205,7 +2239,8 @@ function kpiLatestOrders(pred, n) {
   });
   return [...best.values()].sort((a, b) => parseKpiTime(b.申请日期) - parseKpiTime(a.申请日期)).slice(0, n);
 }
-function kpiOrderWaitBuckets(orderList) {
+// field：订单上的超时分钟字段（放行超时分钟 / 接收超时分钟）。有分钟数按分钟数落档；没有（旧标记导出）才退回「末次放行 → 当前」
+function kpiOrderWaitBuckets(orderList, field) {
   const nos = new Set(orderList.map(o => o.单号));
   const lastRel = {};
   rows.forEach(r => {
@@ -2217,7 +2252,8 @@ function kpiOrderWaitBuckets(orderList) {
   let b1 = 0, b2 = 0, b3 = 0;
   orderList.forEach(o => {
     const t = lastRel[o.单号] || 0;
-    const h = t ? Math.max(0, (now - t) / 3600000) : 0;
+    const m = field ? o[field] : null;
+    const h = m != null ? m / 60 : (t ? Math.max(0, (now - t) / 3600000) : 0);
     if (h < 1) b1++;
     else if (h <= 4) b2++;
     else b3++;
@@ -2456,7 +2492,7 @@ function buildKpiProps(id, S) {
   }
   if (id === "kpi_transit") {
     const tOrders = S.transitTimeoutOrders || [];
-    const tw = kpiOrderWaitBuckets(tOrders);
+    const tw = kpiOrderWaitBuckets(tOrders, "放行超时分钟");
     return Object.assign({ tone: "v-danger", tab: "overtime" }, common, {
       hero: overtime, unit: "单", subHtml: '在途单据共 <b style="color:var(--danger)">' + transit + "</b> 单",
       visual: "stack",
@@ -2482,7 +2518,7 @@ function buildKpiProps(id, S) {
     const recOrders = S.receiveTimeoutOrders || [];
     const recSp = recOrders.filter(o => o.特保).length;
     const recArrived = recOrders.filter(o => o.已到达).length;
-    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders);
+    const { b1, b2, b3 } = kpiOrderWaitBuckets(recOrders, "接收超时分钟");
     return Object.assign({ tone: "v-warn", tab: "overtime", cta: true }, common, {
       hero: receive, unit: "单", subHtml: "需及时跟进接收",
       visual: "alert",
@@ -2586,8 +2622,9 @@ function htmlRecords(p) {
   const body = cells.map(r => {
     const abn = isAbnormalStatus(r.放行状态);
     let tag = '<span class="tag tag-ok">已核驗</span>';
-    if (p.recTag === "超时") tag = '<span class="tag tag-bad">超时</span>';
-    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">未接收</span>';
+    const od = (typeof orders !== "undefined" && orders[r.放行单号]) || {};
+    if (p.recTag === "超时") tag = '<span class="tag tag-bad">' + (fmtOver(od.放行超时分钟) || "超时") + '</span>';
+    else if (p.recTag === "未接收") tag = '<span class="tag tag-warn">' + (fmtOver(od.接收超时分钟) || "未接收") + '</span>';
     else if (p.recTag === "安保") tag = '<span class="tag tag-bad">特保</span>';
     else if (abn) tag = '<span class="tag tag-bad">門崗異常</span>';
     const col3v = p.recTag === "超时" ? (r.流出门岗 || "—") : p.recTag === "未接收" ? (r.流入门岗 || "—") : (r.放行物品名称 || r.物品分类 || "—");
@@ -3175,7 +3212,7 @@ const CARD_DEFS = {
         (show.length ? show.map((o, i) => '<tr><td>' + (i + 1) + '</td>' +
           '<td class="no"><span class="orderLink" data-order="' + escapeHtml(o.单号) + '" title="点击查看该单全链路">' + escapeHtml(o.单号) + '</span></td>' +
           td(o.申请部门) + td(o.申请人) + td(o.申请人分机) +
-          '<td><span class="ac-tag" style="background:var(--danger-soft);color:var(--bad);margin:0">' + (o.在途超时 ? "未结案" : "到达超时") + '</span></td></tr>').join("")
+          '<td><span class="ac-tag" style="background:var(--danger-soft);color:var(--bad);margin:0">' + (o.在途超时 ? "未结案" : "到达超时") + (o.放行超时分钟 != null ? " · " + fmtOver(o.放行超时分钟) : "") + '</span></td></tr>').join("")
           : '<tr><td colspan="6" class="gdms-none">✅ 暂无符合条件的单</td></tr>') +
         '</tbody></table></div><div class="gdms-note">共 ' + list.length + ' 单' + (list.length > show.length ? '，表内显示前 ' + show.length + ' 单；导出为全部' : '') + '</div></div>';
       if (top) body.querySelector(".gdms-tblwrap").scrollTop = top;
@@ -3225,11 +3262,18 @@ function gdmsRerender() {
     if (def) def.render(slot.querySelector(".cardBody"), ctx);
   });
 }
-// 颜色在构造 option 时从主题变量读取，故深浅色 / 主题切换后重渲一次
-let _gdmsThemeTimer = null;
+// 图表颜色在 setOption 时才定（gdmsCombo 读主题变量；老图表经 ecDarkFix 换色），故深浅色 / 主题切换后把带图表的卡重渲一次
+let _chartThemeTimer = null;
 new MutationObserver(() => {
-  clearTimeout(_gdmsThemeTimer);
-  _gdmsThemeTimer = setTimeout(() => { if (rows.length && document.querySelector('#cardGrid .cardSlot[data-card^="gdms_"]')) gdmsRerender(); }, 350);
+  clearTimeout(_chartThemeTimer);
+  _chartThemeTimer = setTimeout(() => {
+    if (!rows.length) return;
+    const ctx = { S: computeStats(), rows, orders };
+    document.querySelectorAll("#cardGrid .cardSlot").forEach(slot => {
+      const id = slot.dataset.card, def = CARD_DEFS[id];
+      if (def && def.render && (liveCharts[id] || id.startsWith("gdms_"))) def.render(slot.querySelector(".cardBody"), ctx);
+    });
+  }, 350);
 }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-mode", "data-theme"] });
 function gdmsRateMax(arr, floor) {
   const m = Math.max(floor || 0, ...arr);
@@ -3259,8 +3303,8 @@ function gdmsExport() {
   const sc = gdmsScope(), list = computeGdmsStats(sc).tables[gdmsState.tbl] || [];
   if (!list.length) { toast("当前没有可导出的单", false); return; }
   const cell = v => { let t = String(v ?? ""); if (/^[=+@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
-  const lines = [["序号", "放行单号", "部门", "姓名", "分机", "状态"]].concat(
-    list.map((o, i) => [i + 1, o.单号, o.申请部门, o.申请人, o.申请人分机, o.在途超时 ? "未结案" : "到达超时"]));
+  const lines = [["序号", "放行单号", "部门", "姓名", "分机", "状态", "超时分钟"]].concat(
+    list.map((o, i) => [i + 1, o.单号, o.申请部门, o.申请人, o.申请人分机, o.在途超时 ? "未结案" : "到达超时", o.放行超时分钟 ?? ""]));
   const name = { open: "未结案", closed: "已到达超时", all: "全部放行超时" }[gdmsState.tbl];
   saveAs(new Blob(["﻿" + lines.map(r => r.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }),
     "放行超时查询_" + sc + "_" + name + "_" + dayjs().format("YYYYMMDD_HHmm") + ".csv");
@@ -3826,7 +3870,7 @@ function saveViewPlugin(name) {
 // =====================================================================
 const CACHE = {
   db: "dashCacheData",
-  ver: 3,               // 结构版本（2：超时改认分钟数 + _放行异常，D-36；3：_放行超时分钟 + 申请人分机，D-37）：改动结构时递增，旧缓存自动作废
+  ver: 4,               // 结构版本（2：超时改认分钟数 + _放行异常，D-36；3：_放行超时分钟 + 申请人分机，D-37；4：_接收超时分钟）：改动结构时递增，旧缓存自动作废
   chunk: 2000,          // 每块行数（单条 IndexedDB 记录过大会拖慢读写）
   metaStore: "meta",
   rowStore: "rows",
@@ -4125,22 +4169,27 @@ function updateFileMeta(S) {
 }
 
 // ---------- 异常监控卡片内容生成（供 CARD_DEFS 复用） ----------
+// 超时最久的排前面（没有分钟数的排最后，保持原顺序）
+function byOverDesc(list, field) { return list.slice().sort((a, b) => (b[field] ?? -1) - (a[field] ?? -1)); }
+function overChip(mins, tone) {
+  return mins == null ? "" : ` <b style="color:var(--${tone});white-space:nowrap;margin-left:6px">${fmtOver(mins)}</b>`;
+}
 function analysisTransitHTML(S) {
   let preview;
   if (!S.transitTimeoutOrders.length) {
     preview = '<div class="ac-empty">✅ 暂无在途超时未放行单据</div>';
   } else {
-    preview = S.transitTimeoutOrders.slice(0, 3).map(o =>
+    preview = byOverDesc(S.transitTimeoutOrders, "放行超时分钟").slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,59,48,.12);color:#c0392b">${o.特保 ? "特保" : "普通"}</span>` +
       `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
-      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
+      `<span style="color:var(--txt2);text-align:right">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}${overChip(o.放行超时分钟, "bad")}</span></div>`).join("") +
       (S.transitTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.transitTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
     `<span style="font-size:12px;color:var(--txt2)">在途超时单数</span>` +
     `<span class="ac-count" style="color:var(--danger)">${S.transitTimeoutOrders.length}</span></div>` +
-    `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。点击卡片查看完整明细。</div>` +
+    `<div class="ac-desc">放行单尚未到达流入门岗（实际放行门岗 ≠ 流入门岗），且已超过规定放行时限。按超时时长从长到短列出，点击卡片查看完整明细。</div>` +
     `<div class="ac-preview">${preview}</div>`;
 }
 function analysisReceiveHTML(S) {
@@ -4148,11 +4197,11 @@ function analysisReceiveHTML(S) {
   if (!S.receiveTimeoutOrders.length) {
     preview = '<div class="ac-empty">✅ 暂无超时未接收单据</div>';
   } else {
-    preview = S.receiveTimeoutOrders.slice(0, 3).map(o =>
+    preview = byOverDesc(S.receiveTimeoutOrders, "接收超时分钟").slice(0, 3).map(o =>
       `<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line)">` +
       `<span><span class="ac-tag" style="background:rgba(255,159,10,.16);color:#9a6200">${o.特保 ? "特保" : "普通"}</span>` +
       `<b class="orderLink" data-order="${escapeHtml(o.单号)}" style="color:var(--txt)" title="点击查看该单全链路">${escapeHtml(o.单号)}</b></span>` +
-      `<span style="color:var(--txt2)">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}</span></div>`).join("") +
+      `<span style="color:var(--txt2);text-align:right">${escapeHtml(o.申请部门 || "-")} · ${escapeHtml(o.流入门岗 || "-")}${overChip(o.接收超时分钟, "warn")}</span></div>`).join("") +
       (S.receiveTimeoutOrders.length > 3 ? `<div style="color:var(--txt2);margin-top:6px">… 另有 ${S.receiveTimeoutOrders.length - 3} 单</div>` : "");
   }
   return `<div style="display:flex;align-items:baseline;justify-content:space-between">` +
@@ -4566,7 +4615,7 @@ function traceNodes(o, recs) {
       desc: released.length > 1 ? "第 " + (i + 1) + " 笔放行" : "放行核验完成",
       who: (r.放行人 || "-") + " · " + (r.实际放行门岗 || "-"),
       tone: r._放行超时 ? "bad" : (o.特保 ? "purple" : "ok"),
-      flag: r._放行超时 ? "放行超时" : ""
+      flag: r._放行超时 ? "放行超时" + (r._放行超时分钟 != null ? " " + fmtOver(r._放行超时分钟) : "") : ""
     }));
   } else {
     nodes.push({ kind: "release", time: null, desc: "尚未放行", tone: "bad", who: o.流入门岗 || "-" });
@@ -4579,13 +4628,13 @@ function traceNodes(o, recs) {
       kind: "receive", time: recvAt, desc: "接收确认",
       tone: recvLate ? "warn" : "ok",
       who: (rr.接收人 || "-") + " · " + (rr.接收人部门 || "-"),
-      flag: recvLate ? "已接收但超时" : ""
+      flag: recvLate ? "已接收但超时" + (o.接收超时分钟 != null ? " " + fmtOver(o.接收超时分钟) : "") : ""
     });
   } else {
     nodes.push({
       kind: "receive", time: null, desc: "尚未接收",
       tone: o.超时未接收 ? "warn" : "accent", who: "待接收",
-      flag: o.超时未接收 ? "超时未接收" : ""
+      flag: o.超时未接收 ? "超时未接收" + (o.接收超时分钟 != null ? " " + fmtOver(o.接收超时分钟) : "") : ""
     });
   }
   const now = dayjs();
@@ -4644,8 +4693,9 @@ function renderTraceTable(recs) {
         : (r._放行超时 ? { t: "放行超时", c: "tag-bad" }
         : (r._放行日期 ? { t: "已放行", c: "tag-ok" }
         : { t: "在途", c: "tag-mute" }))));
+      const over = st.c === "tag-warn" ? fmtOver(r._接收超时分钟) : st.c === "tag-bad" ? fmtOver(r._放行超时分钟) : "";
       return "<tr>" + cells.map(c => '<td style="' + td + '">' + c + "</td>").join("") +
-        '<td style="padding:7px 8px;border-bottom:1px solid var(--line)"><span class="tag ' + st.c + '">' + st.t + "</span></td></tr>";
+        '<td style="padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap"><span class="tag ' + st.c + '">' + st.t + (over ? " · " + over : "") + "</span></td></tr>";
     }).join("") + "</tbody></table>";
 }
 function renderTrace(o, recs) {
