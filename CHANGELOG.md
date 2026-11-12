@@ -17,6 +17,7 @@
 
 ## 2026-11-12
 
+- 无行为变化：`gdms-view-redesign` HANDOFF §4.3 按用户确认改写超时时长定义——上一门岗放行到下一门岗放行的间隔（在途的算到数据最新时刻），不再从申请时间起算。
 - 新增设计原型 `docs/prototypes/gdms-view-redesign/`（`status: draft`，Claude Code 代笔）：仿 GDMS「放行物品监测」大屏重排「GDMS超时管控」视图为 3×2 六模块，去掉三个厂区圆。无行为变化：只加原型与 HANDOFF，主文件未改。
 
 ## 2026-10-27
