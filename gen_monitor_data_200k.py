@@ -35,6 +35,7 @@
 """
 import argparse
 import codecs
+import csv
 import datetime
 import hashlib
 import random
@@ -159,6 +160,8 @@ def main():
     ap.add_argument("--days", type=int, default=7, help="窗口天数（默认 7）")
     ap.add_argument("--no-merged-header", action="store_true",
                     help="表头放第 1 行，不补合并空白行（省一次 zip 重写）")
+    ap.add_argument("--format", dest="fmt", choices=["xlsx", "csv"], default="xlsx",
+                    help="输出格式：xlsx（默认，真实导出形态）/ csv（供看板大文件压测用，绕开 SheetJS 的 XML 体积上限）")
     args = ap.parse_args()
 
     if not SRC.exists():
@@ -169,6 +172,21 @@ def main():
     random.seed(args.seed)
 
     out = Path(args.out)
+    if args.fmt == "csv" and out.suffix.lower() != ".csv":
+        out = out.with_suffix(".csv")
+
+    # 体量预警：SheetJS（看板 lib/xlsx.full.min.js）在浏览器里解压后的 sheet XML 超过
+    # 约 512MB（V8 单字符串上限）时会解析成空表，报「文件中没有可读取的工作表数据」。
+    # 实测：100k 行 / 251MB 正常；291k 行 / 682MB、583k 行 / 1374MB 均失败。
+    if args.fmt == "xlsx":
+        est_rows = args.bills * 2.9
+        est_xml_mb = est_rows * 2.4 / 1024
+        if est_xml_mb > 480:
+            print(f"⚠️  预计 {est_rows:,.0f} 行，解压后 sheet XML ≈ {est_xml_mb:,.0f} MB，"
+                  f"超过浏览器解析上限（≈512MB）。看板加载可能报「文件中没有可读取的工作表数据」。",
+                  flush=True)
+            print("    压测建议改用 --format csv（CSV 走 Papa.parse，不受此限）；"
+                  "要真实 xlsx 形态就把 --bills 降到 60000 以下。", flush=True)
     end_date = (datetime.date.fromisoformat(args.end_date) if args.end_date else datetime.date.today())
     end = datetime.datetime.combine(end_date, datetime.time(0, 0, 0))
     start = end - datetime.timedelta(days=args.days)
@@ -176,11 +194,19 @@ def main():
 
     headers = [c.value for c in openpyxl.load_workbook(SRC, read_only=True).active[1]]
 
-    wb = openpyxl.Workbook(write_only=True)
-    ws = wb.create_sheet("物品放行监控")
-    if not args.no_merged_header:
-        ws.append([""] * len(headers))       # 第 1 行：合并空白（与系统导出一致）
-    ws.append(headers)                        # 第 2 行（或第 1 行）：表头
+    wb = ws = csv_f = writer = None
+    if args.fmt == "csv":
+        # CSV：UTF-8 BOM，Excel 双击不乱码；看板走 Papa.parse，不受 sheet XML 体积上限影响
+        out.parent.mkdir(parents=True, exist_ok=True)
+        csv_f = open(out, "w", newline="", encoding="utf-8-sig")
+        writer = csv.writer(csv_f)
+        writer.writerow(headers)
+    else:
+        wb = openpyxl.Workbook(write_only=True)
+        ws = wb.create_sheet("物品放行监控")
+        if not args.no_merged_header:
+            ws.append([""] * len(headers))       # 第 1 行：合并空白（与系统导出一致）
+        ws.append(headers)                        # 第 2 行（或第 1 行）：表头
 
     seq = 0
     stat_count = {}
@@ -349,7 +375,11 @@ def main():
                 "確認人工號": conf_id,
                 "確認人姓名": conf_name,
             }
-            ws.append([row.get(h, "") for h in headers])
+            vals = [row.get(h, "") for h in headers]
+            if ws is not None:
+                ws.append(vals)
+            else:
+                writer.writerow(vals)
             rows_written += 1
 
         if (n + 1) % 20000 == 0:
@@ -358,16 +388,21 @@ def main():
 
     print(f"写盘完成：{rows_written:,} 行，用时 {time.time() - t0:.0f}s，开始保存…", flush=True)
     out.parent.mkdir(parents=True, exist_ok=True)
-    wb.save(out)
-    t_save = time.time() - t0
-
-    if not args.no_merged_header:
-        print("补合并空白首行…", flush=True)
-        inject_merged_header(out, len(headers))
+    if args.fmt == "csv":
+        csv_f.close()
+        t_save = time.time() - t0
+        header_note = "第 1"
+    else:
+        wb.save(out)
+        t_save = time.time() - t0
+        if not args.no_merged_header:
+            print("补合并空白首行…", flush=True)
+            inject_merged_header(out, len(headers))
+        header_note = "第 2" if not args.no_merged_header else "第 1"
 
     size_mb = out.stat().st_size / 1024 / 1024
     print("完成. 输出:", out)
-    print(f"总行数: {rows_written:,}（表头 {'第 2' if not args.no_merged_header else '第 1'} 行）"
+    print(f"总行数: {rows_written:,}（表头 {header_note} 行）"
           f"  单号数: {args.bills:,}  平均 {rows_written / max(args.bills, 1):.2f} 行/单")
     print(f"不同放行门岗: {len(gates_used)} / {len(GATES)}    窗口: {start:%Y-%m-%d} ~ {end:%Y-%m-%d}（前 {args.days} 天）")
     print(f"状态分布: {stat_count}")

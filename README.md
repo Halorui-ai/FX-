@@ -18,7 +18,9 @@
 
 大文件建议先点「转存 CSV」再加载（约 35 倍）。老电脑点顶栏右侧圆形箭头打开功能面板，把「流畅模式」开关打开。验收门岗高压卡请加载 `物品放行监控_门岗压力演示.xlsx`（由 `gen_gate_pressure_data.py` 生成），不要用 100k / 200k 的均分门岗集。
 
-数据生成：`gen_monitor_data_v3.py`（小样本，默认 1200 行）、`gen_gate_pressure_data.py`（16 门岗倾斜）、`gen_monitor_data_200k.py`（大数据量压测，默认 20 万单约 58 万行 / 130MB，`--bills N` 可调）。三个都读取根目录 `物品放行监控_原备份.xlsx` 当表头模板（不入库）。
+> ⚠️ **xlsx 有个体量上限**：浏览器解析器（SheetJS）要求解压后的 sheet XML 不超过约 512MB，换算约 **21 万行 / 7 万单**。超过会报「文件中没有可读取的工作表数据（所有 Sheet 均为空）」——不是文件坏了，是解析器到顶了。此时请先用 `xls-to-csv-converter.html` 或看板「转存 CSV」，CSV 走另一条解析路径，20 万单（212MB）可正常加载。
+
+数据生成：`gen_monitor_data_v3.py`（小样本，默认 1200 行）、`gen_gate_pressure_data.py`（16 门岗倾斜）、`gen_monitor_data_200k.py`（大数据量压测，默认 20 万单约 58 万行；xlsx 约 120MB、CSV 约 212MB）。三个都读取根目录 `物品放行监控_原备份.xlsx` 当表头模板（不入库）。
 
 配套工具：根目录 `xls-to-csv-converter.html`（离线把 `.xls` / `.xlsx` 转为 CSV，双击打开；不是看板主文件）。
 
