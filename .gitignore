@@ -34,5 +34,9 @@ tests/
 *.pptx
 docs/参赛PPT/
 
+# 本地打包归档 / 参赛材料（本地可保留，不入库）
+*.zip
+参赛材料/
+
 # workbuddy 参赛相关视频（本地可保留，不入库）
 video/
