@@ -19,6 +19,10 @@
 
 - **GDMS 视图重做（D-36 / D-37 / D-38）验收闭环**：2026-11-26 合入 `main`（PR #16，用户验收通过），HANDOFF 与原型登记表改 `shipped`。HANDOFF §7 第 10 条 `物品放行监控_生成_100k.xlsx` 压测由用户 2026-11-27 本机补做通过，验收清单 10 条全部勾选。
 - 测试数据与两个现行生成器对齐系统真实导出格式（超时分钟数 / 状态新枚举）落库；`CONTEXT.md` 删掉「看板主文件尚未适配」的过时提示——D-36 已生效，新格式数据可直接加载。
+- **新增大数据量生成器 `gen_monitor_data_200k.py`**（以 `gen_monitor_data_v3.py` 为底）：默认 20 万单 ≈ 58.26 万行 / 120.7MB，对齐「系统一周十几万单、导出 100 多 MB」的量级；`--bills N` 调单量、`--end-date` 调窗口（默认运行当天往前 7 个整日）、`--no-merged-header` 省一次 zip 重写。样式与真实导出一致（第 1 行合并空白 + 第 2 行表头），字段格式与 V3 完全一致，1800 个门岗均分。
+  - 实现要点：58 万行 × 40 列必须用 openpyxl `write_only` 流式写盘（普通模式要吃数 GB 内存）；`write_only` 不支持 `merge_cells`，故保存后流式改写 sheet XML 注入 `<mergeCells>`，且**必须插在 `</sheetData>` 之后**（OOXML 子节点顺序 sheetData → mergeCells → pageMargins，放到 `</worksheet>` 前会让 Excel 报内容有问题）。
+  - 实测：生成 342s（写盘 282s + 保存/补合并 60s），200,000 单 / 582,834 行 / 1800 门岗 / 120.7MB；字段枚举、放行超时⇄状态一一对应、超时标记只在末笔，全部 0 例外。
+- 数据脚本分工定稿并写入 CONTEXT §5 与 README：`gen_monitor_data_v3.py` 小样本 / `gen_gate_pressure_data.py` 16 门岗倾斜（验卡 A·卡 B 唯一来源）/ `gen_monitor_data_200k.py` 大压测。归档的 `gen_monitor_data_big.py`（旧字段格式）不再使用。
 
 ## 2026-11-12
 
