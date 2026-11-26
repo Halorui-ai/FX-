@@ -3,8 +3,12 @@
 
 口径与 gen_monitor_data_v3.py 相同（WF9897、整单分类、超时打末笔）。
 输出：物品放行监控_门岗压力演示.xlsx（xlsx 被 gitignore，需本地生成）。
+
+导出字段格式（2026-11-12 起）：放行狀態 正常/超时/放行拒绝；放行超時、接收超時
+为 0 或超时分钟数；接收狀態 未接收/未接收超时/正常/超时；物品類型
+特级安保物品/普通物品（物品分類 6 类细分保持不变）。
 """
-import random, datetime, openpyxl
+import random, datetime, hashlib, openpyxl
 from pathlib import Path
 
 random.seed(2026091201)
@@ -56,6 +60,18 @@ def gen_emp(prefix):
 
 def fmt(dt):
     return dt.strftime("%Y/%m/%d %H:%M:%S")
+
+RELEASE_LIMIT_H = 12   # 申请后 12 小时内应到达流入门岗
+RECV_LIMIT_H = 2       # 到达后 2 小时内应完成接收
+
+def overtime_minutes(actual_dt, deadline_dt, seed):
+    """超时分钟数：优先用真实时限差推导；推导不出时用单号稳定的 30~600 分钟。"""
+    if actual_dt and deadline_dt:
+        m = int((actual_dt - deadline_dt).total_seconds() // 60)
+        if m > 0:
+            return str(min(m, 10080))
+    h = int(hashlib.md5(seed.encode("utf-8")).hexdigest()[:8], 16)
+    return str(30 + h % 571)
 
 seq = 0
 def gen_bill_no(special, apply_dt):
@@ -127,8 +143,8 @@ bill_count = 0
 while ws.max_row - 1 < TARGET_ROWS:
     special = random.random() < 0.18
     if special:
-        item_type = random.choice(["新产品A级物料", "新产品机台"])
-        item_class = item_type
+        item_class = random.choice(["新产品A级物料", "新产品机台"])  # 特保单分类仅两种
+        item_type = "特级安保物品"                  # 物品類型只区分特保 / 普通
     else:
         item_type = "普通物品"
         item_class = random.choice(item_class_common)
@@ -191,23 +207,27 @@ while ws.max_row - 1 < TARGET_ROWS:
     arrival_time = release_times[-1] if arrived else None
     in_transit_timeout = (not arrived) and random.random() < 0.55
 
-    recv_id = recv_name = recv_dept = recv_time = recv_status = ""
+    # —— 接收字段：仅最后一笔（接收发生在流入门岗） ——
+    # 接收狀態 4 值：正常 / 超时（已接收）/ 未接收 / 未接收超时
+    recv_id = recv_name = recv_dept = recv_time = ""
     recv_timeout = "0"
-    if status == "arrived_recv_timeout":
+    recv_deadline = (arrival_time + datetime.timedelta(hours=RECV_LIMIT_H)) if arrival_time else None
+    if status == "arrived_recv_timeout":        # 已接收但接收时超时 → 「超时」
         recv_id, recv_name = make_emp_pair("H")
         recv_dept = random.choice(depts)
         recv_time = arrival_time + datetime.timedelta(hours=random.randint(3, 10))
-        recv_status = "正常"
-        recv_timeout = "1"
-    elif status == "arrived_ontime":
+        recv_status = "超时"
+        recv_timeout = overtime_minutes(recv_time, recv_deadline, bill_no + "C")
+    elif status == "arrived_ontime":            # 正常接收 → 「正常」
         recv_id, recv_name = make_emp_pair("H")
         recv_dept = random.choice(depts)
         recv_time = arrival_time + datetime.timedelta(minutes=random.randint(10, 90))
         recv_status = "正常"
-    elif status == "arrived_no_recv":
-        recv_status = "未接收"
-        recv_timeout = "1"
-    elif status == "arrived_late_release":
+    elif status == "arrived_no_recv":           # 未接收超时 → 「未接收超时」
+        recv_status = "未接收超时"
+        # 无接收时间，无法由时限差推导，用单号稳定的分钟数
+        recv_timeout = overtime_minutes(None, None, bill_no + "C")
+    elif status == "arrived_late_release":      # 到达超时：部分已接收、部分未接收
         if random.random() < 0.5:
             recv_id, recv_name = make_emp_pair("H")
             recv_dept = random.choice(depts)
@@ -215,20 +235,27 @@ while ws.max_row - 1 < TARGET_ROWS:
             recv_status = "正常"
         else:
             recv_status = "未接收"
+    else:                                       # 在途单：无接收数据 → 「未接收」
+        recv_status = "未接收"
+
+    # 放行超时分钟数：整单算一次，只打在最后一笔（deadline_arrival = 申请 + 12h）
+    if status == "arrived_late_release":
+        last_rel_timeout = overtime_minutes(release_times[-1], deadline_arrival, bill_no + "R")
+    elif not arrived and in_transit_timeout:
+        # 在途超时没有到达时间，无法由时限差推导，用单号稳定的分钟数
+        last_rel_timeout = overtime_minutes(None, None, bill_no + "R")
+    else:
+        last_rel_timeout = "0"
 
     for idx, gate in enumerate(path):
         is_last = (idx == len(path) - 1)
         rel_id, rel_name = make_emp_pair("F")
-        rel_status = "正常" if random.random() < 0.95 else "異常"
-        if is_last:
-            if status == "arrived_late_release":
-                rel_timeout = "1"
-            elif not arrived:
-                rel_timeout = "1" if in_transit_timeout else "0"
-            else:
-                rel_timeout = "0"
+        rel_timeout = last_rel_timeout if is_last else "0"
+        # 放行狀態：超时行固定「超时」；其余为「正常」或「放行拒绝」
+        if rel_timeout != "0":
+            rel_status = "超时"
         else:
-            rel_timeout = "0"
+            rel_status = "正常" if random.random() < 0.95 else "放行拒绝"
         row = {
             "申請日期": fmt(apply_dt),
             "放行單號": bill_no,
