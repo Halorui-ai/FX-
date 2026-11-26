@@ -25,6 +25,10 @@
 - 数据脚本分工定稿并写入 CONTEXT §5 与 README：`gen_monitor_data_v3.py` 小样本 / `gen_gate_pressure_data.py` 16 门岗倾斜（验卡 A·卡 B 唯一来源）/ `gen_monitor_data_200k.py` 大压测。归档的 `gen_monitor_data_big.py`（旧字段格式）不再使用。
 - **查清「200k xlsx 载入报『文件中没有可读取的工作表数据』」的原因：不是字段格式问题，是解析器体量上限。** 用 Node + 看板自带 `lib/xlsx.full.min.js` 复现：100,002 行（解压 XML 251MB）正常、`!ref=A1:AN100004`；291,318 行（682MB）、582,834 行（1,374MB）均返回 `!ref = undefined`，Worker 据此判定空表。根因是解压后的 sheet XML 超过 V8 单字符串上限（≈512MB），SheetJS 拿到被截断的结果、一个单元格都没注册。换算约 **21 万行 / 7 万单**封顶。`gen_monitor_data_200k.py` 因此新增：① 生成 xlsx 前按行数预估并告警；② `--format csv`（BOM + 40 列），走 Papa.parse 那条路。实测 20 万单 CSV = 212MB / 582,834 行，Papa 解析 5.0s 正常。
 - CONTEXT §5 与 README 记录该上限与绕行方式（超过就先「转存 CSV」或用 `xls-to-csv-converter.html`）。
+- **L1 落地：ETL 引擎 + 第一份周报配方**（`etl_engine.py` + `recipes/weekly_overtime.json`，方案见 `docs/周报月报自动化方案.md` §10）。标准库流式解析（不用 openpyxl/pandas），单遍扫描产出 KPI、按部门/物品类型/物品分类/申请日期/流入门岗五个维度、时长四档、以及供看板下钻的明细子集。
+  - 实测（20 万单 / 58.26 万行）：**xlsx 读取 224s vs 同数据 CSV 15s**（约 15 倍差距），峰值内存约 400MB；明细子集 15.8 万行 / 56MB，看板 Papa 解析 1.0s、表头识别正常。
+  - 新增 `--cache-csv`（xlsx 先转 CSV 再跑，同级 CSV 复用）、`--to-csv`（只转换）、`--min-minutes`（子集瘦身）。`.gitignore` 加 `out/`（产物不入库）。
+  - 结论写进文档：**首选让系统直接导 CSV**；openpyxl 约 188 行/秒（58 万行要 51 分钟），不可用于大文件；`python-calamine`/`polars` 可再快 10-50 倍但需离线 whl，非必需。
 
 ## 2026-11-12
 

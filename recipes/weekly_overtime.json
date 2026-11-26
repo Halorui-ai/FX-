@@ -1,0 +1,44 @@
+{
+  "name": "周报_超时分析",
+  "version": 1,
+  "updated": "2026-11-27",
+  "note": "周报口径配方。改需求只改这个文件：阈值、时长分档、看哪些维度、每维取前几名。engine 不需要动。",
+  "thresholds": {
+    "release_hours": 12,
+    "receive_hours": 2,
+    "comment": "放行超时=申请+12h 内未到达流入门岗；接收超时=到达后 2h 内未接收。引擎按导出列直接取分钟数，这里仅做说明与兜底推算用。"
+  },
+  "duration_buckets_min": [30, 60, 240],
+  "duration_buckets_note": "≤30min / 30~60min / 60~240min / >240min。>4h 视为重大滞留，周报里单独说。",
+  "top_n": 12,
+  "dimensions": [
+    { "key": "一級部門", "label": "一级部门", "top": 12,
+      "why": "老板问「谁的锅」，主管要落到一级部门；全名太散，归并后才有可比性" },
+    { "key": "物品類型", "label": "物品类型",
+      "why": "特级安保物品（NPI 物料）超时风险等级完全不同，必须单独看" },
+    { "key": "物品分類", "label": "物品分类",
+      "why": "设备/耗材/资讯物品的流转链路不一样，用于定位是哪类货在卡" },
+    { "key": "日期", "label": "申请日期",
+      "why": "按天看趋势，判断是常态还是某天爆量（周末/盘点/搬迁常见）" },
+    { "key": "流入門崗", "label": "流入门岗", "top": 10,
+      "why": "超时集中在哪个门岗——是接收端不签收，还是门岗本身堵" }
+  ],
+  "detail_subset": {
+    "rule": "release_or_unreceived",
+    "min_minutes": 0,
+    "rule_options": {
+      "release_or_unreceived": "只留「放行超时」和「超时未接收」——这两类才真的要人处理（推荐）",
+      "all_overtime": "广义超时（放行 ∪ 接收），体量最大",
+      "overtime_or_transit": "超时 ∪ 在途，连正常在途也留"
+    },
+    "note": "min_minutes 用来给子集瘦身：设 60 就只留超时 ≥1 小时的单。子集建议控制在 80MB / 25 万行以内，否则 4GB 机器拖进看板会卡。"
+  },
+  "outputs": {
+    "kpi": "01_KPI.csv",
+    "dimensions": "02..0N_按<维度>.csv",
+    "duration": "09_时长分档.csv",
+    "detail_subset": "09_明细_超时单.csv",
+    "summary": "summary.json"
+  },
+  "detail_subset_rule": "只保留「超时」或「在途」的整单全部记录（40 列原样），拖进看板即可下钻到门岗流转"
+}
