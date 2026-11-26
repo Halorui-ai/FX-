@@ -9,7 +9,7 @@
 
 ## 进行中
 
-- **GDMS 视图重做已实现，待用户本机 `file://` 验收**（HANDOFF `docs/prototypes/gdms-view-redesign/`，`status: implementing`）。验收清单见 HANDOFF §7；通过后由用户把 HANDOFF 改 `shipped`。未做：`物品放行监控_生成_100k.xlsx` 压测（会话内没有该文件）。
+- **GDMS 视图重做（D-36 / D-37 / D-38）已于 2026-11-26 合入 `main`**（PR #16，用户验收通过），HANDOFF 改 `shipped`。仍待补：`物品放行监控_生成_100k.xlsx` 压测（文件在本地、不在仓库）。
 
 <!-- 明天接着改时：把未做完的写在这里（做到哪、下一步、不要动什么）。做完后删掉或迁到当日记录。 -->
 

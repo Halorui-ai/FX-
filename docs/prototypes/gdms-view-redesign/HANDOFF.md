@@ -5,7 +5,7 @@
 原型图表是手绘 SVG，数字是脚本生成的演示数据；实现时换 ECharts，数字一律走 `orders` / `computeStats`。
 
 ```yaml
-status: implementing   # draft | approved | implementing | shipped —— 已实现进主文件，待用户本机 file:// 验收后改 shipped
+status: shipped        # draft | approved | implementing | shipped —— 2026-11-12 实现进主文件，2026-11-26 用户验收通过、PR #16 合入 main
 owner_design: Claude Code（用户指定代笔设计，2026-11-12）
 owner_impl: Claude Code
 approved_by: 用户（"原型也没问题"）
